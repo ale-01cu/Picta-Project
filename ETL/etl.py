@@ -10,7 +10,108 @@ Original file is located at
 import pandas as pd
 from pandas import DataFrame
 
-"""Limpiar el texto con spacy"""
+from sqlalchemy import create_engine, MetaData, Table, text, Engine
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+
+# SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:admin@localhost:5432/picta"
+
+engine = create_engine(
+  SQLALCHEMY_DATABASE_URL, 
+)
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+
+
+# Base = declarative_base()
+# db: Session = get_db()
+
+
+def extract(table_name, amount=None):
+    # Reflejar la tabla
+    metadata = MetaData()
+    table = Table(table_name, metadata, autoload_with=engine)
+
+    # Consultar la tabla
+    results = session.query(table).all()
+    session.close()
+
+    if amount: return results[:amount]
+    return results
+
+
+def extract_v2(sql_consult, amount=None):
+    # Crear un motor que se conecta a la base de datos
+    with engine.connect() as connection:
+      result = list(connection.execute(text(sql_consult)))
+
+    if amount: return result[:amount]
+    return result
+
+
+def save_nan_values_rows(df: DataFrame):
+  path = '../datasets/picta_publicaciones_nulas.csv'
+  df_nan_rows = df[df.isnull().any(axis=1)]
+  df_nan_rows.to_csv(path, index=False)
+   
+
+
+def transform(data, columns):
+  df = DataFrame(data)
+
+  # save_nan_values_rows(df)
+  # df = df.dropna()
+
+  return df[columns]
+
+def load_csv(path: str, df: DataFrame) -> None:
+  df.to_csv(path, index=False)
+
+
+DATASET_URL = '../datasets/picta_publicaciones.csv'
+DATASET_URL_2 = '../datasets/picta_publicaciones_crudas.csv'
+DATA_TABLE = 'app_contenido'
+columns = ['id', 'nombre', 'descripcion']
+SQL_CONSULT = """
+  SELECT app_c.id, app_c.nombre, app_c.descripcion, app_t.nombre as categoria
+  FROM app_contenido as app_c 
+  INNER JOIN app_publicacion as app_p ON app_c.id = app_p.contenido_id
+  INNER JOIN app_categoria as app_cat ON app_p.categoria_id = app_cat.id
+  INNER JOIN app_tipologia as app_t ON app_cat.tipologia_id = app_t.id;
+"""
+
+# data = extract(DATA_TABLE)
+# data = extract_v2(SQL_CONSULT)
+# load_csv(DATASET_URL_2, DataFrame(data))
+# df = transform(data, columns)
+# load_csv(DATASET_URL, df)
+
+
+df = pd.read_csv(DATASET_URL_2)
+print(df.shape[0])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def get_columns(df: DataFrame) -> list:
   return df.columns.tolist()
@@ -19,10 +120,6 @@ def get_columns(df: DataFrame) -> list:
 def extract_csv(path: str) -> DataFrame:
   df = pd.read_csv(path)
   return df
-
-
-def load_csv(path: str, df: DataFrame) -> None:
-  df.to_csv(path, index=False)
 
 
 def transform_optimized(df: DataFrame, columns: list[str]) -> DataFrame:
@@ -40,7 +137,7 @@ def transform_optimized(df: DataFrame, columns: list[str]) -> DataFrame:
 # df = extract_csv('netflix_titles.csv')
 # transform(df)
 # load_csv('nuevo_datasset.csv', df)
-df = extract_csv('netflix_titles.csv')
-columns = get_columns(df)
-df_sp = transform_optimized(df, columns)
-load_csv('netflix_titles_clean.csv', df_sp)
+# df = extract_csv('netflix_titles.csv')
+# columns = get_columns(df)
+# df_sp = transform_optimized(df, columns)
+# load_csv('netflix_titles_clean.csv', df_sp)
