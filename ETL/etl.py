@@ -79,6 +79,7 @@ def load_csv(path: str, df: DataFrame) -> None:
 
 DATASET_URL = '../datasets/picta_publicaciones.csv'
 DATASET_URL_2 = '../datasets/picta_publicaciones_crudas.csv'
+DATASET_URL_3 = '../datasets/picta_publicaciones_procesadas_sin_nulas.csv'
 DATA_TABLE = 'app_contenido'
 columns = ['id', 'nombre', 'descripcion']
 SQL_CONSULT = """
@@ -95,13 +96,10 @@ SQL_CONSULT = """
 # df = transform(data, columns)
 # load_csv(DATASET_URL, df)
 
+df = pd.read_csv(DATASET_URL_3)
+duplicates = df.duplicated()
 
-df = pd.read_csv(DATASET_URL_2)
-print(df.shape[0])
-
-
-
-
+print(df.loc[duplicates, :])
 
 
 
