@@ -10,6 +10,7 @@ class RetrievalModel(tfrs.models.Model):
         super().__init__()
         self.query_model = QueryModel(layer_sizes)
         self.candidate_model = CandidateModel(layer_sizes)
+        self.index = tfrs.layers.factorized_top_k.BruteForce(self.query_model, k=100)
         # self.task = tfrs.tasks.Retrieval(
         #     metrics=tfrs.metrics.FactorizedTopK(
         #         candidates=pubs_ds.batch(128).map(self.candidate_model),
@@ -26,7 +27,7 @@ class RetrievalModel(tfrs.models.Model):
         self.cached_train = train.shuffle(total).batch(2048).cache()
         self.cached_test = test.batch(1024).cache()
 
-        self.num_epoch = 3
+        self.num_epochs = 3
 
 
     def compute_loss(self, features, training=False):
@@ -40,7 +41,6 @@ class RetrievalModel(tfrs.models.Model):
         model = self
         model.compile(optimizer=tf.keras.optimizers.Adagrad(learning_rate=0.1))
         model.fit(self.cached_train, epochs=self.num_epochs)
-        return model
     
 
     def evaluate_model(self):
@@ -59,7 +59,7 @@ class RetrievalModel(tfrs.models.Model):
     def predict_model(self, user_id):
         print('--------- Prediciendo con el modelo ----------')
         model = self
-        brute_force = tfrs.layers.factorized_top_k.BruteForce(model.query_model)
+        brute_force = self.index
         brute_force.index_from_dataset(
             pubs_ds.batch(128).map(lambda x: (x['id'], model.candidate_model(x)))
         )
@@ -70,7 +70,7 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def save(self, path):
-        tf.saved_model.save(self, path)
+        tf.saved_model.save(self.index, path)
 
 
     def load(self, path):

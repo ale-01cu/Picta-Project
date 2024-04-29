@@ -26,6 +26,11 @@ class RankingModel(tfrs.models.Model):
             metrics=[tf.keras.metrics.RootMeanSquaredError()],
         )
 
+        self.cached_train = train.shuffle(total).batch(2048).cache()
+        self.cached_test = test.batch(1024).cache()
+        self.num_epochs = 100
+
+
     def call(self, inputs):
         user_embedding = self.query_model(inputs)
         pub_embedding = self.candidate_model(inputs)
@@ -41,24 +46,25 @@ class RankingModel(tfrs.models.Model):
 
 
     def fit_model(self):
+        print('---------- Entrenando el modelo ----------')
         model = self
         model.compile(optimizer=tf.keras.optimizers.Adagrad(learning_rate=0.1))
+        model.fit(self.cached_train, epochs=self.num_epochs)
 
-        cached_train = train.shuffle(total).batch(2048).cache()
-        cached_test = test.batch(1024).cache()
 
-        num_epoch = 3
-        model.fit(cached_train, epochs=num_epoch)
+    def evaluate_model(self):
+        self.evaluate(self.cached_test, return_dict=True)
 
-        model.evaluate(cached_test, return_dict=True)
 
-    def predict(self, user_id, titles):
+    def predict_model(self, user_id, pubs_ids):
         model = self
         test_ratings = {}
-        for movie_title in titles:
-            model_input = self.get_row_as_dict(movie_title)
+
+        for id in pubs_ids[0]:
+            id = id.numpy()
+            model_input = self.get_row_as_dict(id)
             model_input['user_id'] = np.array([user_id])
-            test_ratings[movie_title] = model(model_input)
+            test_ratings[id] = model(model_input)
 
         print("Ratings:")
         for title, score in sorted(test_ratings.items(), key=lambda x: x[1], reverse=True):
@@ -66,7 +72,8 @@ class RankingModel(tfrs.models.Model):
 
 
     def get_row_as_dict(self, id):
-        print(id)
+        id = int(id)
+        id = str(id)
         # Filtrar el DataFrame para solo la fila donde el id coincide con el proporcionado
         df_filtered = pubs_df[pubs_df['id'] == id]
         

@@ -3,9 +3,14 @@ import tensorflow as tf
 import numpy as np
 
 pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
-ratings_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/publicaciones_ratings_con_timestamp.csv')
+ratings_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/publicaciones_ratings_con_timestamp_medium.csv')
 
-ratings_df = ratings_df.merge(pubs_df, how='inner', left_on='publication_id', right_on='id')[['user_id', 'publication_id', 'timestamp', 'rating','nombre', 'descripcion', 'categoria']]
+ratings_df = ratings_df.merge(
+    pubs_df, 
+    how='inner', 
+    left_on='publication_id', 
+    right_on='id'
+)[['user_id', 'publication_id', 'timestamp', 'rating','nombre', 'descripcion', 'categoria']]
 ratings_df['user_id'] = ratings_df['user_id'].astype(str)
 ratings_df['publication_id'] = ratings_df['publication_id'].astype(str)
 ratings_df['nombre'] = ratings_df['nombre'].astype(str)
@@ -16,6 +21,12 @@ pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
 ratings_ds = tf.data.Dataset.from_tensor_slices(dict(ratings_df))
 pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
+
+feature_names = ['publication_id', 'nombre', 'descripcion', 'categoria', 'user_id']
+vocabularies = {}
+for feature_name in feature_names:
+    vocab = ratings_ds.batch(20_000).map(lambda x: x[feature_name])
+    vocabularies[feature_name] = np.unique(np.concatenate(list(vocab)))
 
 pubs_ids_ds = pubs_ds.map(lambda x: x['id'])
 pubs_ids_ds_batch = pubs_ids_ds.batch(1_000)
