@@ -1,11 +1,12 @@
 import tensorflow as tf
 from .data_pipeline import unique_users_ids, ratings_ds
+from tensorflow.python.types.core import Tensor
 
 class UserModel(tf.keras.Model):
 
-    def __init__(self):
+    def __init__(self, embedding_dimension: int = 32) -> None:
         super().__init__()
-        self.embedding_dimension = 32
+        self.embedding_dimension = embedding_dimension
 
         self.id_embedding = tf.keras.Sequential([
             tf.keras.layers.StringLookup(vocabulary=unique_users_ids, mask_token=None),
@@ -21,7 +22,7 @@ class UserModel(tf.keras.Model):
         # self.normalized_timestamp.adapt(
         #     ratings_ds.map(lambda x: x["timestamp"]).batch(128))
 
-    def call(self, inputs):
+    def call(self, inputs) -> Tensor:
         # Take the input dictionary, pass it through each input layer,
         # and concatenate the result.
         return tf.concat([

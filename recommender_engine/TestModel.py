@@ -10,8 +10,8 @@ else:
 
 
 import pandas as pd
-pubs_df = pd.read_csv('../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
-ratings_df = pd.read_csv('../datasets/publicaciones_ratings_con_timestamp.csv')
+pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+ratings_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/publicaciones_ratings_con_timestamp.csv')
 
 
 ratings_df = ratings_df.merge(pubs_df, how='inner', left_on='publication_id', right_on='id')[['user_id', 'publication_id', 'nombre']]

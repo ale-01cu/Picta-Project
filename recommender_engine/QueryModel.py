@@ -1,22 +1,16 @@
 import tensorflow as tf
 from .UserModel import UserModel
 from .data_pipeline import ratings_ds
+from tensorflow.python.types.core import Tensor
 
 class QueryModel(tf.keras.Model):
     """Model for encoding user queries."""
 
-    def __init__(self, layer_sizes):
-        """Model for encoding user queries.
-
-        Args:
-            layer_sizes:
-            A list of integers where the i-th entry represents the number of units
-            the i-th layer contains.
-        """
+    def __init__(self, layer_sizes: list[int], embedding_dimension: int) -> None:
         super().__init__()
 
         # We first use the user model for generating embeddings.
-        self.embedding_model = UserModel()
+        self.embedding_model = UserModel(embedding_dimension=embedding_dimension)
 
         # Then construct the layers.
         self.dense_layers = tf.keras.Sequential()
@@ -30,14 +24,14 @@ class QueryModel(tf.keras.Model):
             self.dense_layers.add(tf.keras.layers.Dense(layer_size))
 
 
-    def call(self, inputs):
+    def call(self, inputs) -> Tensor:
         feature_embedding = self.embedding_model(inputs)
         return self.dense_layers(feature_embedding)
   
 
 if __name__ == "__main__":
     # --- Testeando el modelo ---
-    q_model = QueryModel([64])
+    q_model = QueryModel([64], 64)
     # for row in ratings_ds.batch(1).take(1):
     #   print(f"Computed representations: {q_model(row)[0, :3]}")
 

@@ -1,21 +1,15 @@
 import tensorflow as tf
 from .PubModel import PubModel
-from .data_pipeline import ratings_ds, pubs_ds
+from .data_pipeline import pubs_ds
+from tensorflow.python.types.core import Tensor
 
 class CandidateModel(tf.keras.Model):
     """Model for encoding movies."""
 
-    def __init__(self, layer_sizes):
-        """Model for encoding movies.
-
-        Args:
-            layer_sizes:
-            A list of integers where the i-th entry represents the number of units
-            the i-th layer contains.
-        """
+    def __init__(self, layer_sizes: list[int], embedding_dimension: int) -> None:
         super().__init__()
 
-        self.embedding_model = PubModel()
+        self.embedding_model = PubModel(embedding_dimension=embedding_dimension)
 
         # Then construct the layers.
         self.dense_layers = tf.keras.Sequential()
@@ -29,7 +23,7 @@ class CandidateModel(tf.keras.Model):
             self.dense_layers.add(tf.keras.layers.Dense(layer_size))
 
 
-    def call(self, inputs):
+    def call(self, inputs) -> Tensor:
         feature_embedding = self.embedding_model(inputs)
         return self.dense_layers(feature_embedding)
 

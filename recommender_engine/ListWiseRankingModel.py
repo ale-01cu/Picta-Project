@@ -1,14 +1,18 @@
 import tensorflow as tf
 import tensorflow_recommenders as tfrs
+import tensorflow_ranking as tfr
 from .QueryModel import QueryModel
 from .CandidateModel import CandidateModel
-from typing import Dict, Text
+from typing import Dict, Text, Union
 from .data_pipeline import pubs_df
 import numpy as np
+from keras.losses import MeanSquaredError
+from tensorflow_ranking.python.keras.losses import PairwiseHingeLoss, ListMLELoss
 
-class RankingModel(tfrs.models.Model):
+class ListWiseRankingModel(tfrs.models.Model):
 
     def __init__(self, 
+        loss: Union[MeanSquaredError, PairwiseHingeLoss, ListMLELoss],
         layer_sizes: list[int], 
         deep_layer_sizes: list[int],
         train: tf.data.Dataset,
@@ -24,6 +28,8 @@ class RankingModel(tfrs.models.Model):
         self.cached_train = train.shuffle(shuffle).batch(train_batch).cache()
         self.cached_test = test.batch(test_batch).cache()
 
+        print(len(self.cached_train))
+        print(len(self.cached_test))
 
         self.query_model = QueryModel(
             layer_sizes=layer_sizes, 
@@ -49,8 +55,10 @@ class RankingModel(tfrs.models.Model):
 
 
         self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
-            loss=tf.keras.losses.MeanSquaredError(),
-            metrics=[tf.keras.metrics.RootMeanSquaredError()],
+            loss=loss,
+            metrics=[
+                tfr.keras.metrics.NDCGMetric(name="ndcg_metric"),
+                tf.keras.metrics.RootMeanSquaredError()],
         )
 
 
@@ -58,17 +66,25 @@ class RankingModel(tfrs.models.Model):
         user_embedding = self.query_model(inputs)
         pub_embedding = self.candidate_model(inputs)
 
-        return self.rating_model(tf.concat(
-            [user_embedding, pub_embedding], axis=1))
+        list_length = inputs['nombre'].shape[1]
+        user_embedding_repeated = tf.repeat(
+            tf.expand_dims(user_embedding, 1), [list_length], axis=1
+        )
+
+        concatenated_embeddings = tf.concat([user_embedding_repeated, pub_embedding], 2)
+
+        return self.rating_model(concatenated_embeddings)
 
 
     def compute_loss(self, features: Dict[Text, tf.Tensor], training: bool = False) -> tf.Tensor:
         labels = features.pop("rating")
         rating_predictions = self(features)
+
+
         # The task computes the loss and the metrics.
         return self.task(
             labels=labels, 
-            predictions=rating_predictions
+            predictions=tf.squeeze(rating_predictions, axis=-1)
         )
 
 
@@ -113,3 +129,4 @@ class RankingModel(tfrs.models.Model):
             row_as_dict[key] = np.array([row_as_dict[key]])
         
         return row_as_dict
+    

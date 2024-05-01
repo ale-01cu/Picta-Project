@@ -16,7 +16,7 @@ def choice_publications_ids(id_list, amount):
     return random.choices(id_list, k=amount)
 
 def generate_ratings(num_rows):
-    ratings = [random.randint(1, 5) for _ in range(num_rows)]
+    ratings = [random.randint(10, 50) / 10.0 for _ in range(num_rows)]
     return ratings
 
 def delete_duplicates(df):

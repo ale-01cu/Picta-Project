@@ -1,6 +1,26 @@
 import pandas as pd
 import tensorflow as tf
+import tensorflow_recommenders as tfrs
 import numpy as np
+import math
+from . import listwise as lw
+
+
+def save(dataset: tf.data.Dataset):
+    tf.data.experimental.save(
+        dataset, 
+        '/ruta/al/archivo.tfrecord'
+    )
+
+
+def load() -> tf.data.Dataset:
+    return tf.data.experimental.load(
+        '/ruta/al/archivo.tfrecord', 
+        tf.TensorSpec(shape=(), 
+        dtype=tf.int64)
+    )
+
+
 
 pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
 ratings_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/publicaciones_ratings_con_timestamp_medium.csv')
@@ -52,7 +72,6 @@ unique_users_ids = np.unique(np.concatenate(list(user_ids_ds_batch)))
 pubs_names_batch = pubs_names_ds.batch(128)
 
 
-import math
 
 total = len(ratings_ds)
 train_Length = math.ceil(total * (80 / 100))
@@ -62,9 +81,46 @@ print('Total ', total)
 print('Tamaño del set de entrenamiento ', train_Length)
 print('Tamaño del set de prueba ', test_length)
 
-
 tf.random.set_seed(42)
 shuffled = ratings_ds.shuffle(total, seed=42, reshuffle_each_iteration=False)
 
 train = shuffled.take(train_Length)
 test = shuffled.skip(train_Length).take(test_length)
+
+
+
+
+""" Con Listwise para el modelo de Ranking """
+
+print("Creando las listas...")
+
+
+
+print('no listas')
+print(len(train))
+print(len(test))
+
+
+train = lw.sample_listwise(
+    train,
+    features_for_examples=['nombre', 'rating'],
+    features_for_list=['user_id'],
+    num_list_per_user=50,
+    num_examples_per_list=5,
+    seed=42
+)
+
+test = lw.sample_listwise(
+    test,
+    features_for_examples=['nombre', 'rating'],
+    features_for_list=['user_id'],
+    num_list_per_user=1,
+    num_examples_per_list=5,
+    seed=42
+)
+
+
+print('si listas')
+print(len(train))
+print(len(test))
+

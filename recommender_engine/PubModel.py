@@ -1,13 +1,14 @@
 import tensorflow as tf
 from .data_pipeline import unique_pubs_names, ratings_ds
+from tensorflow.python.types.core import Tensor
 
 class PubModel(tf.keras.Model):
 
-    def __init__(self):
+    def __init__(self, embedding_dimension: int = 32) -> None:
         super().__init__()
 
         self.max_tokens = 10_000
-        self.embedding_dimension = 32
+        self.embedding_dimension = embedding_dimension
 
         # self.title_weight = tf.Variable(0.3, trainable=True)
         # # self.title_text_weight = tf.Variable(1., trainable=True)
@@ -43,7 +44,7 @@ class PubModel(tf.keras.Model):
         # ])
 
 
-    def call(self, inputs):
+    def call(self, inputs) -> Tensor:
         return tf.concat([
             # self.id_embedding(inputs['publication_id']),
             self.title_embedding(inputs["nombre"]),
