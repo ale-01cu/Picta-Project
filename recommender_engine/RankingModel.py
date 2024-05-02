@@ -7,6 +7,16 @@ from .data_pipeline import pubs_df
 import numpy as np
 
 class RankingModel(tfrs.models.Model):
+    """
+    
+    Los datos para entrenar este modelo son calificaciones
+    que ha dado un usuario a un contenido
+    
+    ejemplo:
+
+    El usuario x dio una calificacion z a la publicacion k.
+    
+    """
 
     def __init__(self, 
         layer_sizes: list[int], 

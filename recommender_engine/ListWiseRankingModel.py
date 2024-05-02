@@ -10,6 +10,19 @@ from keras.losses import MeanSquaredError
 from tensorflow_ranking.python.keras.losses import PairwiseHingeLoss, ListMLELoss
 
 class ListWiseRankingModel(tfrs.models.Model):
+    """
+    
+    Los datos para entrenar este modelo son listas de calificaciones 
+    por usuarios
+    
+    ejemplo:
+
+    El usuario x dio una cantidad de calificaciones y a una candidad de peliculas
+    z y tiene k listas de estas. 
+    
+    Las listas se basan en una candidad de muestras y los usuarios en cantidades de listas
+    
+    """
 
     def __init__(self, 
         loss: Union[MeanSquaredError, PairwiseHingeLoss, ListMLELoss],

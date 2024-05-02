@@ -1,28 +1,32 @@
 import tensorflow_recommenders as tfrs
 import tensorflow as tf
-from .QueryModel import QueryModel
 from .CandidateModel import CandidateModel
 from tensorflow.python.types.core import Tensor
 import numpy as np
+from typing import Dict, Text
 
-class RetrievalModel(tfrs.models.Model):
+class ItemToItemRetrievalModel(tfrs.models.Model):
     """
     
     Los datos para entrenar este modelo son son pares 
-    de tipo usuario - item osea en el caso de las publicaciones
-    tengo que pasarle un historial de clicks que ha dado cada usuario 
-    a cada publicacion
+    de tipo item - item osea en el caso de las publicaciones
+    tengo que pasarle un historial de clicks pero en la pagina de las publicaciones
     
     ejemplo:
 
-    En cualquier pagina de la aplicacion el usuario x dio click en la pelicula z
+    En la pagina de la pelicula x se le dio click a la pelicula z.
     
     """
+
+
     def __init__(self, 
         layer_sizes: list[int], 
         train: tf.data.Dataset, 
         test: tf.data.Dataset,
         candidates: tf.data.Dataset,
+        vocabularies: Dict[Text, Dict[Text, tf.Tensor]],
+        features_names_q: list[str],
+        features_names_c: list[str],
         embedding_dimension: int = 32, 
         shuffle: int = 20_000,
         train_batch: int = 2048,
@@ -42,13 +46,17 @@ class RetrievalModel(tfrs.models.Model):
         self.cached_train = train.shuffle(self.shuffle).batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
 
-        self.query_model = QueryModel(
+        self.query_model = CandidateModel(
+            vocabularies=vocabularies,
+            features_names=features_names_q,
             layer_sizes=layer_sizes, 
             embedding_dimension=embedding_dimension
         )
 
         self.candidate_model = CandidateModel(
-            layer_sizes=layer_sizes,
+            vocabularies=vocabularies,
+            features_names=features_names_c,
+            layer_sizes=layer_sizes, 
             embedding_dimension=embedding_dimension
         )
 

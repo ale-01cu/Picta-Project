@@ -4,18 +4,25 @@ from .QueryModel import QueryModel
 from .CandidateModel import CandidateModel
 from tensorflow.python.types.core import Tensor
 import numpy as np
+from .data_pipeline import unique_pubs_ids
 
-class RetrievalModel(tfrs.models.Model):
+class SecuntialRetrievalModel(tfrs.models.Model):
     """
     
     Los datos para entrenar este modelo son son pares 
-    de tipo usuario - item osea en el caso de las publicaciones
-    tengo que pasarle un historial de clicks que ha dado cada usuario 
-    a cada publicacion
+    de tipo:
+    cantidad de peliculas que le ha dado click el usuario - la proxima pelicula que vera
+    las cantidades de peliculas anteriores se define dependiendo del tamano del dataset
+    y la proxima pelicula siempre es una.
     
+    Aqui se tiene en cuenta el orden de las peliculas anteriormente vistas por tanto
+    se necesita una caracteristica de tiempo.
+
     ejemplo:
 
-    En cualquier pagina de la aplicacion el usuario x dio click en la pelicula z
+    Cantidad x de peliculas que ha visto el usuario anteriormente y la siguiente pelicula que vio
+    y las peliculas anteriores todas tienen una marca de tiempo.
+
     
     """
     def __init__(self, 
@@ -42,15 +49,18 @@ class RetrievalModel(tfrs.models.Model):
         self.cached_train = train.shuffle(self.shuffle).batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
 
-        self.query_model = QueryModel(
-            layer_sizes=layer_sizes, 
-            embedding_dimension=embedding_dimension
-        )
+        self.query_model = tf.keras.Sequential([
+            tf.keras.layers.StringLookup(
+            vocabulary=unique_pubs_ids, mask_token=None),
+            tf.keras.layers.Embedding(len(unique_pubs_ids) + 1, embedding_dimension), 
+            tf.keras.layers.GRU(embedding_dimension),
+        ])
 
-        self.candidate_model = CandidateModel(
-            layer_sizes=layer_sizes,
-            embedding_dimension=embedding_dimension
-        )
+        self.candidate_model = tf.keras.Sequential([
+            tf.keras.layers.StringLookup(
+                vocabulary=unique_pubs_ids, mask_token=None),
+            tf.keras.layers.Embedding(len(unique_pubs_ids) + 1, embedding_dimension)
+        ])
 
         self.index = tfrs.layers.factorized_top_k.BruteForce(
             self.query_model, 
@@ -71,8 +81,8 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def compute_loss(self, features, training=False):
-        query_embeddings = self.query_model(features)
-        pubs_embeddings = self.candidate_model(features)
+        query_embeddings = self.query_model(features['publication_id'])
+        pubs_embeddings = self.candidate_model(features['publication_id'])
         return self.task(query_embeddings, pubs_embeddings)
 
 
@@ -101,7 +111,7 @@ class RetrievalModel(tfrs.models.Model):
         print(f"Top-100 accuracy (test): {test_accuracy:.2f}.")
 
 
-    def predict_model(self, user_id: int) -> tuple[Tensor, Tensor]:
+    def predict_model(self, publication_id: int) -> tuple[Tensor, Tensor]:
         print('--------- Prediciendo con el modelo ----------')
         model = self
         brute_force = self.index
@@ -112,7 +122,7 @@ class RetrievalModel(tfrs.models.Model):
         )
 
         score, titles = brute_force(
-            {'user_id': np.array([user_id])}, 
+            {'publication_id': np.array([publication_id])}, 
             k=self.k_candidates
         )
         

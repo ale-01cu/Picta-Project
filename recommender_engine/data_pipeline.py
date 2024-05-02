@@ -1,24 +1,8 @@
 import pandas as pd
 import tensorflow as tf
-import tensorflow_recommenders as tfrs
 import numpy as np
 import math
-from . import listwise as lw
-
-
-def save(dataset: tf.data.Dataset):
-    tf.data.experimental.save(
-        dataset, 
-        '/ruta/al/archivo.tfrecord'
-    )
-
-
-def load() -> tf.data.Dataset:
-    return tf.data.experimental.load(
-        '/ruta/al/archivo.tfrecord', 
-        tf.TensorSpec(shape=(), 
-        dtype=tf.int64)
-    )
+from .utils import listwise as lw
 
 
 
@@ -92,35 +76,35 @@ test = shuffled.skip(train_Length).take(test_length)
 
 """ Con Listwise para el modelo de Ranking """
 
-print("Creando las listas...")
+# print("Creando las listas...")
 
 
 
-print('no listas')
-print(len(train))
-print(len(test))
+# print('no listas')
+# print(len(train))
+# print(len(test))
 
 
-train = lw.sample_listwise(
-    train,
-    features_for_examples=['nombre', 'rating'],
-    features_for_list=['user_id'],
-    num_list_per_user=50,
-    num_examples_per_list=5,
-    seed=42
-)
+# train = lw.sample_listwise(
+#     train,
+#     features_for_examples=['nombre', 'rating'],
+#     features_for_list=['user_id'],
+#     num_list_per_user=50,
+#     num_examples_per_list=5,
+#     seed=42
+# )
 
-test = lw.sample_listwise(
-    test,
-    features_for_examples=['nombre', 'rating'],
-    features_for_list=['user_id'],
-    num_list_per_user=1,
-    num_examples_per_list=5,
-    seed=42
-)
+# test = lw.sample_listwise(
+#     test,
+#     features_for_examples=['nombre', 'rating'],
+#     features_for_list=['user_id'],
+#     num_list_per_user=1,
+#     num_examples_per_list=5,
+#     seed=42
+# )
 
 
-print('si listas')
-print(len(train))
-print(len(test))
+# print('si listas')
+# print(len(train))
+# print(len(test))
 
