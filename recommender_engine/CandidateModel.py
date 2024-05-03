@@ -1,7 +1,7 @@
 import tensorflow as tf
 from .PubModel import PubModel
 from tensorflow.python.types.core import Tensor
-from typing import Dict, Text
+from typing import Dict, Text, Optional
 from .data.DataPipelineBase import DataPipelineBase
 import pandas as pd
 
@@ -12,7 +12,9 @@ class CandidateModel(tf.keras.Model):
         vocabularies: Dict[Text, Dict[Text, tf.Tensor]],
         features_names: list[str],
         layer_sizes: list[int], 
-        embedding_dimension: int
+        embedding_dimension: int,
+        aditional_layers: Optional[list[object]] = None,
+
     ) -> None:
         super().__init__()
 

@@ -5,41 +5,50 @@ import numpy as np
 
 import pandas as pd
 
-def agrupar_publicaciones(df, listas_por_usuario, publicaciones_por_lista, caracteristicas):
-    # Ordenar el DataFrame por 'user_id' y 'timestamp'
-    df = df.sort_values(['user_id', 'timestamp'])
+def group(ds: tf.data.Dataset, q_features: list[str], c_features: list[str], features: list[str]):
+
+    sampled_fetures = { feature: [] for feature in q_features + c_features }
 
     # Crear un diccionario vacío para almacenar los resultados
-    resultados = {}
+    unique_ids = set(np.unique(list(ds.map(lambda x: x['user_id']))))
+    
+    for user_id in unique_ids:
+        print(user_id)
+        sequence = ds.filter(lambda x: x['user_id'] == user_id)
 
-    # Agrupar el DataFrame por 'user_id'
-    for user_id, grupo in df.groupby('user_id'):
-        # Crear un diccionario vacío para este usuario
-        resultados[user_id] = []
 
-        # Dividir el grupo en listas de publicaciones
-        publicaciones = [grupo.iloc[i:i+publicaciones_por_lista] for i in range(0, len(grupo), publicaciones_por_lista)]
+        for q, c, f in zip(q_features, c_features, features):
+            sequence_data = list(sequence.map(lambda x: x[f]))
+            sampled_fetures[q].append(tf.stack(sequence_data[:-1], 0))
+            sampled_fetures[c].append(tf.stack(sequence_data[-1:], 0))
 
-        # Procesar cada lista de publicaciones
-        for lista in publicaciones:
-            # Crear un diccionario para esta lista
-            lista_dict = {}
 
-            # Extraer las características adicionales
-            for caracteristica in caracteristicas:
-                lista_dict[caracteristica] = lista[caracteristica].tolist()
+    print(sampled_fetures)
+#     # ds = tf.data.Dataset.from_tensor_slices(sampled_fetures)
+#     # for i in ds.take(1):
+#     #     print(i)
+        
 
-            # Extraer los IDs de las publicaciones
-            lista_dict['context_pub_id'] = lista['pub_id'].tolist()[:-1]
-            lista_dict['label_movie_id'] = lista['pub_id'].tolist()[-1]
+# def group2(df: tf.data.Dataset, q_features: list[str], c_features: list[str], features: list[str]):
 
-            # Añadir la lista al usuario
-            resultados[user_id].append(lista_dict)
+#     sampled_fetures = { feature: [] for feature in q_features + c_features }
 
-        # Limitar el número de listas por usuario
-        resultados[user_id] = resultados[user_id][:listas_por_usuario]
+#     # Crear un diccionario vacío para almacenar los resultados
+#     unique_ids = set(np.unique(list(ds.map(lambda x: x['user_id']))))
+    
+#     for user_id in unique_ids:
+#         print(user_id)
+#         sequence = ds.filter(lambda x: x['user_id'] == user_id)
 
-    return resultados
+
+#         for q, c, f in zip(q_features, c_features, features):
+#             sequence_data = list(sequence.map(lambda x: x[f]))
+#             sampled_fetures[q].append(tf.stack(sequence_data[:-1], 0))
+#             sampled_fetures[c].append(tf.stack(sequence_data[-1:], 0))
+
+
+#     print(sampled_fetures)
+
 
 
 

@@ -2,12 +2,14 @@ from .RetrievalModel import RetrievalModel
 from .RankingModel import RankingModel
 from .ListWiseRankingModel import ListWiseRankingModel
 from .ItemToItemRetrievalModel import ItemToItemRetrievalModel
+from .SecuentialRetrievalModel import SecuntialRetrievalModel
 from .DCN_Ranking import DCN
 import time
 from .data_pipeline import train, test, pubs_ds
 import tensorflow_ranking as tfr
 import tensorflow as tf
 from .data.DataPipelineItemToItem import DataPipelineItemToItem
+from .data.DataPipelineSecuential import DataPipelineSecuential
 import pandas as pd
 
 def use_retrieval_model(user_id):
@@ -87,23 +89,47 @@ def use_listwise_ranking_model():
 
 def use_item_to_item_model():
     pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
+    pubs_df['nombre'] = pubs_df['nombre'].astype(str)
+    pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
+
+
     path = 'C:/Users/Ale/Desktop/Picta-Project/datasets/publicacion_a_publicacion_con_timestamp.csv'
     dp = DataPipelineItemToItem(dataframe_path=path)
     train, test, vocabularies = dp(df_to_merge=pubs_df)
 
-
-    pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
-    pubs_df['nombre'] = pubs_df['nombre'].astype(str)
-    pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
     model = ItemToItemRetrievalModel(
         layer_sizes=[32], embedding_dimension=32, 
-        train=train, test=test, shuffle=100_000, train_batch=8192, test_batch=1024, 
+        train=train, test=test, shuffle=100_000, train_batch=8192, test_batch=4096, 
         candidates=pubs_ds, candidates_batch=128, k_candidates=100,
-        vocabularies=vocabularies, features_names_q=['publication_id_q', 'nombre_q'],
-        features_names_c=['publication_id_c', 'nombre_c']
+        vocabularies=vocabularies, 
+        features_names_q=['publication_id_q', 'nombre_q'],
+        features_names_c=['id', 'nombre'], 
     )
     model.fit_model(learning_rate=0.1, num_epochs=3)
     model.evaluate_model()
+
+
+def use_secuential_model():
+    pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
+    pubs_df['nombre'] = pubs_df['nombre'].astype(str)
+    pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
+
+
+    path = 'C:/Users/Ale/Desktop/Picta-Project/datasets/historial_secuencia_publicaciones.csv'
+    dp = DataPipelineSecuential(dataframe_path=path)
+    train, test, vocabularies = dp(df_to_merge=pubs_df)
+
+    # model = SecuntialRetrievalModel(
+    #     layer_sizes=[34], train=train, test=test,
+    #     candidates=pubs_ds, embedding_dimension=32, 
+    #     shuffle=100_000, train_batch=8192, test_batch=4096,
+    #     candidates_batch=128, k_candidates=100
+    # )
+
+    # model.fit_model(learning_rate=0.1, num_epochs=3)
+    # model.evaluate_model()
 
 
 if __name__ == "__main__":
@@ -115,7 +141,8 @@ if __name__ == "__main__":
     # use_ranking_model(USER_ID, [])
     # use_dcn_ranking_model(USER_ID, [])
     # use_listwise_ranking_model()
-    use_item_to_item_model()
+    # use_item_to_item_model()
+    use_secuential_model()
 
     end = time.time()
 

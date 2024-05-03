@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.types.core import Tensor
-from typing import Dict, Text
+from typing import Dict, Text, Optional
 import pandas as pd
 from .data.DataPipelineBase import DataPipelineBase
 
@@ -9,7 +9,8 @@ class PubModel(tf.keras.Model):
     def __init__(self, 
         vocabularies: Dict[Text, Dict[Text, tf.Tensor]],
         features_names: list[str],
-        embedding_dimension: int = 32
+        embedding_dimension: int = 32,
+        aditional_layers: Optional[list[object]] = None,
     ) -> None:
         super().__init__()
         self.embedding_dimension = embedding_dimension
@@ -45,6 +46,9 @@ class PubModel(tf.keras.Model):
                         len(vocabulary) + 1, self.embedding_dimension),
                 ])
 
+            if aditional_layers:
+                for layer in aditional_layers:
+                    model.add(layer)
             self.models[feature_name] = model
 
         # self.title_embedding = tf.keras.Sequential([

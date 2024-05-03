@@ -41,6 +41,8 @@ class ItemToItemRetrievalModel(tfrs.models.Model):
         self.test_batch = test_batch
         self.candidates_batch = candidates_batch
         self.k_candidates = k_candidates
+        self.features_names_q = features_names_q
+        self.features_names_c = features_names_c
 
         self.candidates = candidates
         self.cached_train = train.shuffle(self.shuffle).batch(self.train_batch).cache()
@@ -77,10 +79,9 @@ class ItemToItemRetrievalModel(tfrs.models.Model):
             )
         )
 
-
-    def compute_loss(self, features, training=False):
-        query_embeddings = self.query_model(features)
-        pubs_embeddings = self.candidate_model(features)
+    def compute_loss(self, inputs, training=False):
+        query_embeddings = self.query_model(inputs)
+        pubs_embeddings = self.candidate_model(inputs)
         return self.task(query_embeddings, pubs_embeddings)
 
 

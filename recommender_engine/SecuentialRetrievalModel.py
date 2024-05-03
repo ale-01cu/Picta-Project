@@ -5,6 +5,7 @@ from .CandidateModel import CandidateModel
 from tensorflow.python.types.core import Tensor
 import numpy as np
 from .data_pipeline import unique_pubs_ids
+from typing import Dict, Text
 
 class SecuntialRetrievalModel(tfrs.models.Model):
     """
@@ -30,6 +31,9 @@ class SecuntialRetrievalModel(tfrs.models.Model):
         train: tf.data.Dataset, 
         test: tf.data.Dataset,
         candidates: tf.data.Dataset,
+        vocabularies: Dict[Text, Dict[Text, tf.Tensor]],
+        features_names_q: list[str],
+        features_names_c: list[str],
         embedding_dimension: int = 32, 
         shuffle: int = 20_000,
         train_batch: int = 2048,
@@ -44,28 +48,35 @@ class SecuntialRetrievalModel(tfrs.models.Model):
         self.test_batch = test_batch
         self.candidates_batch = candidates_batch
         self.k_candidates = k_candidates
+        self.embedding_dimension = embedding_dimension
+        self.vocabularies = vocabularies
+        self.features_names_q = features_names_q
+        self.features_names_c = features_names_c
 
         self.candidates = candidates
-        self.cached_train = train.shuffle(self.shuffle).batch(self.train_batch).cache()
+        self.cached_train = train.shuffle(self.shuffle).batch(
+            self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
 
-        self.query_model = tf.keras.Sequential([
-            tf.keras.layers.StringLookup(
-            vocabulary=unique_pubs_ids, mask_token=None),
-            tf.keras.layers.Embedding(len(unique_pubs_ids) + 1, embedding_dimension), 
-            tf.keras.layers.GRU(embedding_dimension),
-        ])
 
-        self.candidate_model = tf.keras.Sequential([
-            tf.keras.layers.StringLookup(
-                vocabulary=unique_pubs_ids, mask_token=None),
-            tf.keras.layers.Embedding(len(unique_pubs_ids) + 1, embedding_dimension)
-        ])
+        self.query_model = CandidateModel(
+            vocabularies=vocabularies,
+            features_names=features_names_c,
+            layer_sizes=layer_sizes, 
+            embedding_dimension=embedding_dimension,
+            aditional_layers=[tf.keras.layers.GRU(self.embedding_dimension)]
+        )
+
+        self.candidate_model = CandidateModel(
+            vocabularies=vocabularies,
+            features_names=features_names_c,
+            layer_sizes=layer_sizes, 
+            embedding_dimension=embedding_dimension
+        )
+
 
         self.index = tfrs.layers.factorized_top_k.BruteForce(
-            self.query_model, 
-            k=self.k_candidates
-        )
+            self.query_model, k=self.k_candidates)
         # self.task = tfrs.tasks.Retrieval(
         #     metrics=tfrs.metrics.FactorizedTopK(
         #         candidates=pubs_ds.batch(128).map(self.candidate_model),
@@ -81,8 +92,8 @@ class SecuntialRetrievalModel(tfrs.models.Model):
 
 
     def compute_loss(self, features, training=False):
-        query_embeddings = self.query_model(features['publication_id'])
-        pubs_embeddings = self.candidate_model(features['publication_id'])
+        query_embeddings = self.query_model(features)
+        pubs_embeddings = self.candidate_model(features)
         return self.task(query_embeddings, pubs_embeddings)
 
 
