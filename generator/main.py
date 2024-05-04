@@ -9,7 +9,7 @@ TO_DATASET_PATH = './datasets/publicaciones_ratings_con_timestamp_medium.csv'
 TO_DATASET_ITEM_TO_ITEM_PATH = './datasets/publicacion_a_publicacion_con_timestamp.csv'
 TO_DATASET_USER_CLICKS_HISTORY_PATH = './datasets/historial_clicks_usuario.csv'
 
-TO_DATASET_SEQUENCE_ITEMS_PATH = './datasets/historial_secuencia_publicaciones_1M.csv'
+TO_DATASET_SEQUENCE_ITEMS_PATH = './datasets/historial_secuencia_publicaciones.csv'
 
 def generate_ratings_with_timestamp():
     gn = RatingWithTimestamp(
@@ -42,6 +42,6 @@ def generate_candidate_sequence():
     si = SecuentialItems(
         from_path=FROM_DATASET_PATH,
         to_path=TO_DATASET_SEQUENCE_ITEMS_PATH,
-        num_rows=100_000,
+        num_rows=1_000_000,
     )
-    si(k_sequence=11)
+    si(k_sequence=10)

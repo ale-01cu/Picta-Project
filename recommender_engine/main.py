@@ -88,13 +88,13 @@ def use_listwise_ranking_model():
 
 
 def use_item_to_item_model():
-    pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
     pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
-    path = 'C:/Users/Ale/Desktop/Picta-Project/datasets/publicacion_a_publicacion_con_timestamp.csv'
+    path = 'I:/UCI/tesis/Picta-Project/datasets/publicacion_a_publicacion_con_timestamp.csv'
     dp = DataPipelineItemToItem(dataframe_path=path)
     train, test, vocabularies = dp(df_to_merge=pubs_df)
 
@@ -111,25 +111,32 @@ def use_item_to_item_model():
 
 
 def use_secuential_model():
-    pubs_df = pd.read_csv('C:/Users/Ale/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
     pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
-    path = 'C:/Users/Ale/Desktop/Picta-Project/datasets/historial_secuencia_publicaciones.csv'
+    path = 'I:/UCI/tesis/Picta-Project/datasets/historial_secuencia_publicaciones_1M.csv'
     dp = DataPipelineSecuential(dataframe_path=path)
     train, test, vocabularies = dp(df_to_merge=pubs_df)
 
-    # model = SecuntialRetrievalModel(
-    #     layer_sizes=[34], train=train, test=test,
-    #     candidates=pubs_ds, embedding_dimension=32, 
-    #     shuffle=100_000, train_batch=8192, test_batch=4096,
-    #     candidates_batch=128, k_candidates=100
-    # )
 
-    # model.fit_model(learning_rate=0.1, num_epochs=3)
-    # model.evaluate_model()
+    print(len(train))
+    print(len(test))
+
+    model = SecuntialRetrievalModel(
+        layer_sizes=[34], train=train, test=test,
+        vocabularies=vocabularies,
+        features_names_q=['context_id'],
+        features_names_c=['id'],
+        candidates=pubs_ds, embedding_dimension=32, 
+        shuffle=10_000, train_batch=8192, test_batch=4096,
+        candidates_batch=128, k_candidates=100
+    )
+
+    model.fit_model(learning_rate=0.1, num_epochs=3)
+    model.evaluate_model()
 
 
 if __name__ == "__main__":

@@ -93,6 +93,7 @@ class SecuntialRetrievalModel(tfrs.models.Model):
 
     def compute_loss(self, features, training=False):
         query_embeddings = self.query_model(features)
+        query_embeddings = tf.reshape(query_embeddings, [-1, 34])
         pubs_embeddings = self.candidate_model(features)
         return self.task(query_embeddings, pubs_embeddings)
 

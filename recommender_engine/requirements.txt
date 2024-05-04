@@ -36,6 +36,7 @@ tensorflow==2.15.0
 tensorflow-estimator==2.15.0
 tensorflow-intel==2.15.0
 tensorflow-io-gcs-filesystem==0.31.0
+tensorflow-ranking==0.5.5
 tensorflow-recommenders==0.7.3
 termcolor==2.4.0
 typing_extensions==4.11.0

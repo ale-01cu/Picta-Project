@@ -27,14 +27,14 @@ class SecuentialItems(BaseGenerator):
 
         for i in range(1, self.num_rows+1):
             users_ids = [i] * k_sequence
-            publications_ids = self.choice_publications_ids(
+            pubs_ids_choices = self.choice_publications_ids(
                 publications_ids, k_sequence)
             
             # time.sleep(1)
             # print(data)
 
             data['user_id'] += users_ids
-            data['publication_id'] += publications_ids
+            data['publication_id'] += pubs_ids_choices
 
 
         df = pd.DataFrame(data)
