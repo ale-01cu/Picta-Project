@@ -31,7 +31,8 @@ class RankingModel(tfrs.models.Model):
         
         super().__init__()
 
-        self.cached_train = train.shuffle(shuffle).batch(train_batch).cache()
+        self.cached_train = train.shuffle(shuffle).batch(
+            train_batch).cache()
         self.cached_test = test.batch(test_batch).cache()
 
 
@@ -123,3 +124,4 @@ class RankingModel(tfrs.models.Model):
             row_as_dict[key] = np.array([row_as_dict[key]])
         
         return row_as_dict
+

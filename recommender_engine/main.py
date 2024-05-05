@@ -10,7 +10,15 @@ import tensorflow_ranking as tfr
 import tensorflow as tf
 from .data.DataPipelineItemToItem import DataPipelineItemToItem
 from .data.DataPipelineSecuential import DataPipelineSecuential
+from .data.DataPipelineLikes import DataPipelineLikes
+from .LikesModel import likesModel
 import pandas as pd
+
+pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
+pubs_df['nombre'] = pubs_df['nombre'].astype(str)
+pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
+
 
 def use_retrieval_model(user_id):
 
@@ -111,12 +119,6 @@ def use_item_to_item_model():
 
 
 def use_secuential_model():
-    pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
-    pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
-    pubs_df['nombre'] = pubs_df['nombre'].astype(str)
-    pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
-
-
     path = 'I:/UCI/tesis/Picta-Project/datasets/historial_secuencia_publicaciones_1M.csv'
     dp = DataPipelineSecuential(dataframe_path=path)
     train, test, vocabularies = dp(df_to_merge=pubs_df)
@@ -138,6 +140,39 @@ def use_secuential_model():
     model.fit_model(learning_rate=0.1, num_epochs=3)
     model.evaluate_model()
 
+import datetime
+
+def use_like_model():
+    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=log_dir, histogram_freq=1)
+    path = 'I:/UCI/tesis/Picta-Project/datasets/likes_con_timestamp_100K.csv'
+    pipe = DataPipelineLikes(dataframe_path=path)
+    train, test, vocabularies = pipe(df_to_merge=pubs_df)
+    model = likesModel(
+        towers_layers_sizes=[32, 32, 32],
+        likes_layers_sizes=[64, 64, 64],
+        vocabularies=vocabularies,
+        features_names_q=['user_id'],
+        features_names_c=['id', 'nombre'],
+        train=train, test=test,
+        shuffle=100_000, train_batch=8192, test_batch=4096,
+        embedding_dimension=32
+    )
+
+    model.fit_model(
+        learning_rate=0.1, 
+        num_epochs=30, 
+        callbacks=[tensorboard_callback]
+    )
+    model.evaluate_model()
+
+    model.predict_model(
+        user_id=42, 
+        pubs_ids=['10482', '22097', '28319'], 
+        candidates=pubs_df
+    )
+
 
 if __name__ == "__main__":
     USER_ID = '26'
@@ -149,7 +184,8 @@ if __name__ == "__main__":
     # use_dcn_ranking_model(USER_ID, [])
     # use_listwise_ranking_model()
     # use_item_to_item_model()
-    use_secuential_model()
+    # use_secuential_model()
+    use_like_model()
 
     end = time.time()
 
