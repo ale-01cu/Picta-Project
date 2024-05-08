@@ -67,10 +67,12 @@ class DataPipelineBase():
 
     def get_lengths(self, ds: tf.data.Dataset) -> None:
         total = len(ds)
-        train_Length = math.ceil(total * (80 / 100))
-        test_length = int(total * (20 / 100))
+        train_Length = math.ceil(total * (70 / 100))
+        test_length = int(total * (30 / 100))
+        val_length = int(test_length * (15 / 100))
+        test_length = int(test_length * (15 / 100))
 
-        return total, train_Length, test_length
+        return total, train_Length, val_length, test_length
 
 
     def split_into_train_and_test(
@@ -79,15 +81,17 @@ class DataPipelineBase():
             shuffle: int, 
             train_length: int, 
             test_length: int,
+            val_length: int,
             seed: int
     ) -> Tuple[tf.data.Dataset]:
 
         tf.random.set_seed(seed)
         shuffled = ds.shuffle(shuffle, seed=seed, reshuffle_each_iteration=False)
         train = shuffled.take(train_length)
-        test = shuffled.skip(train_length).take(test_length)
+        val = shuffled.skip(train_length).take(val_length)
+        test = shuffled.skip(train_length).skip(val_length).take(test_length)
 
-        return train, test
+        return train, val, test
 
 
     def save(self, dataset: tf.data.Dataset, path:str) -> None:

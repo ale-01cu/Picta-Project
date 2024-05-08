@@ -146,22 +146,25 @@ def use_like_model():
     log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
         log_dir=log_dir, histogram_freq=1)
-    path = 'I:/UCI/tesis/Picta-Project/datasets/likes_con_timestamp_100K.csv'
+    path = 'I:/UCI/tesis/Picta-Project/datasets/likes_con_timestamp_100M.csv'
+    
     pipe = DataPipelineLikes(dataframe_path=path)
-    train, test, vocabularies = pipe(df_to_merge=pubs_df)
+    train, val, test, vocabularies = pipe(df_to_merge=pubs_df)
+
     model = likesModel(
-        towers_layers_sizes=[32, 32, 32],
-        likes_layers_sizes=[64, 64, 64],
+        towers_layers_sizes=[64],
+        likes_layers_sizes=[128, 128, 128],
         vocabularies=vocabularies,
         features_names_q=['user_id'],
         features_names_c=['id', 'nombre'],
-        train=train, test=test,
-        shuffle=100_000, train_batch=8192, test_batch=4096,
-        embedding_dimension=32
+        train=train, test=test, val=val,
+        shuffle=1_000_000, train_batch=65536, 
+        test_batch=16384, val_batch=16384,
+        embedding_dimension=64
     )
 
     model.fit_model(
-        learning_rate=0.1, 
+        learning_rate=0.3, 
         num_epochs=30, 
         callbacks=[tensorboard_callback]
     )

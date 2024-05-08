@@ -29,16 +29,19 @@ class DataPipelineLikes(DataPipelineBase):
             features=features
         )
 
-        total, train_Length, test_length = self.get_lengths(ds)
-        train, test = self.split_into_train_and_test(
+        total, train_Length, val_length, test_length = self.get_lengths(ds)
+
+
+        train, val, test = self.split_into_train_and_test(
             ds=ds,
             shuffle=100_000,
             train_length=train_Length,
+            val_length=val_length,
             test_length=test_length,
             seed=42
         )
 
-        return train, test, vocabularies
+        return train, val, test, vocabularies
 
 
     

@@ -15,10 +15,12 @@ class likesModel(tfrs.models.Model):
         features_names_q: list[str],
         features_names_c: list[str],
         train: tf.data.Dataset,
+        val: tf.data.Dataset,
         test: tf.data.Dataset,
         shuffle: int = 20_000,
         train_batch: int = 2048,
         test_batch: int = 1024,
+        val_batch: int = 1024,
         embedding_dimension: int = 32,
     ) -> None:
         super().__init__()
@@ -26,6 +28,7 @@ class likesModel(tfrs.models.Model):
         self.cached_train = train.shuffle(shuffle)\
             .batch(train_batch).cache()
         self.cached_test = test.batch(test_batch).cache()
+        self.cached_val = val.batch(val_batch).cache()
 
 
         self.query_model = QueryModel(
@@ -47,21 +50,22 @@ class likesModel(tfrs.models.Model):
             tf.keras.layers.Dense(size, activation="relu") 
             for size in likes_layers_sizes
         ])
-        self.likes_model.add(tf.keras.layers.Dense(1, activation="sigmoid"))
+        self.likes_model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
 
 
         self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
             loss=tf.keras.losses.BinaryCrossentropy(),
-            metrics=[tf.keras.metrics.BinaryAccuracy()],
+            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
         )
 
 
     def call(self, inputs: typ.Dict[typ.Text, tf.Tensor]) -> tf.Tensor:
         user_embedding = self.query_model(inputs)
         pub_embedding = self.candidate_model(inputs)
+        concated_embeddings = tf.concat(
+            [user_embedding, pub_embedding], axis=1)
 
-        return self.likes_model(tf.concat(
-            [user_embedding, pub_embedding], axis=1))
+        return self.likes_model(concated_embeddings)
     
 
     def compute_loss(self, 
@@ -72,6 +76,7 @@ class likesModel(tfrs.models.Model):
         labels = features.pop("like_dislike")
         likes_predictions = self(features)
         # The task computes the loss and the metrics.
+
         return self.task(
             labels=labels, 
             predictions=likes_predictions
@@ -85,11 +90,11 @@ class likesModel(tfrs.models.Model):
         
         print('---------- Entrenando el modelo ----------')
         model = self
-        model.compile(optimizer=tf.keras.optimizers.Adagrad(
-            learning_rate=learning_rate))
+        model.compile(optimizer='adam')
         model.fit(
             self.cached_train, 
             epochs=num_epochs,
+            validation_data=self.cached_val,
             callbacks=callbacks
         )
 
