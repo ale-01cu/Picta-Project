@@ -1,11 +1,11 @@
 import tensorflow as tf
-from .PubModel import PubModel
+from .FeaturesLayers import FeaturesLayers
 from tensorflow.python.types.core import Tensor
 from typing import Dict, Text, Optional
-from .data.DataPipelineBase import DataPipelineBase
+from data.DataPipelineBase import DataPipelineBase
 import pandas as pd
 
-class CandidateModel(tf.keras.Model):
+class TowerModel(tf.keras.Model):
     """Model for encoding movies."""
 
     def __init__(self, 
@@ -18,10 +18,11 @@ class CandidateModel(tf.keras.Model):
     ) -> None:
         super().__init__()
 
-        self.embedding_model = PubModel(
+        self.embedding_model = FeaturesLayers(
             vocabularies=vocabularies,
             features_names=features_names,
-            embedding_dimension=embedding_dimension
+            embedding_dimension=embedding_dimension,
+            aditional_layers=aditional_layers
         )
 
         # Then construct the layers.
@@ -67,7 +68,7 @@ if __name__ == "__main__":
 
 
     # --- Testeando el modelo ---
-    pub_model = CandidateModel(
+    pub_model = TowerModel(
         vocabularies=vocabularies, 
         features_names=['nombre'],
         embedding_dimension=64,

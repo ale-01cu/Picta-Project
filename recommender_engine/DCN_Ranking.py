@@ -5,7 +5,6 @@ from .CandidateModel import CandidateModel
 from typing import Dict
 
 class DCN(tfrs.Model):
-
     def __init__(self, 
         deep_layer_sizes_towers: list[int],
         deep_layer_sizes_ranking: list[int], 

@@ -46,17 +46,31 @@ class likesModel(tfrs.models.Model):
         )
 
 
-        self.likes_model = tf.keras.Sequential([
-            tf.keras.layers.Dense(size, activation="relu") 
-            for size in likes_layers_sizes
-        ])
+        # ********* Red De Clasificacion Binaria **********
+        self.likes_model = tf.keras.Sequential()
+
+        # self.likes_model.add(tf.keras.layers.Dense(64, 
+        #     kernel_initializer=tf.keras.initializers.RandomNormal(
+        #         mean=0.0, stddev=0.05), input_shape=(None, 128)))
+        
+        for size in likes_layers_sizes:
+            self.likes_model.add(tf.keras.layers.Dense(
+                size, activation='relu'))
+
+        self.likes_model.add(tf.keras.layers.Dropout(0.5))
         self.likes_model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+        # ********* Red De Clasificacion Binaria **********
 
 
         self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
             loss=tf.keras.losses.BinaryCrossentropy(),
-            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
+            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5), 'acc'],
         )
+
+        # self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
+        #     loss=tf.keras.losses.MeanSquaredError(),
+        #     metrics=[tf.keras.metrics.RootMeanSquaredError()],
+        # )
 
 
     def call(self, inputs: typ.Dict[typ.Text, tf.Tensor]) -> tf.Tensor:
@@ -90,7 +104,8 @@ class likesModel(tfrs.models.Model):
         
         print('---------- Entrenando el modelo ----------')
         model = self
-        model.compile(optimizer='adam')
+        model.compile(optimizer=tf.keras.optimizers.Adam(
+            learning_rate=learning_rate))
         model.fit(
             self.cached_train, 
             epochs=num_epochs,

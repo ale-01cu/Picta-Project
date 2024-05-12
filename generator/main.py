@@ -12,7 +12,7 @@ TO_DATASET_USER_CLICKS_HISTORY_PATH = './datasets/historial_clicks_usuario.csv'
 
 TO_DATASET_SEQUENCE_ITEMS_PATH = './datasets/historial_secuencia_publicaciones.csv'
 
-TO_DATASET_LIKES_PATH = './datasets/likes_con_timestamp_100M.csv'
+TO_DATASET_LIKES_PATH = './datasets/likes_con_timestamp_100K.csv'
 
 def generate_ratings_with_timestamp():
     gn = RatingWithTimestamp(
@@ -54,8 +54,9 @@ def generate_likes_with_timestamp():
     lt = LikesWithTimestamp(
         from_path=FROM_DATASET_PATH,
         to_path=TO_DATASET_LIKES_PATH,
-        num_rows=1_000_000,
-        users_ids_range=50
+        num_rows=100_000,
+        users_ids_range=23487,
+        seed=11
     )
 
     lt()
