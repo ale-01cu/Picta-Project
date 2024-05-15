@@ -13,6 +13,9 @@ from .data.DataPipelineSecuential import DataPipelineSecuential
 from .data.DataPipelineLikes import DataPipelineLikes
 from .LikesModel import likesModel
 import pandas as pd
+from recommender_engine.data.featurestypes import (
+    StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
+from .data.DataPipelineBase import DataPipelineBase
 
 pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
 pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
@@ -21,21 +24,64 @@ pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
+    ratings_df_path = 'I:/UCI/tesis/Picta-Project/datasets/publicaciones_ratings_con_timestamp.csv'
+    features = ['user_id', 'id', 'nombre', 'descripcion', 'timestamp']
 
-    model = RetrievalModel(layer_sizes=[32], embedding_dimension=32, 
-        train=train, test=test, shuffle=100_000, train_batch=8192, test_batch=1024, 
-        candidates=pubs_ds, candidates_batch=128, k_candidates=100
+    pipeline = DataPipelineBase(dataframe_path=ratings_df_path)
+    df = pipeline.merge_data(
+        df_to_merge=pubs_df, 
+        left_on='publication_id',
+        right_on='id',
+        output_features=features
+    )
+    df['nombre'] = df['nombre'].astype(str)
+    df['descripcion'] = df['descripcion'].astype(str)
+
+    ds = pipeline.convert_to_tf_dataset(df)
+    vocabularies = pipeline.build_vocabularies(
+        features=features, ds=ds, batch=1_000)
+    
+    total, train_Length, val_length, test_length = pipeline.get_lengths(ds)
+
+    train, val, test = pipeline.split_into_train_and_test(
+        ds=ds,
+        shuffle=100_000,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
     )
 
-    try:
-        loaded = model.load('./recommender_engine/models/test-models')
-        return loaded({'user_id': [user_id]})
+    model = RetrievalModel(
+        towers_layers_sizes=[64, 64, 64],
+        vocabularies=vocabularies,
+        features_data_q={
+            'user_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
+            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.1 }    
+        },
+        features_data_c={ 'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 } },
+        embedding_dimension=64, 
+        train=train, 
+        test=test, 
+        shuffle=100_000, 
+        train_batch=256, 
+        test_batch=64, 
+        candidates=pubs_ds,
+        candidates_batch=128, 
+        k_candidates=100
+    )
+    model.fit_model(learning_rate=0.1, num_epochs=8)
+    model.evaluate_model()
+    # ids = model.predict_model(user_id=user_id)
+    # return ids
 
-    except Exception as e:
-        model.fit_model(learning_rate=0.1, num_epochs=8)
-        ids = model.predict_model(user_id=user_id)
-        model.save('./recommender_engine/models/test-model')
-        return ids
+    # try:
+    #     loaded = model.load('./recommender_engine/models/test-models')
+    #     return loaded({'user_id': [user_id]})
+
+    # except Exception as e:
+    #     model.save('./recommender_engine/models/test-model')
+    #     return ids
 
 
 def use_ranking_model(user_id, ids):
@@ -178,17 +224,17 @@ def use_like_model():
 
 
 if __name__ == "__main__":
-    USER_ID = '26'
+    USER_ID = 26
 
     start = time.time()
 
-    # score, ids = use_retrieval_model(USER_ID)
+    score, ids = use_retrieval_model(USER_ID)
     # use_ranking_model(USER_ID, [])
     # use_dcn_ranking_model(USER_ID, [])
     # use_listwise_ranking_model()
     # use_item_to_item_model()
     # use_secuential_model()
-    use_like_model()
+    # use_like_model()
 
     end = time.time()
 

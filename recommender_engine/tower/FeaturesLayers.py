@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.types.core import Tensor
-from typing import Dict, Text, Optional
+from typing import Dict, Text, Optional, Union, List
 import pandas as pd
 from recommender_engine.data.DataPipelineBase import DataPipelineBase
 from recommender_engine.data.featurestypes import (
@@ -8,30 +8,42 @@ from recommender_engine.data.featurestypes import (
 import numpy as np
 
 class FeaturesLayers(tf.keras.Model):
+    embedding_dimension: int
+    vocabularies: Dict[Text, Dict[Text, tf.Tensor]]
+    features_data = Dict[Text, Dict[Text, object]]
+    features_weights = Dict[Text, float]
+    max_tokens: int
+    models: Dict[Text, tf.keras.Sequential]
+    extra_layers: Dict[Text, tf.keras.layers.Layer]
 
     def __init__(self, 
         vocabularies: Dict[Text, Dict[Text, tf.Tensor]],
-        features_data: Dict[Text, object],
+        features_data: Dict[Text, Dict[Text, object]],
         embedding_dimension: int = 32,
+        max_tokens: int = 10_000,
         aditional_layers: Optional[list[object]] = None,
     ) -> None:
         super().__init__()
         self.embedding_dimension = embedding_dimension
         self.vocabularies = vocabularies
         self.features_data = features_data
+        self.features_weights = {}
 
-        self.max_tokens = 100_000
+        self.max_tokens = max_tokens
         self.models = {}
+        self.extra_layers = {}
 
 
-        # self.title_weight = tf.Variable(0.3, trainable=True)
-        # # self.title_text_weight = tf.Variable(1., trainable=True)
-        # self.description_weight = tf.Variable(0.1, trainable=True)
-        # self.category_weight = tf.Variable(0.2, trainable=True)
+        for feature_name, feature_data in self.features_data.items():
+            feature_type = feature_data['dtype']
+            feature_weight = feature_data['w']
 
-        for feature_name, feature_type in self.features_data.items():
-            feature_data = vocabularies[feature_name]
-            vocabulary = feature_data['vocabulary']
+            self.features_weights[feature_name] = feature_weight
+
+            feature_vocabulary = vocabularies[feature_name]
+            vocabulary = feature_vocabulary['vocabulary']
+
+            print(f'Building {feature_name} feature...')
 
             if feature_type == CategoricalInteger.CategoricalInteger:
                 model = tf.keras.Sequential([
@@ -50,10 +62,13 @@ class FeaturesLayers(tf.keras.Model):
                 ])
 
             elif feature_type == CategoricalContinuous.CategoricalContinuous:
-                vocabulary = tf.data.Dataset.from_tensor_slices({'timestamp': vocabulary})
-                max_timestamp = vocabulary.map(lambda x: x["timestamp"]).reduce(
+                vocabulary = tf.data.Dataset.from_tensor_slices({str(feature_name): vocabulary})
+                vocabulary = vocabulary.map(lambda x: x[str(feature_name)])
+
+
+                max_timestamp = vocabulary.reduce(
                     tf.cast(0, tf.int64), tf.maximum).numpy().max()
-                min_timestamp = vocabulary.map(lambda x: x["timestamp"]).reduce(
+                min_timestamp = vocabulary.reduce(
                     np.int64(1e9), tf.minimum).numpy().min()
 
                 timestamp_buckets = np.linspace(
@@ -65,12 +80,12 @@ class FeaturesLayers(tf.keras.Model):
                     tf.keras.layers.Embedding(len(timestamp_buckets) + 2, self.embedding_dimension)
                 ])
 
-                self.normalized_timestamp = tf.keras.layers.Normalization(
+                normalized_timestamp = tf.keras.layers.Normalization(
                     axis=None
                 )
 
-                # tf.reshape(self.normalized_timestamp(inputs["timestamp"]), (-1, 1))
-
+                normalized_timestamp.adapt(vocabulary.batch(128))
+                self.extra_layers[feature_name] = normalized_timestamp
 
 
             elif feature_type == StringText.StringText:
@@ -93,18 +108,21 @@ class FeaturesLayers(tf.keras.Model):
 
 
     def call(self, inputs) -> Tensor:
-        # return tf.concat([
-        #     # self.id_embedding(inputs['publication_id']),
-        #     self.title_embedding(inputs["nombre"]),
-        #     # self.title_embedding(inputs["nombre"]) * self.title_weight,
-        #     # self.category_embedding(inputs["categoria"]) * self.category_weight,
-        #     # self.description_embedding(inputs["descripcion"]) * self.description_weight,
-        # ], axis=1)
-
-        return tf.concat([
-            self.models[feature](inputs[feature]) 
+        features_embeddings = [
+            self.models[feature](inputs[feature]) * self.features_weights[feature]
             for feature in self.features_data
-        ], axis=1)
+        ]
+
+        if self.extra_layers.values():
+            extra_layers = tf.concat([
+                tf.reshape(model(inputs[feature]), (-1, 1)) * self.features_weights[feature]
+                for feature, model in self.extra_layers.items()
+            ], axis=1)
+
+            features_embeddings.append(extra_layers) 
+        
+        return tf.concat(features_embeddings, axis=1)
+
 
 
 
@@ -142,15 +160,20 @@ if __name__ == "__main__":
     features_layers = FeaturesLayers(
         vocabularies=vocabularies, 
         features_data={
-            'id': CategoricalInteger.CategoricalInteger,
-            'nombre': CategoricalString.CategoricalString,
-            'descripcion': StringText.StringText,
-            'timestamp': CategoricalContinuous.CategoricalContinuous
+            'id': {'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1},
+            'nombre': {'dtype': CategoricalString.CategoricalString, 'w': 0.2},
+            'descripcion': {'dtype': StringText.StringText, 'w': 0.1},
+            'timestamp': {'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3}
         },
-        embedding_dimension=64
+        embedding_dimension=64,
+        max_tokens=10_000
     )
 
+
     for row in ds.batch(1).take(1):
-        print(f"Computed representations: {features_layers(row)[0, :3]}")
+        print(f"Computed representations: {features_layers(row)}")
 
     features_layers.summary()
+
+
+    print('Pesos: ', features_layers.features_weights)

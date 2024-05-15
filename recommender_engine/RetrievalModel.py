@@ -1,9 +1,8 @@
 import tensorflow_recommenders as tfrs
 import tensorflow as tf
-from .QueryModel import QueryModel
-from .CandidateModel import CandidateModel
-from tensorflow.python.types.core import Tensor
 import numpy as np
+from .tower.TowerModel import TowerModel
+import typing as typ
 
 class RetrievalModel(tfrs.models.Model):
     """
@@ -19,7 +18,10 @@ class RetrievalModel(tfrs.models.Model):
     
     """
     def __init__(self, 
-        layer_sizes: list[int], 
+        towers_layers_sizes: typ.List[int],
+        vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
+        features_data_q: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
+        features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
         train: tf.data.Dataset, 
         test: tf.data.Dataset,
         candidates: tf.data.Dataset,
@@ -39,33 +41,37 @@ class RetrievalModel(tfrs.models.Model):
         self.k_candidates = k_candidates
 
         self.candidates = candidates
-        self.cached_train = train.shuffle(self.shuffle).batch(self.train_batch).cache()
+        self.cached_train = train.shuffle(self.shuffle)\
+            .batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
 
-        self.query_model = QueryModel(
-            layer_sizes=layer_sizes, 
+        self.query_model = TowerModel(
+            layer_sizes=towers_layers_sizes,
+            vocabularies=vocabularies,
+            features_data=features_data_q,
             embedding_dimension=embedding_dimension
+        )
+        self.candidate_model = TowerModel(
+            layer_sizes=towers_layers_sizes,
+            vocabularies=vocabularies,
+            features_data=features_data_c,
+            embedding_dimension=embedding_dimension,
         )
 
-        self.candidate_model = CandidateModel(
-            layer_sizes=layer_sizes,
-            embedding_dimension=embedding_dimension
-        )
+        # self.candidate_model = TowerModel(
+        #     layer_sizes=layer_sizes,
+        #     embedding_dimension=embedding_dimension
+        # )
 
         self.index = tfrs.layers.factorized_top_k.BruteForce(
             self.query_model, 
             k=self.k_candidates
         )
-        # self.task = tfrs.tasks.Retrieval(
-        #     metrics=tfrs.metrics.FactorizedTopK(
-        #         candidates=pubs_ds.batch(128).map(self.candidate_model),
-        #     ),
-        # )
 
         self.task = tfrs.tasks.Retrieval(
             metrics= tfrs.metrics.FactorizedTopK(
-                candidates=self.candidates.batch(self.candidates_batch).map(
-                    lambda c: (c["id"], self.candidate_model(c)))
+                candidates=self.candidates.batch(
+                    self.candidates_batch).map(self.candidate_model)
             )
         )
 
@@ -90,18 +96,44 @@ class RetrievalModel(tfrs.models.Model):
 
         train_accuracy = model.evaluate(
             self.cached_train, 
-            return_dict=True
-        )["factorized_top_k/top_100_categorical_accuracy"]
+            return_dict=True,
+            verbose=0
+        )
+
+        train_top_1 = train_accuracy["factorized_top_k/top_1_categorical_accuracy"]
+        train_top_5 = train_accuracy["factorized_top_k/top_5_categorical_accuracy"]
+        train_top_10 = train_accuracy["factorized_top_k/top_10_categorical_accuracy"]
+        train_top_50 = train_accuracy["factorized_top_k/top_50_categorical_accuracy"]
+        train_top_100 = train_accuracy["factorized_top_k/top_100_categorical_accuracy"]
+
         test_accuracy = model.evaluate(
             self.cached_test, 
-            return_dict=True
-        )["factorized_top_k/top_100_categorical_accuracy"]
+            return_dict=True,
+            verbose=0
+        )
 
-        print(f"Top-100 accuracy (train): {train_accuracy:.2f}.")
-        print(f"Top-100 accuracy (test): {test_accuracy:.2f}.")
+        test_top_1 = test_accuracy["factorized_top_k/top_1_categorical_accuracy"]
+        test_top_5 = test_accuracy["factorized_top_k/top_5_categorical_accuracy"]
+        test_top_10 = test_accuracy["factorized_top_k/top_10_categorical_accuracy"]
+        test_top_50 = test_accuracy["factorized_top_k/top_50_categorical_accuracy"]
+        test_top_100 = test_accuracy["factorized_top_k/top_100_categorical_accuracy"]
+
+        print('**********')
+        print(f"Top-1 accuracy (train): {train_top_1:.2f}.")
+        print(f"Top-5 accuracy (train): {train_top_5:.2f}.")
+        print(f"Top-10 accuracy (train): {train_top_10:.2f}.")
+        print(f"Top-50 accuracy (train): {train_top_50:.2f}.")
+        print(f"Top-100 accuracy (train): {train_top_100:.2f}.")
+
+        print('**********')
+        print(f"Top-1 accuracy (test): {test_top_1:.2f}.")
+        print(f"Top-5 accuracy (test): {test_top_5:.2f}.")
+        print(f"Top-10 accuracy (test): {test_top_10:.2f}.")
+        print(f"Top-50 accuracy (test): {test_top_50:.2f}.")
+        print(f"Top-100 accuracy (test): {test_top_100:.2f}.")
 
 
-    def predict_model(self, user_id: int) -> tuple[Tensor, Tensor]:
+    def predict_model(self, user_id: int) -> tuple[tf.Tensor, tf.Tensor]:
         print('--------- Prediciendo con el modelo ----------')
         model = self
         brute_force = self.index
