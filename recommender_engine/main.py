@@ -57,20 +57,20 @@ def use_retrieval_model(user_id):
         vocabularies=vocabularies,
         features_data_q={
             'user_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
-            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.1 }    
+            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.2 }    
         },
         features_data_c={ 'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 } },
         embedding_dimension=64, 
         train=train, 
         test=test, 
         shuffle=100_000, 
-        train_batch=256, 
-        test_batch=64, 
+        train_batch=32, 
+        test_batch=32, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
-    model.fit_model(learning_rate=0.1, num_epochs=8)
+    model.fit_model(learning_rate=0.1, num_epochs=3)
     model.evaluate_model()
     # ids = model.predict_model(user_id=user_id)
     # return ids
@@ -198,20 +198,28 @@ def use_like_model():
     train, val, test, vocabularies = pipe(df_to_merge=pubs_df)
 
     model = likesModel(
-        towers_layers_sizes=[64, 128, 64],
+        towers_layers_sizes=[64],
         likes_layers_sizes=[64],
         vocabularies=vocabularies,
-        features_names_q=['user_id'],
-        features_names_c=['id'],
+        features_data_q={
+            'user_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
+            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.1 }    
+        },
+        features_data_c={ 
+            'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.1 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 },
+
+        },
         train=train, test=test, val=val,
-        shuffle=100_000, train_batch=4096, 
-        test_batch=2048, val_batch=2048,
+        shuffle=100_000, train_batch=1024, 
+        test_batch=512, val_batch=512,
         embedding_dimension=64
     )
 
     model.fit_model(
-        learning_rate=0.001, 
-        num_epochs=5, 
+        learning_rate=0.01, 
+        num_epochs=3, 
         callbacks=[tensorboard_callback]
     )
     model.evaluate_model()
@@ -228,13 +236,13 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    score, ids = use_retrieval_model(USER_ID)
+    # score, ids = use_retrieval_model(USER_ID)
     # use_ranking_model(USER_ID, [])
     # use_dcn_ranking_model(USER_ID, [])
     # use_listwise_ranking_model()
     # use_item_to_item_model()
     # use_secuential_model()
-    # use_like_model()
+    use_like_model()
 
     end = time.time()
 

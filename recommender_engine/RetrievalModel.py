@@ -58,11 +58,6 @@ class RetrievalModel(tfrs.models.Model):
             embedding_dimension=embedding_dimension,
         )
 
-        # self.candidate_model = TowerModel(
-        #     layer_sizes=layer_sizes,
-        #     embedding_dimension=embedding_dimension
-        # )
-
         self.index = tfrs.layers.factorized_top_k.BruteForce(
             self.query_model, 
             k=self.k_candidates

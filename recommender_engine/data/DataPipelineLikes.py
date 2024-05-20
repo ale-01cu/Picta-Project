@@ -11,7 +11,8 @@ class DataPipelineLikes(DataPipelineBase):
             'id', 
             'nombre', 
             'like_dislike', 
-            'timestamp'
+            'timestamp',
+            'descripcion'
         ]
         
         df = self.merge_data(

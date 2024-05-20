@@ -2,9 +2,7 @@ import tensorflow as tf
 import tensorflow_recommenders as tfrs
 import typing as typ
 import numpy as np
-from .QueryModel import QueryModel
-from .CandidateModel import CandidateModel
-
+from .tower.TowerModel import TowerModel
 
 class likesModel(tfrs.models.Model):
     
@@ -12,8 +10,8 @@ class likesModel(tfrs.models.Model):
         towers_layers_sizes: typ.List[int],
         likes_layers_sizes: typ.List[int],
         vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
-        features_names_q: list[str],
-        features_names_c: list[str],
+        features_data_q: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
+        features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
         train: tf.data.Dataset,
         val: tf.data.Dataset,
         test: tf.data.Dataset,
@@ -31,20 +29,19 @@ class likesModel(tfrs.models.Model):
         self.cached_val = val.batch(val_batch).cache()
 
 
-        self.query_model = QueryModel(
-            layer_sizes=towers_layers_sizes, 
-            embedding_dimension=embedding_dimension,
+        self.query_model = TowerModel(
+            layer_sizes=towers_layers_sizes,
             vocabularies=vocabularies,
-            features_names=features_names_q
-
-        )
-        self.candidate_model = CandidateModel(
-            layer_sizes=towers_layers_sizes, 
-            embedding_dimension=embedding_dimension,
-            vocabularies=vocabularies,
-            features_names=features_names_c
+            features_data=features_data_q,
+            embedding_dimension=embedding_dimension
         )
 
+        self.candidate_model = TowerModel(
+            layer_sizes=towers_layers_sizes,
+            vocabularies=vocabularies,
+            features_data=features_data_c,
+            embedding_dimension=embedding_dimension,
+        )
 
         # ********* Red De Clasificacion Binaria **********
         self.likes_model = tf.keras.Sequential()
@@ -57,14 +54,14 @@ class likesModel(tfrs.models.Model):
             self.likes_model.add(tf.keras.layers.Dense(
                 size, activation='relu'))
 
-        self.likes_model.add(tf.keras.layers.Dropout(0.5))
+        self.likes_model.add()
         self.likes_model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
         # ********* Red De Clasificacion Binaria **********
 
 
         self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
             loss=tf.keras.losses.BinaryCrossentropy(),
-            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5), 'acc'],
+            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
         )
 
         # self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
