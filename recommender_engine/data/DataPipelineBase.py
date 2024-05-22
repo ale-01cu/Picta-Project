@@ -69,8 +69,8 @@ class DataPipelineBase():
         total = len(ds)
         train_Length = math.ceil(total * (60 / 100))
         test_length = int(total * (40 / 100))
-        val_length = int(test_length * (20 / 100))
-        test_length = int(test_length * (20 / 100))
+        val_length = int(test_length * (30 / 100))
+        test_length = int(test_length * (10 / 100))
 
         return total, train_Length, val_length, test_length
 

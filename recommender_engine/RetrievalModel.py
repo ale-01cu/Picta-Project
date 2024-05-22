@@ -24,6 +24,7 @@ class RetrievalModel(tfrs.models.Model):
         features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
         train: tf.data.Dataset, 
         test: tf.data.Dataset,
+        val: tf.data.Dataset,
         candidates: tf.data.Dataset,
         embedding_dimension: int = 32, 
         shuffle: int = 20_000,
@@ -44,6 +45,7 @@ class RetrievalModel(tfrs.models.Model):
         self.cached_train = train.shuffle(self.shuffle)\
             .batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
+        self.cached_val = test.batch(self.test_batch).cache()
 
         self.query_model = TowerModel(
             layer_sizes=towers_layers_sizes,
@@ -82,7 +84,11 @@ class RetrievalModel(tfrs.models.Model):
         model = self
         model.compile(optimizer=tf.keras.optimizers.Adagrad(
             learning_rate=learning_rate))
-        model.fit(self.cached_train, epochs=num_epochs)
+        model.fit(
+            self.cached_train, 
+            validation_data=self.cached_val,
+            epochs=num_epochs
+        )
     
 
     def evaluate_model(self) -> None:

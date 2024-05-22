@@ -53,19 +53,24 @@ def use_retrieval_model(user_id):
     )
 
     model = RetrievalModel(
-        towers_layers_sizes=[64, 64, 64],
+        towers_layers_sizes=[64],
         vocabularies=vocabularies,
         features_data_q={
             'user_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
-            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.2 }    
+            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
         },
-        features_data_c={ 'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 } },
-        embedding_dimension=64, 
+        features_data_c={ 
+            'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
+            'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
+        },
+        embedding_dimension=32, 
         train=train, 
         test=test, 
+        val=val,
         shuffle=100_000, 
-        train_batch=32, 
-        test_batch=32, 
+        train_batch=64, 
+        test_batch=64, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
@@ -236,13 +241,13 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    # score, ids = use_retrieval_model(USER_ID)
+    use_retrieval_model(USER_ID)
     # use_ranking_model(USER_ID, [])
     # use_dcn_ranking_model(USER_ID, [])
     # use_listwise_ranking_model()
     # use_item_to_item_model()
     # use_secuential_model()
-    use_like_model()
+    # use_like_model()
 
     end = time.time()
 
