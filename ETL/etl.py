@@ -21,6 +21,7 @@ engine = create_engine(
   SQLALCHEMY_DATABASE_URL, 
 )
 
+print('Conectando con la base de datos...')
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -37,6 +38,7 @@ session = Session()
 
 
 def extract(table_name, amount=None):
+    print('Extrayendo los datos...')
     # Reflejar la tabla
     metadata = MetaData()
     table = Table(table_name, metadata, autoload_with=engine)
@@ -50,6 +52,7 @@ def extract(table_name, amount=None):
 
 
 def extract_v2(sql_consult, amount=None):
+    print('Extrayendo los datos...')
     # Crear un motor que se conecta a la base de datos
     with engine.connect() as connection:
       result = list(connection.execute(text(sql_consult)))
@@ -74,13 +77,18 @@ def transform(data, columns):
   return df[columns]
 
 def load_csv(path: str, df: DataFrame) -> None:
+  print('Cargando los datos...')
   df.to_csv(path, index=False)
 
 
 DATASET_URL = '../datasets/picta_publicaciones.csv'
 DATASET_URL_2 = '../datasets/picta_publicaciones_crudas.csv'
 DATASET_URL_3 = '../datasets/picta_publicaciones_procesadas_sin_nulas.csv'
-DATA_TABLE = 'app_contenido'
+DATASET_URL_4 = '../datasets/visitas.csv'
+DATASET_URL_5 = '../datasets/descargas.csv'
+DATASET_URL_6 = '../datasets/comentarios.csv'
+DATASET_URL_7 = '../datasets/likes.csv'
+DATA_TABLE = 'app_visita'
 columns = ['id', 'nombre', 'descripcion']
 SQL_CONSULT = """
   SELECT app_c.id, app_c.nombre, app_c.descripcion, app_t.nombre as categoria
@@ -90,22 +98,21 @@ SQL_CONSULT = """
   INNER JOIN app_tipologia as app_t ON app_cat.tipologia_id = app_t.id;
 """
 
+SQL_CONSULT_2 = """SELECT id, fecha, usuario_id, publicacion_id FROM app_visita"""
+SQL_CONSULT_3 = """SELECT id, fecha, usuario_id, publicacion_id FROM app_descarga"""
+SQL_CONSULT_4 = """SELECT id, texto, fecha, publicado, usuario_id, eliminado ,publicacion_id FROM app_comentario"""
+SQL_CONSULT_5 = """SELECT id, fecha, valor, usuario_id, publicacion_id FROM app_voto"""
+
 # data = extract(DATA_TABLE)
-# data = extract_v2(SQL_CONSULT)
-# load_csv(DATASET_URL_2, DataFrame(data))
+data = extract_v2(SQL_CONSULT_5)
+load_csv(DATASET_URL_7, DataFrame(data))
 # df = transform(data, columns)
 # load_csv(DATASET_URL, df)
 
-df = pd.read_csv(DATASET_URL_3)
-duplicates = df.duplicated()
+# df = pd.read_csv(DATASET_URL_3)
+# duplicates = df.duplicated()
 
-print(df.loc[duplicates, :])
-
-
-
-
-
-
+# print(df.loc[duplicates, :])
 
 
 
