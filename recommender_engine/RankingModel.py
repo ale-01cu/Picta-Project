@@ -124,4 +124,10 @@ class RankingModel(tfrs.models.Model):
             row_as_dict[key] = np.array([row_as_dict[key]])
         
         return row_as_dict
+    
+import pandas as pd
+
+
+if __name__ == '__main__':
+    pd.read_csv('C:\Users\Picta\Desktop\Picta-Project\datasets\likes_con_timestamp_100K.csv')
 

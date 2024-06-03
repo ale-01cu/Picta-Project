@@ -8,7 +8,7 @@ from generator.main import (
 )
 
 def main():
-    generate_positive_features_with_timestamp()
+    generate_likes_with_timestamp()
 
 if __name__ == '__main__':
     main()

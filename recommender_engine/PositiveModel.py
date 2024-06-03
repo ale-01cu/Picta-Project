@@ -157,25 +157,47 @@ class PositiveModel(tfrs.models.Model):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('/content/positive_features_with_timestamp_1m.csv')
-    pubs_df = pd.read_csv('/content/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    # df_comments = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/comentarios.csv')
+    # df_downloads = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/descargas.csv')
+    # df_likes = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/likes.csv')
+
+    # df_comments['category'] = 'comment'
+    # df_downloads['category'] = 'download'
+    # df_likes['category'] = 'like'
+
+    # columns = ['usuario_id', 'publicacion_id', 'category']
+
+    # df_comments = df_comments[columns]
+    # df_downloads = df_downloads[columns]
+    # df_likes = df_likes[columns]
+
+    # # print(df_comments[columns].head())
+    # # print(df_downloads[columns].head())
+    # # print(df_likes[columns].head())
+
+    # df = pd.concat([df_comments, df_downloads, df_likes])
+    # df = df.sample(frac=1)
+    # df.to_csv('./datasets/positive_data.csv')
+    # print(df.head(10))
+
+    pubs_df = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas.csv')
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
     pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
-# x = ds.map(lambda x: {
-#     'user_id': x['user_id'],
-#     'publication_id': x['publication_id'],
-#     'timestamp': x['timestamp']
-# })
-# y = ds.map(lambda x: x['category'])
+    # x = ds.map(lambda x: {
+    #     'user_id': x['user_id'],
+    #     'publication_id': x['publication_id'],
+    #     'timestamp': x['timestamp']
+    # })
+    # # y = ds.map(lambda x: x['category'])
 
-# x_train = x.take(80_000)
-# y_train = y.take(80_000)
+    # # x_train = x.take(80_000)
+    # # y_train = y.take(80_000)
 
-# x_test = x.skip(80_000).take(20_000)
-# y_test = y.skip(80_000).take(20_000)
+    # # x_test = x.skip(80_000).take(20_000)
+    # # y_test = y.skip(80_000).take(20_000)
 
     def map_to_one_hot(elements: list):
         labels = elements
@@ -197,11 +219,11 @@ if __name__ == '__main__':
         return np.array([map[elem] for elem in elements])
 
 
-    features = ['user_id', 'id', 'nombre','timestamp', 'category']
-    pipeline = DataPipelineBase(dataframe_path='/content/positive_features_with_timestamp.csv')
+    features = ['usuario_id', 'id', 'nombre', 'category']
+    pipeline = DataPipelineBase(dataframe_path='C:/Users/Picta/Desktop/Picta-Project/datasets/positive_data.csv')
     df = pipeline.merge_data(
         df_to_merge=pubs_df,
-        left_on='publication_id',
+        left_on='publicacion_id',
         right_on='id',
         output_features=features
     )
@@ -227,18 +249,18 @@ if __name__ == '__main__':
 
 
     model = PositiveModel(
-        towers_layers_sizes=[64, 64, 64],
-        deep_layer_sizes=[1024, 512],
+        towers_layers_sizes=[64],
+        deep_layer_sizes=[64],
         vocabularies=vocabularies,
         features_data_q={
             'user_id': { 'dtype': CategoricalInteger, 'w': 0.1 },
-            'timestamp': { 'dtype': CategoricalContinuous, 'w': 0.2 }
+            # 'timestamp': { 'dtype': CategoricalContinuous, 'w': 0.2 }
         },
         features_data_c={
             'id': { 'dtype': CategoricalInteger, 'w': 0.1 },
             # 'nombre': { 'dtype': StringText, 'w': 0.1 }
         },
-        embedding_dimension=512,
+        embedding_dimension=64,
         train=train,
         test=test,
         val=val,
