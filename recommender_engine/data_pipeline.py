@@ -6,8 +6,8 @@ from .utils import listwise as lw
 
 
 
-pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
-ratings_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/publicaciones_ratings_con_timestamp_medium.csv')
+pubs_df = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+ratings_df = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/likes_con_timestamp_100K.csv')
 
 ratings_df = ratings_df.merge(
     pubs_df, 

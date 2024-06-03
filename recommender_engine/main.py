@@ -5,7 +5,7 @@ from .ItemToItemRetrievalModel import ItemToItemRetrievalModel
 from .SecuentialRetrievalModel import SecuntialRetrievalModel
 from .DCN_Ranking import DCN
 import time
-from .data_pipeline import train, test, pubs_ds
+# from .data_pipeline import train, test, pubs_ds
 import tensorflow_ranking as tfr
 import tensorflow as tf
 from .data.DataPipelineItemToItem import DataPipelineItemToItem
@@ -17,25 +17,30 @@ from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
 from .data.DataPipelineBase import DataPipelineBase
 
-pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+pubs_df = pd.read_csv('C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
 pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
 pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
-    ratings_df_path = 'I:/UCI/tesis/Picta-Project/datasets/publicaciones_ratings_con_timestamp.csv'
-    features = ['user_id', 'id', 'nombre', 'descripcion', 'timestamp']
+    data_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/likes.csv'
+    features = ['usuario_id', 'id', 'nombre', 'descripcion']
 
-    pipeline = DataPipelineBase(dataframe_path=ratings_df_path)
+    pipeline = DataPipelineBase(dataframe_path=data_path)
+
+    pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+
     df = pipeline.merge_data(
         df_to_merge=pubs_df, 
-        left_on='publication_id',
+        left_on='publicacion_id',
         right_on='id',
         output_features=features
     )
     df['nombre'] = df['nombre'].astype(str)
     df['descripcion'] = df['descripcion'].astype(str)
+
+    df.info()
 
     ds = pipeline.convert_to_tf_dataset(df)
     vocabularies = pipeline.build_vocabularies(
@@ -45,7 +50,7 @@ def use_retrieval_model(user_id):
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=100_000,
+        shuffle=500_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -53,29 +58,29 @@ def use_retrieval_model(user_id):
     )
 
     model = RetrievalModel(
-        towers_layers_sizes=[64],
+        towers_layers_sizes=[32],
         vocabularies=vocabularies,
         features_data_q={
-            'user_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
-            'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+            'usuario_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
         },
         features_data_c={ 
-            'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 0.1 },
-            'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
             # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
         },
         embedding_dimension=32, 
         train=train, 
         test=test, 
         val=val,
-        shuffle=100_000, 
-        train_batch=64, 
-        test_batch=64, 
+        shuffle=500_000, 
+        train_batch=512, 
+        test_batch=256, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
-    model.fit_model(learning_rate=0.1, num_epochs=3)
+    model.fit_model(learning_rate=0.1, num_epochs=30)
     model.evaluate_model()
     # ids = model.predict_model(user_id=user_id)
     # return ids

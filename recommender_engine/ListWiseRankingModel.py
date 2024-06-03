@@ -4,7 +4,7 @@ import tensorflow_ranking as tfr
 from .QueryModel import QueryModel
 from .CandidateModel import CandidateModel
 from typing import Dict, Text, Union
-from .data_pipeline import pubs_df
+# from .data_pipeline import pubs_df
 import numpy as np
 from keras.losses import MeanSquaredError
 from tensorflow_ranking.python.keras.losses import PairwiseHingeLoss, ListMLELoss

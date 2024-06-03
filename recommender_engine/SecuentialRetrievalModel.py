@@ -4,7 +4,7 @@ from .QueryModel import QueryModel
 from .CandidateModel import CandidateModel
 from tensorflow.python.types.core import Tensor
 import numpy as np
-from .data_pipeline import unique_pubs_ids
+# from .data_pipeline import unique_pubs_ids
 from typing import Dict, Text
 
 class SecuntialRetrievalModel(tfrs.models.Model):
