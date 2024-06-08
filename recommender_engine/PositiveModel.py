@@ -8,9 +8,10 @@ from .tower.TowerModel import TowerModel
 import pandas as pd
 from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
-from tensorflow.keras.utils import to_categorical
-from sklearn.preprocessing import LabelEncoder
+from keras.utils import to_categorical
+# from sklearn.preprocessing import LabelEncoder
 from .data.DataPipelineBase import DataPipelineBase
+from keras.preprocessing.text import Tokenizer
 
 class PositiveModel(tfrs.models.Model):
     """
@@ -157,8 +158,8 @@ class PositiveModel(tfrs.models.Model):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('/content/positive_features_with_timestamp_1m.csv')
-    pubs_df = pd.read_csv('/content/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
+    pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
@@ -192,23 +193,46 @@ if __name__ == '__main__':
             for elem, one_hot in
             zip(unique_labels, onehot_encoded)
         }
+        return np.array([map[elem] for elem in elements])
+    
+    def map_to_one_hot_v2(elements: list):
+        labels = elements
+        unique_labels = np.unique(labels)
 
+        # Supongamos que 'y' son tus etiquetas de salida
+        label_encoder = Tokenizer()
+        integer_encoded = label_encoder.fit_on_texts(unique_labels)
+        max_len = len(max(unique_labels, key=len))
+        integer_encoded = label_encoder.texts_to_sequences(unique_labels)
 
+        onehot_encoded = to_categorical(
+            integer_encoded, 
+            num_classes=len(label_encoder.word_index) + 1
+        )
+
+        map = {
+            elem: one_hot.tolist()
+            for elem, one_hot in
+            zip(unique_labels, onehot_encoded)
+        }
         return np.array([map[elem] for elem in elements])
 
 
-    features = ['user_id', 'id', 'nombre','timestamp', 'category']
-    pipeline = DataPipelineBase(dataframe_path='/content/positive_features_with_timestamp.csv')
+    features = ['usuario_id', 'id', 'categoria']
+    pipeline = DataPipelineBase(dataframe_path='I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
+    
+    print(pipeline.dataframe.head())
+    
     df = pipeline.merge_data(
         df_to_merge=pubs_df,
-        left_on='publication_id',
+        left_on='publicacion_id',
         right_on='id',
         output_features=features
     )
 
     data = dict(df)
-    one_hot =  map_to_one_hot(df['category'].tolist())
-    data['category'] = one_hot
+    one_hot =  map_to_one_hot(df['categoria'].tolist())
+    data['categoria'] = one_hot
 
     ds = pipeline.convert_to_tf_dataset(data)
     vocabularies = pipeline.build_vocabularies(
@@ -218,7 +242,7 @@ if __name__ == '__main__':
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=100_000,
+        shuffle=10_000_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -227,24 +251,24 @@ if __name__ == '__main__':
 
 
     model = PositiveModel(
-        towers_layers_sizes=[64, 64, 64],
-        deep_layer_sizes=[1024, 512],
+        towers_layers_sizes=[],
+        deep_layer_sizes=[],
         vocabularies=vocabularies,
         features_data_q={
-            'user_id': { 'dtype': CategoricalInteger, 'w': 0.1 },
-            'timestamp': { 'dtype': CategoricalContinuous, 'w': 0.2 }
+            'usuario_id': { 'dtype': CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous, 'w': 0.2 }
         },
         features_data_c={
-            'id': { 'dtype': CategoricalInteger, 'w': 0.1 },
+            'id': { 'dtype': CategoricalInteger, 'w': 1 },
             # 'nombre': { 'dtype': StringText, 'w': 0.1 }
         },
         embedding_dimension=512,
         train=train,
         test=test,
         val=val,
-        shuffle=100_000,
-        train_batch=512,
-        test_batch=256,
+        shuffle=10_000_000,
+        train_batch=65_536,
+        test_batch=8192,
     )
 
-    history = model.fit_model(learning_rate=0.5, num_epochs=5)
+    history = model.fit_model(learning_rate=0.1, num_epochs=3)
