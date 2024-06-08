@@ -5,8 +5,8 @@ from .SecuentialItems import SecuentialItems
 from .LikesWithTimestamp import LikesWithTimestamp
 from .PostiveFeatures import PositiveFeaturesGenerator
 
-FROM_DATASET_PATH = './datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
-TO_DATASET_PATH = './datasets/publicaciones_ratings_con_timestamp_100.csv'
+FROM_DATASET_PATH = './datasets/picta_publicaciones_procesadas_sin_nulas.csv'
+TO_DATASET_PATH = './datasets/publicaciones_ratings_con_timestamp_medium.csv'
 
 TO_DATASET_ITEM_TO_ITEM_PATH = './datasets/publicacion_a_publicacion_con_timestamp.csv'
 TO_DATASET_USER_CLICKS_HISTORY_PATH = './datasets/historial_clicks_usuario.csv'
@@ -64,7 +64,6 @@ def generate_likes_with_timestamp():
         users_ids_range=23487,
         seed=11
     )
-
     lt()
 
 def generate_positive_features_with_timestamp():

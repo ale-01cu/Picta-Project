@@ -165,18 +165,18 @@ if __name__ == '__main__':
 
     pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
-# x = ds.map(lambda x: {
-#     'user_id': x['user_id'],
-#     'publication_id': x['publication_id'],
-#     'timestamp': x['timestamp']
-# })
-# y = ds.map(lambda x: x['category'])
+    # x = ds.map(lambda x: {
+    #     'user_id': x['user_id'],
+    #     'publication_id': x['publication_id'],
+    #     'timestamp': x['timestamp']
+    # })
+    # # y = ds.map(lambda x: x['category'])
 
-# x_train = x.take(80_000)
-# y_train = y.take(80_000)
+    # # x_train = x.take(80_000)
+    # # y_train = y.take(80_000)
 
-# x_test = x.skip(80_000).take(20_000)
-# y_test = y.skip(80_000).take(20_000)
+    # # x_test = x.skip(80_000).take(20_000)
+    # # y_test = y.skip(80_000).take(20_000)
 
     def map_to_one_hot(elements: list):
         labels = elements
@@ -262,7 +262,7 @@ if __name__ == '__main__':
             'id': { 'dtype': CategoricalInteger, 'w': 1 },
             # 'nombre': { 'dtype': StringText, 'w': 0.1 }
         },
-        embedding_dimension=512,
+        embedding_dimension=64,
         train=train,
         test=test,
         val=val,

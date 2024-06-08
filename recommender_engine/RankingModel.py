@@ -3,7 +3,7 @@ import tensorflow_recommenders as tfrs
 from .QueryModel import QueryModel
 from .CandidateModel import CandidateModel
 from typing import Dict, Text
-from .data_pipeline import pubs_df
+# from .data_pipeline import pubs_df
 import numpy as np
 
 class RankingModel(tfrs.models.Model):
@@ -124,4 +124,11 @@ class RankingModel(tfrs.models.Model):
             row_as_dict[key] = np.array([row_as_dict[key]])
         
         return row_as_dict
+    
+import pandas as pd
+
+
+if __name__ == '__main__':
+    pass
+    # pd.read_csv('C:\Users\Picta\Desktop\Picta-Project\datasets\likes_con_timestamp_100K.csv')
 
