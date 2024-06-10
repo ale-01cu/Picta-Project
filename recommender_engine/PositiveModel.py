@@ -9,7 +9,7 @@ import pandas as pd
 from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
 from keras.utils import to_categorical
-# from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from .data.DataPipelineBase import DataPipelineBase
 from keras.preprocessing.text import Tokenizer
 
@@ -78,14 +78,18 @@ class PositiveModel(tfrs.models.Model):
 
         for size in deep_layer_sizes:
           self.positive_layers.add(tf.keras.layers.Dense(size, activation="relu"))
-          self.positive_layers.add(tf.keras.layers.Dropout(0.01))
+        #   self.positive_layers.add(tf.keras.layers.Dropout(0.01))
 
-        self.positive_layers.add(tf.keras.layers.Dense(units=3, activation='softmax'))
+        self.positive_layers.add(tf.keras.layers.Dense(units=3, activation='sigmoid'))
 
 
+        # self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
+        #     loss=tf.keras.losses.CategoricalCrossentropy(),
+        #     metrics=[tf.keras.metrics.CategoricalAccuracy()],
+        # )
         self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
-            loss=tf.keras.losses.CategoricalCrossentropy(),
-            metrics=[tf.keras.metrics.CategoricalAccuracy()],
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
         )
 
     def call(self, inputs: dict[Text, tf.Tensor]) -> tf.Tensor:
@@ -195,33 +199,34 @@ if __name__ == '__main__':
         }
         return np.array([map[elem] for elem in elements])
     
-    def map_to_one_hot_v2(elements: list):
-        labels = elements
-        unique_labels = np.unique(labels)
+    # def map_to_one_hot_v2(elements: list):
+    #     labels = elements
+    #     unique_labels = np.unique(labels)
 
-        # Supongamos que 'y' son tus etiquetas de salida
-        label_encoder = Tokenizer()
-        integer_encoded = label_encoder.fit_on_texts(unique_labels)
-        max_len = len(max(unique_labels, key=len))
-        integer_encoded = label_encoder.texts_to_sequences(unique_labels)
+    #     print(unique_labels)
 
-        onehot_encoded = to_categorical(
-            integer_encoded, 
-            num_classes=len(label_encoder.word_index) + 1
-        )
+    #     # Supongamos que 'y' son tus etiquetas de salida
+    #     label_encoder = Tokenizer()
+    #     integer_encoded = label_encoder.fit_on_texts(unique_labels)
+    #     max_len = len(max(unique_labels, key=len))
+    #     integer_encoded = label_encoder.texts_to_sequences(unique_labels)
 
-        map = {
-            elem: one_hot.tolist()
-            for elem, one_hot in
-            zip(unique_labels, onehot_encoded)
-        }
-        return np.array([map[elem] for elem in elements])
+    #     onehot_encoded = to_categorical(
+    #         integer_encoded, 
+    #         num_classes=len(label_encoder.word_index) + 1
+    #     )
+
+    #     map = {
+    #         elem: one_hot.tolist()
+    #         for elem, one_hot in
+    #         zip(unique_labels, onehot_encoded)
+    #     }
+    #     return np.array([map[elem] for elem in elements])
 
 
-    features = ['usuario_id', 'id', 'categoria']
+    features = ['usuario_id', 'id', 'category']
     pipeline = DataPipelineBase(dataframe_path='I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
     
-    print(pipeline.dataframe.head())
     
     df = pipeline.merge_data(
         df_to_merge=pubs_df,
@@ -231,8 +236,9 @@ if __name__ == '__main__':
     )
 
     data = dict(df)
-    one_hot =  map_to_one_hot(df['categoria'].tolist())
-    data['categoria'] = one_hot
+    one_hot =  map_to_one_hot(df['category'].tolist())
+    data['category'] = one_hot
+
 
     ds = pipeline.convert_to_tf_dataset(data)
     vocabularies = pipeline.build_vocabularies(
@@ -242,7 +248,7 @@ if __name__ == '__main__':
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=10_000_000,
+        shuffle=15_000_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -251,24 +257,27 @@ if __name__ == '__main__':
 
 
     model = PositiveModel(
-        towers_layers_sizes=[],
-        deep_layer_sizes=[],
+        towers_layers_sizes=[64],
+        deep_layer_sizes=[64],
         vocabularies=vocabularies,
         features_data_q={
-            'usuario_id': { 'dtype': CategoricalInteger, 'w': 1 },
+            'usuario_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 1 },
             # 'timestamp': { 'dtype': CategoricalContinuous, 'w': 0.2 }
         },
         features_data_c={
-            'id': { 'dtype': CategoricalInteger, 'w': 1 },
+            'id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 1 },
             # 'nombre': { 'dtype': StringText, 'w': 0.1 }
         },
         embedding_dimension=64,
         train=train,
         test=test,
         val=val,
-        shuffle=10_000_000,
+        shuffle=15_000_000,
         train_batch=65_536,
         test_batch=8192,
     )
 
-    history = model.fit_model(learning_rate=0.1, num_epochs=3)
+    history = model.fit_model(learning_rate=0.0001, num_epochs=3)
+
+    print('Evaluando...')
+    model.evaluate_model()

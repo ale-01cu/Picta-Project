@@ -35,7 +35,8 @@ class DataPipelineBase():
             how='inner', 
             left_on=left_on, 
             right_on=right_on
-        )
+        )[output_features]
+
         self.merge.append(df_to_merge.columns)
          
         return new_df
@@ -53,7 +54,8 @@ class DataPipelineBase():
         
         vocaburaries = {}
         for feature_name in features:
-            vocab = ds.map(lambda x: x[feature_name]).batch(batch)
+            vocab = ds.map(lambda x: x[feature_name], 
+                num_parallel_calls=tf.data.AUTOTUNE).batch(batch)
             dtype = ds.element_spec[feature_name].dtype
 
             vocaburaries[feature_name] = {}
