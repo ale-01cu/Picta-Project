@@ -16,20 +16,34 @@ import pandas as pd
 from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
 from .data.DataPipelineBase import DataPipelineBase
+import time
 
-pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
+pubs_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
+
+
+pubs_df = pd.read_csv(pubs_path)
 pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
 pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
-    data_path = 'I:/UCI/tesis/Picta-Project/datasets/visitas.csv'
+    views_path = 'I:/UCI/tesis/Picta-Project/datasets/visitas.csv'
+    views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/visitas.csv'
     features = ['usuario_id', 'id']
+    unique_user_id = int(time.time() * 1000)
 
-    pipeline = DataPipelineBase(dataframe_path=data_path)
+    pipeline = DataPipelineBase(dataframe_path=views_path)
 
     pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+    # pipeline.dataframe.loc[pipeline.dataframe['usuario_id'].isnull(), :] = pipeline.dataframe.loc[
+    #     pipeline.dataframe['usuario_id'].isnull(), :].fillna(unique_user_id)
+
+    pipeline.dataframe = pipeline.dataframe[
+        ~pipeline.dataframe['usuario_id'].isnull()]
+    
+    print(len(pipeline.dataframe))
 
     df = pipeline.merge_data(
         df_to_merge=pubs_df, 
@@ -50,7 +64,7 @@ def use_retrieval_model(user_id):
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=33_000_000,
+        shuffle=4_000_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -73,7 +87,7 @@ def use_retrieval_model(user_id):
         train=train, 
         test=test, 
         val=val,
-        shuffle=33_000_000, 
+        shuffle=4_000_000, 
         train_batch=65_536, 
         test_batch=8192, 
         candidates=pubs_ds,
