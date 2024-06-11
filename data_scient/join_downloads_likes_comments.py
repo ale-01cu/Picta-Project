@@ -67,3 +67,10 @@ print('Salvando la data...')
 df.to_csv('../datasets/positive_data.csv')
 
 
+
+
+
+def analysing_positive_data():
+    positive_df = pd.read_csv('../datasets/positive_data.csv')
+    nulas_en_X_chunk = positive_df[positive_df['usuario_id'].isnull()]
+    print(len(nulas_en_X_chunk))

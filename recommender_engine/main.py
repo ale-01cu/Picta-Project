@@ -18,8 +18,8 @@ from recommender_engine.data.featurestypes import (
 from .data.DataPipelineBase import DataPipelineBase
 import time
 
-pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
 pubs_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
+pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
 
 
 pubs_df = pd.read_csv(pubs_path)
@@ -29,22 +29,18 @@ pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
-    views_path = 'I:/UCI/tesis/Picta-Project/datasets/visitas.csv'
-    views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/visitas.csv'
+    views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/vistas_no_nulas.csv'
+    views_path = 'I:/UCI/tesis/Picta-Project/datasets/vistas_no_nulas.csv'
     features = ['usuario_id', 'id']
-    unique_user_id = int(time.time() * 1000)
+    # unique_user_id = int(time.time() * 1000)
 
+    print('Cargando la data...')
     pipeline = DataPipelineBase(dataframe_path=views_path)
 
     pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
     # pipeline.dataframe.loc[pipeline.dataframe['usuario_id'].isnull(), :] = pipeline.dataframe.loc[
     #     pipeline.dataframe['usuario_id'].isnull(), :].fillna(unique_user_id)
-
-    pipeline.dataframe = pipeline.dataframe[
-        ~pipeline.dataframe['usuario_id'].isnull()]
     
-    print(len(pipeline.dataframe))
-
     df = pipeline.merge_data(
         df_to_merge=pubs_df, 
         left_on='publicacion_id',
@@ -54,9 +50,9 @@ def use_retrieval_model(user_id):
     # df['nombre'] = df['nombre'].astype(str)
     # df['descripcion'] = df['descripcion'].astype(str)
 
-    df.info()
-
     ds = pipeline.convert_to_tf_dataset(df)
+
+    print('Construyendo vocabulario...')
     vocabularies = pipeline.build_vocabularies(
         features=features, ds=ds, batch=1_000)
     
@@ -71,6 +67,8 @@ def use_retrieval_model(user_id):
         seed=42
     )
 
+    
+    print('Instanciando modelo...')
     model = RetrievalModel(
         towers_layers_sizes=[],
         vocabularies=vocabularies,
@@ -87,9 +85,9 @@ def use_retrieval_model(user_id):
         train=train, 
         test=test, 
         val=val,
-        shuffle=4_000_000, 
-        train_batch=65_536, 
-        test_batch=8192, 
+        shuffle=1_000_000, 
+        train_batch=16_384, 
+        test_batch=4096, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
