@@ -8,7 +8,7 @@ counter = 1
 start = time.time()
 
 dataset_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/visitas.csv'
-dataset_path = 'I:/UCI/tesis/Picta-Project/datasets/visitas.csv'
+dataset_path = '../datasets/visitas.csv'
 
 all_null_rows_df = pd.DataFrame()
 
