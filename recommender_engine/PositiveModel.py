@@ -199,33 +199,10 @@ if __name__ == '__main__':
         }
         return np.array([map[elem] for elem in elements])
     
-    # def map_to_one_hot_v2(elements: list):
-    #     labels = elements
-    #     unique_labels = np.unique(labels)
-
-    #     print(unique_labels)
-
-    #     # Supongamos que 'y' son tus etiquetas de salida
-    #     label_encoder = Tokenizer()
-    #     integer_encoded = label_encoder.fit_on_texts(unique_labels)
-    #     max_len = len(max(unique_labels, key=len))
-    #     integer_encoded = label_encoder.texts_to_sequences(unique_labels)
-
-    #     onehot_encoded = to_categorical(
-    #         integer_encoded, 
-    #         num_classes=len(label_encoder.word_index) + 1
-    #     )
-
-    #     map = {
-    #         elem: one_hot.tolist()
-    #         for elem, one_hot in
-    #         zip(unique_labels, onehot_encoded)
-    #     }
-    #     return np.array([map[elem] for elem in elements])
-
 
     features = ['usuario_id', 'id', 'category']
     pipeline = DataPipelineBase(dataframe_path='I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
+    pipeline.dataframe = pipeline.dataframe[: 100_000]
     
     
     df = pipeline.merge_data(
@@ -248,7 +225,7 @@ if __name__ == '__main__':
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=15_000_000,
+        shuffle=100_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -257,8 +234,8 @@ if __name__ == '__main__':
 
 
     model = PositiveModel(
-        towers_layers_sizes=[64],
-        deep_layer_sizes=[64],
+        towers_layers_sizes=[],
+        deep_layer_sizes=[],
         vocabularies=vocabularies,
         features_data_q={
             'usuario_id': { 'dtype': CategoricalInteger.CategoricalInteger, 'w': 1 },
@@ -272,8 +249,8 @@ if __name__ == '__main__':
         train=train,
         test=test,
         val=val,
-        shuffle=15_000_000,
-        train_batch=65_536,
+        shuffle=100_000,
+        train_batch=16_384,
         test_batch=8192,
     )
 

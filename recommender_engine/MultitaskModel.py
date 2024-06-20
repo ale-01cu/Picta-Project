@@ -7,7 +7,9 @@ import pandas as pd
 from .data.DataPipelineBase import DataPipelineBase
 from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
-
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from keras.utils import to_categorical
 
 
 class MultitaskModel(tfrs.models.Model):
@@ -21,6 +23,7 @@ class MultitaskModel(tfrs.models.Model):
         features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
         train: tf.data.Dataset, 
         test: tf.data.Dataset,
+        val: tf.data.Dataset,
         candidates: tf.data.Dataset,
         embedding_dimension: int = 32, 
         shuffle: int = 20_000,
@@ -44,7 +47,7 @@ class MultitaskModel(tfrs.models.Model):
         self.cached_train = train.shuffle(self.shuffle)\
             .batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
-        self.cached_val = test.batch(self.test_batch).cache()
+        self.cached_val = val.batch(self.test_batch).cache()
 
         self.query_model = TowerModel(
             layer_sizes=towers_layers_sizes,
@@ -64,7 +67,7 @@ class MultitaskModel(tfrs.models.Model):
         # as our prediction.
         self.rating_model = tf.keras.Sequential()
         for size in deep_layer_sizes:
-          self.rating_model.add(tf.keras.layers.Dense(size, activation="relu"))
+            self.rating_model.add(tf.keras.layers.Dense(size, activation="relu"))
         self.rating_model.add(tf.keras.layers.Dense(units=3, activation='sigmoid'))
 
 
@@ -73,6 +76,7 @@ class MultitaskModel(tfrs.models.Model):
             loss=tf.keras.losses.BinaryCrossentropy(),
             metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
         )
+
         self.retrieval_task = tfrs.tasks.Retrieval(
             metrics= tfrs.metrics.FactorizedTopK(
                 candidates=self.candidates.batch(
@@ -107,6 +111,7 @@ class MultitaskModel(tfrs.models.Model):
             labels=catetories,
             predictions=categories_predictions,
         )
+
         retrieval_loss = self.retrieval_task(
             user_embeddings, 
             pub_embeddings
@@ -118,30 +123,86 @@ class MultitaskModel(tfrs.models.Model):
             self.retrieval_weight * retrieval_loss
         )
     
+    def fit_model(self, learning_rate: float = 0.1, num_epochs: int = 1) -> None:
+        print('---------- Entrenando el modelo ----------')
+        model = self
+        model.compile(optimizer=tf.keras.optimizers.Adam(
+            learning_rate=learning_rate))
+        history = model.fit(
+            self.cached_train,
+            validation_data=self.cached_val,
+            epochs=num_epochs)
+
+        return history
+    
+
+    # def fit_model2(self, train, val, learning_rate: float = 0.1, num_epochs: int = 1, shuffle = 20000, train_batch = 1024, val_batch = 1024) -> None:
+    #     print('---------- Entrenando el modelo ----------')
+
+    #     cached_train = train.shuffle(shuffle)\
+    #         .batch(train_batch).cache()
+    #     cached_val = val.batch(val_batch).cache()
+
+    #     model = self
+    #     model.compile(optimizer=tf.keras.optimizers.Adam(
+    #         learning_rate=learning_rate))
+    #     history = model.fit(
+    #         cached_train,
+    #         validation_data=cached_val,
+    #         epochs=num_epochs)
+
+    #     return history
+    
+
+def map_to_one_hot(elements: list):
+    labels = elements
+    unique_labels = np.unique(labels)
+
+    # Supongamos que 'y' son tus etiquetas de salida
+    label_encoder = LabelEncoder()
+    integer_encoded = label_encoder.fit_transform(unique_labels)
+
+    onehot_encoded = to_categorical(integer_encoded)
+
+    map = {
+        elem: one_hot.tolist()
+        for elem, one_hot in
+        zip(unique_labels, onehot_encoded)
+    }
+    return np.array([map[elem] for elem in elements])
 
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     print('Cargando la data...')
-    pubs_df = pd.read_csv('../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
-    views_df = pd.read_csv('../datasets/vistas_no_nulas.csv')
-    positive_df = pd.read_csv('../datasets/positive_data.csv')
-    features = ['usuario_id', 'id']
-
+    pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
+    pubs_df = pd.read_csv(pubs_path)
+    pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
+    pubs_df['nombre'] = pubs_df['nombre'].astype(str)
     pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
+    
+    # views_df = pd.read_csv('../datasets/vistas_no_nulas.csv')
+    # positive_path = "I:/UCI/tesis/Picta-Project/datasets/positive_data.csv"
+    # positive_df = pd.read_csv(positive_path)
 
+    features = ['usuario_id', 'id', 'category']
     pipeline = DataPipelineBase(
-        dataframe_path='../datasets/vistas_no_nulas.csv')
-    pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+        dataframe_path='I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
+    pipeline.dataframe = pipeline.dataframe[: 200_000]
+    
     
     df = pipeline.merge_data(
-        df_to_merge=pubs_df, 
+        df_to_merge=pubs_df,
         left_on='publicacion_id',
         right_on='id',
         output_features=features
     )
 
-    ds = pipeline.convert_to_tf_dataset(df)
+    data = dict(df)
+    one_hot =  map_to_one_hot(df['category'].tolist())
+    data['category'] = one_hot
 
+
+    ds = pipeline.convert_to_tf_dataset(data)
     print('Construyendo vocabulario...')
     vocabularies = pipeline.build_vocabularies(
         features=features, ds=ds, batch=1_000)
@@ -150,7 +211,7 @@ if __name__ == '_main_':
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=4_000_000,
+        shuffle=200_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -176,12 +237,14 @@ if __name__ == '_main_':
         train=train, 
         test=test, 
         val=val,
-        shuffle=1_000_000, 
-        train_batch=16_384, 
+        shuffle=200_000, 
+        train_batch=8192, 
         test_batch=4096, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
+        
     
-
+    print('Entrenando Clasificacion...')
+    model.fit_model(learning_rate=0.01, num_epochs=1)

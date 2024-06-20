@@ -5,5 +5,18 @@
 * tf-Ranking :)
 * Ajustar los modelos
 
---- Fase de Prueba ---
-* Aprender a utilizar tensorboard
+
+Graficas
+Cantidad de interacciones por usuario
+Cantidad de interacciones por item
+Todas las interacciones y colorear por cada usuario
+Similitudes de usuarios por sus interacciones
+
+
+--- Produccion ---
+Etapa de recuperacion y clasificacion :)
+Arranque en frio
+Servir y Fine Tunning
+Etapa de Post-Clasificacion
+
+
