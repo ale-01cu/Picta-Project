@@ -75,8 +75,6 @@ class SecuntialRetrievalModel(tfrs.models.Model):
         )
 
 
-        self.index = tfrs.layers.factorized_top_k.BruteForce(
-            self.query_model, k=self.k_candidates)
         # self.task = tfrs.tasks.Retrieval(
         #     metrics=tfrs.metrics.FactorizedTopK(
         #         candidates=pubs_ds.batch(128).map(self.candidate_model),
@@ -126,14 +124,15 @@ class SecuntialRetrievalModel(tfrs.models.Model):
     def predict_model(self, publication_id: int) -> tuple[Tensor, Tensor]:
         print('--------- Prediciendo con el modelo ----------')
         model = self
-        brute_force = self.index
+        index = tfrs.layers.factorized_top_k.BruteForce(
+            self.query_model, k=self.k_candidates)
 
-        brute_force.index_from_dataset(
+        index.index_from_dataset(
             self.candidates.batch(self.candidates_batch).map(
                 lambda x: (x['id'], model.candidate_model(x)))
         )
 
-        score, titles = brute_force(
+        score, titles = index(
             {'publication_id': np.array([publication_id])}, 
             k=self.k_candidates
         )

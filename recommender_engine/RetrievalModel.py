@@ -45,7 +45,7 @@ class RetrievalModel(tfrs.models.Model):
         self.cached_train = train.shuffle(self.shuffle)\
             .batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
-        self.cached_val = test.batch(self.test_batch).cache()
+        self.cached_val = val.batch(self.test_batch).cache()
 
         self.query_model = TowerModel(
             layer_sizes=towers_layers_sizes,
@@ -58,11 +58,6 @@ class RetrievalModel(tfrs.models.Model):
             vocabularies=vocabularies,
             features_data=features_data_c,
             embedding_dimension=embedding_dimension,
-        )
-
-        self.index = tfrs.layers.factorized_top_k.BruteForce(
-            self.query_model, 
-            k=self.k_candidates
         )
 
         self.task = tfrs.tasks.Retrieval(
@@ -79,7 +74,13 @@ class RetrievalModel(tfrs.models.Model):
         return self.task(query_embeddings, pubs_embeddings)
 
 
-    def fit_model(self, learning_rate: float = 0.1, num_epochs: int = 1) -> None:
+    def fit_model(self, 
+        learning_rate: float = 0.1, 
+        num_epochs: int = 1, 
+        use_multiprocessing: bool = False, 
+        workers: int = 1
+    ) -> None:
+        
         print('---------- Entrenando el modelo ----------')
         model = self
         model.compile(optimizer=tf.keras.optimizers.Adagrad(
@@ -87,7 +88,9 @@ class RetrievalModel(tfrs.models.Model):
         model.fit(
             self.cached_train, 
             validation_data=self.cached_val,
-            epochs=num_epochs
+            epochs=num_epochs,
+            use_multiprocessing=use_multiprocessing,
+            workers=workers
         )
     
 
@@ -134,17 +137,23 @@ class RetrievalModel(tfrs.models.Model):
         print(f"Top-100 accuracy (test): {test_top_100:.2f}.")
 
 
-    def predict_model(self, user_id: int) -> tuple[tf.Tensor, tf.Tensor]:
-        print('--------- Prediciendo con el modelo ----------')
-        model = self
-        brute_force = self.index
-
-        brute_force.index_from_dataset(
-            self.candidates.batch(self.candidates_batch).map(
-                lambda x: (x['id'], model.candidate_model(x)))
+    def index_model(self):
+        index = tfrs.layers.factorized_top_k.BruteForce(
+            self.query_model, 
+            k=self.k_candidates
         )
 
-        score, titles = brute_force(
+        index.index_from_dataset(
+            self.candidates.batch(self.candidates_batch).map(
+                lambda x: (x['id'], self.candidate_model(x)))
+        )
+
+        return index
+
+
+    def predict_model(self, index: tfrs.layers.factorized_top_k.BruteForce, user_id: int) -> tuple[tf.Tensor, tf.Tensor]:
+        print('--------- Prediciendo con el modelo ----------')
+        score, titles = index(
             {'user_id': np.array([user_id])}, 
             k=self.k_candidates
         )
@@ -152,8 +161,8 @@ class RetrievalModel(tfrs.models.Model):
         return score, titles[0]
 
 
-    def save_model(self, path: str) -> None:
-        tf.saved_model.save(self.index, path)
+    def save_model(self, index: tfrs.layers.factorized_top_k.BruteForce, path: str) -> None:
+        tf.saved_model.save(index, path)
 
 
     def load_model(self, path: str) -> None:
