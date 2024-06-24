@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 from .tower.TowerModel import TowerModel
 import typing as typ
+from datetime import datetime
 
 class RetrievalModel(tfrs.models.Model):
     """
@@ -18,6 +19,7 @@ class RetrievalModel(tfrs.models.Model):
     
     """
     def __init__(self, 
+        model_name: str,
         towers_layers_sizes: typ.List[int],
         vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
         features_data_q: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
@@ -46,6 +48,35 @@ class RetrievalModel(tfrs.models.Model):
             .batch(self.train_batch).cache()
         self.cached_test = test.batch(self.test_batch).cache()
         self.cached_val = val.batch(self.test_batch).cache()
+
+        self.model_name = model_name
+        self.epochs = None
+        self.learning_rate = None
+
+        self.metric_labels = (
+            "factorized_top_k/top_1_categorical_accuracy",
+            "factorized_top_k/top_5_categorical_accuracy",
+            "factorized_top_k/top_10_categorical_accuracy",
+            "factorized_top_k/top_50_categorical_accuracy",
+            "factorized_top_k/top_100_categorical_accuracy"
+        )
+
+        self.evaluation_result = {
+            "train": [],
+            "test": []
+        }
+
+        self.hiperparams = (
+            f"Towers Layers Sizes: {towers_layers_sizes}",
+            f"Features Query: {[f for f in features_data_q.keys()]}",
+            f"Features Candidate: {[f for f in features_data_c.keys()]}",
+            f"Embedding Dimension: {embedding_dimension}",
+            f"Shuffle: {shuffle}",
+            f"Train Batch: {train_batch}",
+            f"Test Batch: {test_batch}", 
+            f"Candidate Batch: {candidates_batch}", 
+            f"K Candidates: {k_candidates}" 
+        )
 
         self.query_model = TowerModel(
             layer_sizes=towers_layers_sizes,
@@ -83,6 +114,9 @@ class RetrievalModel(tfrs.models.Model):
         
         print('---------- Entrenando el modelo ----------')
         model = self
+        self.epochs = num_epochs
+        self.learning_rate = learning_rate
+
         model.compile(optimizer=tf.keras.optimizers.Adagrad(
             learning_rate=learning_rate))
         model.fit(
@@ -104,11 +138,11 @@ class RetrievalModel(tfrs.models.Model):
             verbose=0
         )
 
-        train_top_1 = train_accuracy["factorized_top_k/top_1_categorical_accuracy"]
-        train_top_5 = train_accuracy["factorized_top_k/top_5_categorical_accuracy"]
-        train_top_10 = train_accuracy["factorized_top_k/top_10_categorical_accuracy"]
-        train_top_50 = train_accuracy["factorized_top_k/top_50_categorical_accuracy"]
-        train_top_100 = train_accuracy["factorized_top_k/top_100_categorical_accuracy"]
+        print("********** Train **********")
+        for metric in self.metric_labels:
+            output = f"Top-1 accuracy (train): {train_accuracy[metric]:.2f}."
+            print(output)
+            self.evaluation_result["train"].append(output)
 
         test_accuracy = model.evaluate(
             self.cached_test, 
@@ -116,25 +150,12 @@ class RetrievalModel(tfrs.models.Model):
             verbose=0
         )
 
-        test_top_1 = test_accuracy["factorized_top_k/top_1_categorical_accuracy"]
-        test_top_5 = test_accuracy["factorized_top_k/top_5_categorical_accuracy"]
-        test_top_10 = test_accuracy["factorized_top_k/top_10_categorical_accuracy"]
-        test_top_50 = test_accuracy["factorized_top_k/top_50_categorical_accuracy"]
-        test_top_100 = test_accuracy["factorized_top_k/top_100_categorical_accuracy"]
+        print("********** Test **********")
+        for metric in self.metric_labels:
+            output = f"Top-1 accuracy (train): {test_accuracy[metric]:.2f}."
+            print(output)
+            self.evaluation_result["test"].append(output)
 
-        print('**********')
-        print(f"Top-1 accuracy (train): {train_top_1:.2f}.")
-        print(f"Top-5 accuracy (train): {train_top_5:.2f}.")
-        print(f"Top-10 accuracy (train): {train_top_10:.2f}.")
-        print(f"Top-50 accuracy (train): {train_top_50:.2f}.")
-        print(f"Top-100 accuracy (train): {train_top_100:.2f}.")
-
-        print('**********')
-        print(f"Top-1 accuracy (test): {test_top_1:.2f}.")
-        print(f"Top-5 accuracy (test): {test_top_5:.2f}.")
-        print(f"Top-10 accuracy (test): {test_top_10:.2f}.")
-        print(f"Top-50 accuracy (test): {test_top_50:.2f}.")
-        print(f"Top-100 accuracy (test): {test_top_100:.2f}.")
 
 
     def index_model(self):
@@ -162,8 +183,58 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def save_model(self, index: tfrs.layers.factorized_top_k.BruteForce, path: str) -> None:
-        tf.saved_model.save(index, path)
+        def format_size(x):
+            if x < 1000:
+                return str(x)
+            elif x < 1000000:
+                return f"{x / 1000:.0f}K"
+            elif x < 1000000000:
+                return f"{x / 1000000:.0f}M"
+            elif x < 1000000000000:
+                return f"{x / 1000000000:.0f}B"
+            else:
+                return f"{x / 1000000000000:.0f}T"
 
+        current_time = datetime.now()
+
+        content = [
+            f"Nombre: {self.model_name}",
+            "\n ********** Hiperparametros **********",
+            '\n'.join(self.hiperparams),
+            f"Epochs: {self.epochs}",
+            f"Learning Rate: {self.learning_rate}"
+        ]
+
+        for k, v in self.evaluation_result.items():
+          content.append(f"\n ********** {k} **********")
+          content.append("\n".join(metric for metric in v))
+
+        content.append("\n ********** Parametros **********")
+        total_params = 0
+        for param in self.variables[:-1]:
+            params = param.shape[0] * param.shape[1]
+            total_params += params
+            content.append(f"{param.name}: {params}")
+        content.append(f"Total params: {total_params}")
+
+        content = "\n".join(content)
+
+        name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
+        tf.saved_model.save(index, f"{path}/{name}")
+        with open(f"{path}/{name}/Info.txt", "w") as f:
+            f.write(f"{content}")
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'model_name': self.model_name,
+            'towers_layers_sizes': self.towers_layers_sizes,
+            'vocabularies': self.vocabularies,
+            'features_data_q': self.features_data_q,
+            'features_data_c': self.features_data_c,
+            ...
+        })
+        return config
 
     def load_model(self, path: str) -> None:
         return tf.saved_model.load(path)
