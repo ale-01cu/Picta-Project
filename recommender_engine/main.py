@@ -18,8 +18,8 @@ from recommender_engine.data.featurestypes import (
 from .data.DataPipelineBase import DataPipelineBase
 import time
 
-pubs_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
 pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
+pubs_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
 
 
 pubs_df = pd.read_csv(pubs_path)
@@ -29,8 +29,8 @@ pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
-    views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/vistas_no_nulas.csv'
     views_path = 'I:/UCI/tesis/Picta-Project/datasets/vistas_no_nulas.csv'
+    views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/vistas_no_nulas.csv'
     features = ['usuario_id', 'id']
     # unique_user_id = int(time.time() * 1000)
 
@@ -70,6 +70,7 @@ def use_retrieval_model(user_id):
     
     print('Instanciando modelo...')
     model = RetrievalModel(
+        model_name="Modelo de Prueba",
         towers_layers_sizes=[],
         vocabularies=vocabularies,
         features_data_q={
@@ -86,14 +87,21 @@ def use_retrieval_model(user_id):
         test=test, 
         val=val,
         shuffle=1_000_000, 
-        train_batch=16_384, 
-        test_batch=4096, 
+        train_batch=32, 
+        test_batch=16, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
-    model.fit_model(learning_rate=0.1, num_epochs=3)
+    model.fit_model(
+        learning_rate=0.1,
+        num_epochs=30,
+        use_multiprocessing=True,
+        workers=32   
+    )
     model.evaluate_model()
+    index = model.index_model()
+    model.save_model(index=index, path="C:/Users/Picta/Desktop/Picta-Project/models")
     # ids = model.predict_model(user_id=user_id)
     # return ids
 

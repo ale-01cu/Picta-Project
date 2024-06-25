@@ -4,6 +4,7 @@ import numpy as np
 from .tower.TowerModel import TowerModel
 import typing as typ
 from datetime import datetime
+import re
 
 class RetrievalModel(tfrs.models.Model):
     """
@@ -152,7 +153,7 @@ class RetrievalModel(tfrs.models.Model):
 
         print("********** Test **********")
         for metric in self.metric_labels:
-            output = f"Top-1 accuracy (train): {test_accuracy[metric]:.2f}."
+            output = f"Top-1 accuracy (test): {test_accuracy[metric]:.2f}."
             print(output)
             self.evaluation_result["test"].append(output)
 
@@ -220,6 +221,10 @@ class RetrievalModel(tfrs.models.Model):
         content = "\n".join(content)
 
         name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
+        name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
+        name = name.replace(' ', '_')  # replace spaces with underscores
+
+        print(name)
         tf.saved_model.save(index, f"{path}/{name}")
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
@@ -231,8 +236,7 @@ class RetrievalModel(tfrs.models.Model):
             'towers_layers_sizes': self.towers_layers_sizes,
             'vocabularies': self.vocabularies,
             'features_data_q': self.features_data_q,
-            'features_data_c': self.features_data_c,
-            ...
+            'features_data_c': self.features_data_c
         })
         return config
 

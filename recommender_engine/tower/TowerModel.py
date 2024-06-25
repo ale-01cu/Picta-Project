@@ -32,7 +32,7 @@ class TowerModel(tf.keras.Model):
 
         # Then construct the layers.
         self.dense_layers = tf.keras.Sequential()
-        self.dense_layers.add(tf.keras.layers.Dropout(0.2))
+        self.dense_layers.add(tf.keras.layers.Dropout(0.5))
 
         # Use the ReLU activation for all but the last layer.
         for layer_size in layer_sizes[:-1]:
