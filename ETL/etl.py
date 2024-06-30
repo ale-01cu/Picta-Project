@@ -90,9 +90,11 @@ DATASET_URL_6 = '../datasets/comentarios.csv'
 DATASET_URL_7 = '../datasets/likes.csv'
 DATA_TABLE = 'app_visita'
 columns = ['id', 'nombre', 'descripcion']
+
+# De contenido descartar los que son canales
 SQL_CONSULT = """
   SELECT app_c.id, app_c.nombre, app_c.descripcion, app_t.nombre as categoria
-  FROM app_contenido as app_c 
+  FROM app_contenido as app_c  
   INNER JOIN app_publicacion as app_p ON app_c.id = app_p.contenido_id
   INNER JOIN app_categoria as app_cat ON app_p.categoria_id = app_cat.id
   INNER JOIN app_tipologia as app_t ON app_cat.tipologia_id = app_t.id;
