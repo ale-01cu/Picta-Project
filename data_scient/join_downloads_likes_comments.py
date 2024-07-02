@@ -10,6 +10,7 @@ BASE_URL = 'I:/UCI/tesis/Picta-Project/datasets/'
 LIKES_URL = f'{BASE_URL}likes.csv'
 DOWNLOADS_URL = f'{BASE_URL}descargas.csv'
 COMMENTS_URL = f'{BASE_URL}comentarios.csv'
+OUTPUT_PATH = '../datasets/positive_data.csv'
 
 print('Cargando la data...')
 likes_df = pd.read_csv(LIKES_URL)
@@ -64,13 +65,11 @@ df = df.sample(frac=1)
 print(df.shape)
 
 print('Salvando la data...')
-df.to_csv('../datasets/positive_data.csv')
+df.to_csv(OUTPUT_PATH)
 
 
 
-
-
-def analysing_positive_data():
+def analyzing_positive_data():
     positive_df = pd.read_csv('../datasets/positive_data.csv')
     nulas_en_X_chunk = positive_df[positive_df['usuario_id'].isnull()]
     print(len(nulas_en_X_chunk))
