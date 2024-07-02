@@ -87,15 +87,15 @@ def use_retrieval_model(user_id):
         test=test, 
         val=val,
         shuffle=1_000_000, 
-        train_batch=32, 
-        test_batch=16, 
+        train_batch=64, 
+        test_batch=32, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
     model.fit_model(
         learning_rate=0.1,
-        num_epochs=30,
+        num_epochs=15,
         use_multiprocessing=True,
         workers=32   
     )
