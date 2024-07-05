@@ -170,6 +170,8 @@ class RetrievalModel(tfrs.models.Model):
                 lambda x: (x['id'], self.candidate_model(x)))
         )
 
+        _ = index({"usuario_id": np.array([0])})
+
         return index
 
 

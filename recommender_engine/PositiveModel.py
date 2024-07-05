@@ -12,6 +12,9 @@ from keras.utils import to_categorical
 from sklearn.preprocessing import LabelEncoder
 from .data.DataPipelineBase import DataPipelineBase
 from keras.preprocessing.text import Tokenizer
+from recommender_engine.utils.utils import update_json
+import re
+from datetime import datetime
 
 class PositiveModel(tfrs.models.Model):
     """
@@ -27,6 +30,7 @@ class PositiveModel(tfrs.models.Model):
 
     """
     def __init__(self,
+        model_name: str,
         towers_layers_sizes: typ.List[int],
         deep_layer_sizes: list[int],
         vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
@@ -54,6 +58,33 @@ class PositiveModel(tfrs.models.Model):
         self.cached_test = test.batch(self.test_batch).cache()
         self.cached_val = val.batch(val_batch).cache()
 
+        self.model_name = model_name
+        self.model_filename = None
+        self.epochs = None
+        self.learning_rate = None
+
+        self.metric_labels = (
+            "binary_accuracy",
+            "loss"
+        )
+
+        self.evaluation_result = {
+            "train": [],
+            "test": []
+        }
+
+        self.hiperparams = (
+            f"Towers Layers Sizes: {towers_layers_sizes}",
+            f"Deep Layers Sizes: {deep_layer_sizes}",
+            f"Features Query: {[f for f in features_data_q.keys()]}",
+            f"Features Candidate: {[f for f in features_data_c.keys()]}",
+            f"Embedding Dimension: {embedding_dimension}",
+            f"Shuffle: {shuffle}",
+            f"Train Batch: {train_batch}",
+            f"Test Batch: {test_batch}", 
+        )
+
+
         self.query_model = TowerModel(
             layer_sizes=towers_layers_sizes,
             vocabularies=vocabularies,
@@ -68,13 +99,14 @@ class PositiveModel(tfrs.models.Model):
         )
 
         self.positive_layers = tf.keras.Sequential()
+        # self.positive_layers.add(tf.keras.layers.Dropout(0.5))
 
         # self.positive_layers.add(tf.keras.layers.Dropout(0.2))
-        # self.positive_layers.add(tf.keras.layers.Dense(64,
-        #   activation="relu", 
-        #   # kernel_regularizer=tf.keras.regularizers.l2(0.01), 
-        #   activity_regularizer=tf.keras.regularizers.l2(0.01)
-        # ))
+        self.positive_layers.add(tf.keras.layers.Dense(64,
+          activation="relu", 
+          kernel_regularizer=tf.keras.regularizers.l2(0.01), 
+          activity_regularizer=tf.keras.regularizers.l2(0.01)
+        ))
 
         for size in deep_layer_sizes:
           self.positive_layers.add(tf.keras.layers.Dense(size, activation="relu"))
@@ -117,21 +149,57 @@ class PositiveModel(tfrs.models.Model):
       self.summary()
 
 
-    def fit_model(self, learning_rate: float = 0.1, num_epochs: int = 1) -> None:
+    def fit_model(self, 
+        learning_rate: float = 0.1, 
+        num_epochs: int = 1, 
+        use_multiprocessing: bool = False, 
+        workers: int = 1
+    ) -> None:
         print('---------- Entrenando el modelo ----------')
         model = self
+        self.epochs = num_epochs
+        self.learning_rate = learning_rate
+
         model.compile(optimizer=tf.keras.optimizers.Adam(
             learning_rate=learning_rate))
         history = model.fit(
-            self.cached_train,
+            self.cached_train, 
             validation_data=self.cached_val,
-            epochs=num_epochs)
+            epochs=num_epochs,
+            use_multiprocessing=use_multiprocessing,
+            workers=workers
+        )
 
         return history
 
     def evaluate_model(self) -> None:
         model = self
         model.evaluate(self.cached_test, return_dict=True)
+        
+        train_accuracy = model.evaluate(
+            self.cached_train, 
+            return_dict=True,
+            verbose=0
+        )
+
+        print("********** Train **********")
+        for metric in self.metric_labels:
+            output = f"{metric} (train): {train_accuracy[metric]:.2f}."
+            print(output)
+            self.evaluation_result["train"].append(output)
+
+        test_accuracy = model.evaluate(
+            self.cached_test, 
+            return_dict=True,
+            verbose=0
+        )
+
+        print("********** Test **********")
+        for metric in self.metric_labels:
+            output = f"{metric} (test): {test_accuracy[metric]:.2f}."
+            print(output)
+            self.evaluation_result["test"].append(output)
+
 
 
     def predict_model(self, user_id: int) -> tuple[tf.Tensor, tf.Tensor]:
@@ -153,17 +221,59 @@ class PositiveModel(tfrs.models.Model):
 
 
     def save_model(self, path: str) -> None:
-        tf.saved_model.save(self.index, path)
+        def format_size(x):
+            if x < 1000:
+                return str(x)
+            elif x < 1000000:
+                return f"{x / 1000:.0f}K"
+            elif x < 1000000000:
+                return f"{x / 1000000:.0f}M"
+            elif x < 1000000000000:
+                return f"{x / 1000000000:.0f}B"
+            else:
+                return f"{x / 1000000000000:.0f}T"
 
+        current_time = datetime.now()
 
-    def load_model(self, path: str) -> None:
-        return tf.saved_model.load(path)
+        content = [
+            f"Nombre: {self.model_name}",
+            "\n ********** Hiperparametros **********",
+            '\n'.join(self.hiperparams),
+            f"Epochs: {self.epochs}",
+            f"Learning Rate: {self.learning_rate}"
+        ]
+
+        for k, v in self.evaluation_result.items():
+          content.append(f"\n ********** {k} **********")
+          content.append("\n".join(metric for metric in v))
+
+        content.append("\n ********** Parametros **********")
+        total_params = 0
+        for param in self.variables[:-1]:
+            params = param.shape[0] if len(param.shape) == 1 else param.shape[0] * param.shape[1]
+            total_params += params
+            content.append(f"{param.name}: {params}")
+        content.append(f"Total params: {total_params}")
+
+        content = "\n".join(content)
+
+        name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
+        name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
+        name = name.replace(' ', '_')  # replace spaces with underscores
+
+        self.model_filename = name
+        tf.saved_model.save(self, f"{path}/{name}")
+        with open(f"{path}/{name}/Info.txt", "w") as f:
+            f.write(f"{content}")
     
 
+import os
 
 if __name__ == '__main__':
-    df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
-    pubs_df = pd.read_csv('I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv')
+    dirname = os.path.dirname(__file__)
+    positive_data_path = os.path.join(dirname, "../datasets/positive_data.csv")
+    pubs_path = os.path.join(dirname, "../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv")
+    pubs_df = pd.read_csv(pubs_path)
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
@@ -201,7 +311,7 @@ if __name__ == '__main__':
     
 
     features = ['usuario_id', 'id', 'category']
-    pipeline = DataPipelineBase(dataframe_path='I:/UCI/tesis/Picta-Project/datasets/positive_data.csv')
+    pipeline = DataPipelineBase(dataframe_path=positive_data_path)
     pipeline.dataframe = pipeline.dataframe[: 100_000]
     
     
@@ -234,6 +344,7 @@ if __name__ == '__main__':
 
 
     model = PositiveModel(
+        model_name="Positive Ranking Lite",
         towers_layers_sizes=[],
         deep_layer_sizes=[],
         vocabularies=vocabularies,
@@ -250,11 +361,14 @@ if __name__ == '__main__':
         test=test,
         val=val,
         shuffle=100_000,
-        train_batch=16_384,
-        test_batch=8192,
+        train_batch=4096,
+        test_batch=1024,
     )
 
-    history = model.fit_model(learning_rate=0.0001, num_epochs=3)
-
+    history = model.fit_model(learning_rate=0.0001, num_epochs=200)
     print('Evaluando...')
     model.evaluate_model()
+    model.save_model(os.path.join(dirname, "models"))
+    update_json("./models/info.json", {
+        "positive_model_name": model.model_filename
+    })

@@ -38,6 +38,7 @@ def use_retrieval_model(user_id):
     pipeline = DataPipelineBase(dataframe_path=views_path)
 
     pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+    pipeline.dataframe = pipeline.dataframe[: 100_000]
     # pipeline.dataframe.loc[pipeline.dataframe['usuario_id'].isnull(), :] = pipeline.dataframe.loc[
     #     pipeline.dataframe['usuario_id'].isnull(), :].fillna(unique_user_id)
     
@@ -60,7 +61,7 @@ def use_retrieval_model(user_id):
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=4_000_000,
+        shuffle=100_000,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -70,7 +71,7 @@ def use_retrieval_model(user_id):
     
     print('Instanciando modelo...')
     model = RetrievalModel(
-        model_name="Modelo de Prueba",
+        model_name="Retrieval Lite",
         towers_layers_sizes=[],
         vocabularies=vocabularies,
         features_data_q={
@@ -86,22 +87,22 @@ def use_retrieval_model(user_id):
         train=train, 
         test=test, 
         val=val,
-        shuffle=1_000_000, 
-        train_batch=64, 
-        test_batch=32, 
+        shuffle=100_000, 
+        train_batch=4096, 
+        test_batch=1024, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
     model.fit_model(
         learning_rate=0.1,
-        num_epochs=15,
+        num_epochs=30,
         use_multiprocessing=True,
-        workers=32   
+        workers=16   
     )
     model.evaluate_model()
     index = model.index_model()
-    model.save_model(index=index, path="C:/Users/Picta/Desktop/Picta-Project/models")
+    model.save_model(index=index, path="C:/Users/Picta/Desktop/Picta-Project/recommender_engine/models")
     # ids = model.predict_model(user_id=user_id)
     # return ids
 
