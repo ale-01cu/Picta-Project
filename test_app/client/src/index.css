@@ -1,0 +1,213 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  background-color: #212121;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+main{
+  margin-bottom: 65px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.App-header {
+  display: flex;
+  width: 100%;
+  height: 150px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.App-header form{
+  width: 50%;
+}
+
+.container-input-search{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #ababab;
+  width: 100%;
+  padding: 4px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.container-input-search.focus{
+  box-shadow: 2px 3px 5px 0 #aaabbb;
+}
+
+.container-input-search:hover{
+  box-shadow: 2px 3px 5px 0 #aaabbb;
+}
+
+.container-input-search button{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+  border: none;
+  cursor: pointer;
+  padding-right: 0;
+}
+
+.container-input-search input{
+  padding: 9px;
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+.input-search{
+  background-color: transparent;
+  color: white;
+}
+
+
+.grilla{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  grid-gap: 10px;
+  padding: 20px 0px 20px 60px;
+  width: 60%;
+}
+
+.card{
+  border: 1px solid #ababab;
+  padding: 20px ;
+  display: flex;
+  justify-content: start;
+  align-items: start;
+  text-decoration: none;
+  color: black;
+  flex-direction: column;
+  background-color: wheat;
+  border-radius: 5%;
+  transition: all 0.2s;
+}
+
+
+.card:hover{
+  background-color: #dddddd;
+}
+
+
+.detalle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border: 2px solid #212121;
+  color: wheat;
+  padding: 24px;
+  max-width: 56rem;
+}
+
+.btn-inicio{
+  text-decoration: none;
+  color: black;
+  margin-right: 10px;
+  background-color: #dddddd;
+  padding: 10px 15px;
+  transition: all 0.3s;
+  border-radius: 10px;
+}
+
+.btn-inicio:hover{
+  background-color: #bbbbbb;
+}
+
+.btn-buscar{
+  background-color: transparent;
+}
+
+.container-not-found{
+  text-align: center;
+  color: red;
+}
+
+.tiempo{
+  text-align: center;
+}
+
+footer{
+  position: relative;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 25px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+}
+
+.btn-previous:not([disabled]){
+  margin-right: 5px;
+  text-decoration: none;
+
+}
+
+.btn-previous:not([disabled]), .btn-next:not([disabled]){
+  padding: 10px;
+  size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: wheat;
+  text-decoration: none;
+}
+
+.btn-previous:not([disabled]):hover, .btn-next:not([disabled]):hover {
+  color: #00BCD4;
+  text-decoration: none;
+
+}
+
+.home-contain{
+  display: flex;
+  gap: 40px;
+}
+
+.recs-section{
+  width: 40%;
+  padding: 20px 60px 20px 0;
+
+}
+
+.recs-container{
+  border: 2px solid white;
+  border-radius: 10px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 5px;
+}
+
+.rec-card{
+  border: 1px solid #ababab;
+  padding: 20px ;
+  display: flex;
+  justify-content: start;
+  align-items: start;
+  text-decoration: none;
+  color: black;
+  flex-direction: column;
+  background-color: burlywood;
+  border-radius: 5%;
+  transition: all 0.2s;
+}

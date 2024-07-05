@@ -5,6 +5,7 @@ from .tower.TowerModel import TowerModel
 import typing as typ
 from datetime import datetime
 import re
+import os
 
 class RetrievalModel(tfrs.models.Model):
     """
@@ -99,6 +100,14 @@ class RetrievalModel(tfrs.models.Model):
             )
         )
 
+    def create_pipeline(self, train_data, test_data, val_data, candidates_data):
+        train_dataset = train_data.shuffle(self.shuffle).batch(self.train_batch).cache()
+        test_dataset = test_data.batch(self.test_batch).cache()
+        val_dataset = val_data.batch(self.test_batch).cache()
+        candidates_dataset = candidates_data.batch(self.candidates_batch)
+        return train_dataset, test_dataset, val_dataset, candidates_dataset
+
+
 
     def compute_loss(self, features, training=False):
         query_embeddings = self.query_model(features)
@@ -159,7 +168,7 @@ class RetrievalModel(tfrs.models.Model):
 
 
 
-    def index_model(self):
+    def index_model(self) -> tfrs.layers.factorized_top_k.BruteForce:
         index = tfrs.layers.factorized_top_k.BruteForce(
             self.query_model, 
             k=self.k_candidates
@@ -185,7 +194,7 @@ class RetrievalModel(tfrs.models.Model):
         return score, titles[0]
 
 
-    def save_model(self, index: tfrs.layers.factorized_top_k.BruteForce, path: str) -> None:
+    def save_model(self, path: str) -> None:
         def format_size(x):
             if x < 1000:
                 return str(x)
@@ -226,8 +235,16 @@ class RetrievalModel(tfrs.models.Model):
         name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
         name = name.replace(' ', '_')  # replace spaces with underscores
 
-        print(name)
-        tf.saved_model.save(index, f"{path}/{name}")
+        model = self
+        index = self.index_model()
+
+        os.makedirs(f"{path}/{name}", exist_ok=True)
+        #Problemas aqui para cargarlo 
+        model.save_weights(f"pesos.h5")
+        # Problemas aqui para guardarlo 
+        tf.saved_model.save(model, f"{path}/{name}/model")
+        tf.saved_model.save(index, f"{path}/{name}/index")
+
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
 
@@ -244,3 +261,4 @@ class RetrievalModel(tfrs.models.Model):
 
     def load_model(self, path: str) -> None:
         return tf.saved_model.load(path)
+    

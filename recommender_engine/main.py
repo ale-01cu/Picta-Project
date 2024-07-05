@@ -94,15 +94,19 @@ def use_retrieval_model(user_id):
         candidates_batch=128, 
         k_candidates=100
     )
-    model.fit_model(
-        learning_rate=0.1,
-        num_epochs=30,
-        use_multiprocessing=True,
-        workers=16   
-    )
-    model.evaluate_model()
-    index = model.index_model()
-    model.save_model(index=index, path="C:/Users/Picta/Desktop/Picta-Project/recommender_engine/models")
+    model.compile(optimizer=tf.keras.optimizers.Adagrad(
+        learning_rate=0.1))
+    model.load_weights("pesos.h5")
+
+    # model.fit_model(
+    #     learning_rate=0.1,
+    #     num_epochs=1,
+    #     # use_multiprocessing=True,
+    #     # workers=16   
+    # )
+    # model.evaluate_model()
+    # index = model.index_model()
+    # model.save_model(path="C:/Users/Picta/Desktop/Picta-Project/recommender_engine/models")
     # ids = model.predict_model(user_id=user_id)
     # return ids
 
