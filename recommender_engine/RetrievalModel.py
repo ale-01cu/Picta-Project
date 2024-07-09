@@ -100,13 +100,14 @@ class RetrievalModel(tfrs.models.Model):
             )
         )
 
-    def create_pipeline(self, train_data, test_data, val_data, candidates_data):
-        train_dataset = train_data.shuffle(self.shuffle).batch(self.train_batch).cache()
-        test_dataset = test_data.batch(self.test_batch).cache()
-        val_dataset = val_data.batch(self.test_batch).cache()
-        candidates_dataset = candidates_data.batch(self.candidates_batch)
-        return train_dataset, test_dataset, val_dataset, candidates_dataset
+    def call(self, inputs):
+        user_embedding = self.query_model(inputs)
+        pub_embedding = self.candidate_model(inputs)
 
+        return tf.concat(
+            [user_embedding, pub_embedding], 
+            axis=1
+        )
 
 
     def compute_loss(self, features, training=False):
@@ -242,9 +243,9 @@ class RetrievalModel(tfrs.models.Model):
         #Problemas aqui para cargarlo 
 
         print("Salvando los pesos *******************************")
-        model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
+        # model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
         # Problemas aqui para guardarlo 
-        # tf.saved_model.save(model, f"{path}/{name}/model")
+        tf.saved_model.save(model, f"{path}/{name}/model")
         tf.saved_model.save(index, f"{path}/{name}/index")
 
         print("Cargando los pesos *******************************")
@@ -264,6 +265,15 @@ class RetrievalModel(tfrs.models.Model):
     #     })
     #     return config
 
-    def load_model(self, path: str) -> None:
-        return tf.saved_model.load(path)
+    def load_model(self, path: str, model_name: str) -> None:
+        print("Cargando los pesos...")
+        self.load_weights(f"{path}/{model_name}/model/pesos.tf")
+        print("Compilando...")
+        self.compile(optimizer=tf.keras.optimizers.Adagrad(
+            learning_rate=0.1)
+        )
+        print("Inicializando...")
+        self.cached_train.map(lambda x: self(x))
+        print("Evaluando...")
+        self.evaluate_model()
     

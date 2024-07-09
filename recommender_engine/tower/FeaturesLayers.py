@@ -47,18 +47,23 @@ class FeaturesLayers(tf.keras.Model):
 
             if feature_type == CategoricalInteger.CategoricalInteger:
                 model = tf.keras.Sequential([
+                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + 'input', dtype = tf.uint64),
                     tf.keras.layers.IntegerLookup(
                         vocabulary=vocabulary, mask_token=None),
                     tf.keras.layers.Embedding(len(
                         vocabulary) + 1, self.embedding_dimension),
+                    tf.keras.layers.Flatten(name='Flatten_' + feature_name)
+                    
                 ])
             
             elif feature_type == CategoricalString.CategoricalString:
                 model = tf.keras.Sequential([
+                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.string),
                     tf.keras.layers.StringLookup(
                         vocabulary=vocabulary, mask_token=None),
                     tf.keras.layers.Embedding(
                         len(vocabulary) + 1, self.embedding_dimension),
+                    tf.keras.layers.Flatten(name='Flatten_' + feature_name)
                 ])
 
             elif feature_type == CategoricalContinuous.CategoricalContinuous:
@@ -76,8 +81,10 @@ class FeaturesLayers(tf.keras.Model):
 
 
                 model = tf.keras.Sequential([
+                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.uint32),
                     tf.keras.layers.Discretization(timestamp_buckets.tolist()),
-                    tf.keras.layers.Embedding(len(timestamp_buckets) + 2, self.embedding_dimension)
+                    tf.keras.layers.Embedding(len(timestamp_buckets) + 2, self.embedding_dimension),
+                    tf.keras.layers.Flatten(name='Flatten_' + feature_name)
                 ])
 
                 normalized_timestamp = tf.keras.layers.Normalization(
@@ -94,10 +101,13 @@ class FeaturesLayers(tf.keras.Model):
                 vectorization_layer.adapt(vocabulary)
 
                 model = tf.keras.Sequential([
+                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.string),
                     vectorization_layer,
                     tf.keras.layers.Embedding(self.max_tokens, 
                         self.embedding_dimension, mask_zero=True),
                     tf.keras.layers.GlobalAveragePooling1D(),
+                    tf.keras.layers.Flatten(name='Flatten_' + feature_name)
+
                 ])
 
 

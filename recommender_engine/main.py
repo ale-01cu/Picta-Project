@@ -17,10 +17,10 @@ from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
 from .data.DataPipelineBase import DataPipelineBase
 import time
+import os
 
-pubs_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
-pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
-
+dirname = os.path.dirname(__file__)
+pubs_path = os.path.join(dirname, "../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv")
 
 pubs_df = pd.read_csv(pubs_path)
 pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
@@ -29,8 +29,8 @@ pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
-    views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/vistas_no_nulas.csv'
-    views_path = 'I:/UCI/tesis/Picta-Project/datasets/vistas_no_nulas.csv'
+    views_path = os.path.join(dirname, "../datasets/vistas_no_nulas.csv")
+
     features = ['usuario_id', 'id']
     # unique_user_id = int(time.time() * 1000)
 
@@ -95,22 +95,23 @@ def use_retrieval_model(user_id):
         k_candidates=100
     )
 
-    # train.map(lambda x: model(x))
+    model.fit_model(
+        learning_rate=0.1,
+        num_epochs=1,
+        use_multiprocessing=True,
+        workers=16   
+    )
 
-    # print(model.get_config())
-    # print("*****************************************")
-    # print(model.summary())
-
-    # model.fit_model(
-    #     learning_rate=0.1,
-    #     num_epochs=1,
-    #     use_multiprocessing=True,
-    #     workers=4   
+    # model.load_model(
+    #     path="models",
+    #     model_name="Retrieval_Lite_521K_2024-07-09_111812265420"
     # )
-    # model.save_model("models")
-    # model.load_weights("pesos.h5")
 
-    # model.evaluate_model()
+    # inputs_shape = tf.keras.Input(shape=(1,))
+    # outputs_shape = tf.keras.layers.Flatten(name='Flatten')(inputs_shape)
+
+    model.save_model("models")
+
     # index = model.index_model()
     # model.save_model(path="C:/Users/Picta/Desktop/Picta-Project/recommender_engine/models")
     # ids = model.predict_model(user_id=user_id)
