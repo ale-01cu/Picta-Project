@@ -240,24 +240,29 @@ class RetrievalModel(tfrs.models.Model):
 
         os.makedirs(f"{path}/{name}", exist_ok=True)
         #Problemas aqui para cargarlo 
-        model.save_weights(f"pesos.h5")
+
+        print("Salvando los pesos *******************************")
+        model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
         # Problemas aqui para guardarlo 
-        tf.saved_model.save(model, f"{path}/{name}/model")
+        # tf.saved_model.save(model, f"{path}/{name}/model")
         tf.saved_model.save(index, f"{path}/{name}/index")
+
+        print("Cargando los pesos *******************************")
+        model.load_weights(f"{path}/{name}/model/pesos.tf")
 
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
 
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'model_name': self.model_name,
-            'towers_layers_sizes': self.towers_layers_sizes,
-            'vocabularies': self.vocabularies,
-            'features_data_q': self.features_data_q,
-            'features_data_c': self.features_data_c
-        })
-        return config
+    # def get_config(self):
+    #     config = super().get_config()
+    #     config.update({
+    #         'model_name': self.model_name,
+    #         'towers_layers_sizes': self.towers_layers_sizes,
+    #         'vocabularies': self.vocabularies,
+    #         'features_data_q': self.features_data_q,
+    #         'features_data_c': self.features_data_c
+    #     })
+    #     return config
 
     def load_model(self, path: str) -> None:
         return tf.saved_model.load(path)

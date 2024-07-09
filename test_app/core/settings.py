@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     "corsheaders",
-    "celery",
     # 'App_Buscador',
     "apps.pubs",
     "apps.recommender",

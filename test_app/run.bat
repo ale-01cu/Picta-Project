@@ -1,4 +1,4 @@
 @echo off
-call ../.venv\Scripts\activate
+call ../venv_recommender\Scripts\activate
 start cmd /k "python manage.py runserver"
 start cmd /k "cd client && npm run dev"

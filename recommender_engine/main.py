@@ -18,8 +18,8 @@ from recommender_engine.data.featurestypes import (
 from .data.DataPipelineBase import DataPipelineBase
 import time
 
-pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
 pubs_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
+pubs_path = 'I:/UCI/tesis/Picta-Project/datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
 
 
 pubs_df = pd.read_csv(pubs_path)
@@ -29,8 +29,8 @@ pubs_ds = tf.data.Dataset.from_tensor_slices(dict(pubs_df))
 
 
 def use_retrieval_model(user_id):
-    views_path = 'I:/UCI/tesis/Picta-Project/datasets/vistas_no_nulas.csv'
     views_path = 'C:/Users/Picta/Desktop/Picta-Project/datasets/vistas_no_nulas.csv'
+    views_path = 'I:/UCI/tesis/Picta-Project/datasets/vistas_no_nulas.csv'
     features = ['usuario_id', 'id']
     # unique_user_id = int(time.time() * 1000)
 
@@ -88,22 +88,28 @@ def use_retrieval_model(user_id):
         test=test, 
         val=val,
         shuffle=100_000, 
-        train_batch=4096, 
-        test_batch=1024, 
+        train_batch=8192, 
+        test_batch=4096, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
-    model.compile(optimizer=tf.keras.optimizers.Adagrad(
-        learning_rate=0.1))
-    model.load_weights("pesos.h5")
+
+    # train.map(lambda x: model(x))
+
+    # print(model.get_config())
+    # print("*****************************************")
+    # print(model.summary())
 
     # model.fit_model(
     #     learning_rate=0.1,
     #     num_epochs=1,
-    #     # use_multiprocessing=True,
-    #     # workers=16   
+    #     use_multiprocessing=True,
+    #     workers=4   
     # )
+    # model.save_model("models")
+    # model.load_weights("pesos.h5")
+
     # model.evaluate_model()
     # index = model.index_model()
     # model.save_model(path="C:/Users/Picta/Desktop/Picta-Project/recommender_engine/models")

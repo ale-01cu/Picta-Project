@@ -43,6 +43,7 @@ class TowerModel(tf.keras.Model):
         for layer_size in layer_sizes[-1:]:
             self.dense_layers.add(tf.keras.layers.Dense(
                 layer_size))
+            
 
 
     def call(self, inputs) -> Tensor:

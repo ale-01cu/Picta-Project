@@ -6,12 +6,18 @@ from apps.pubs.models import PubsModel
 import os
 
 dirname = os.path.dirname(__file__)
-data = read_json(os.path.join(dirname, "models/info.json"))
 
-BASE_PATH = os.path.join(dirname, "models")
 
-retieval_model = tf.saved_model.load(os.path.join(BASE_PATH, data["retrieval_model_name"]))
-positive_model = tf.saved_model.load(os.path.join(BASE_PATH, data["positive_model_name"]))
+try:
+    data = read_json(os.path.join(dirname, "models/info.json"))
+
+    BASE_PATH = os.path.join(dirname, "models")
+
+    retieval_model = tf.saved_model.load(os.path.join(BASE_PATH, data["retrieval_model_name"]))
+    positive_model = tf.saved_model.load(os.path.join(BASE_PATH, data["positive_model_name"]))
+
+except:
+    print("Error loading models")
 
 
 
