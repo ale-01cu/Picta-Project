@@ -38,8 +38,16 @@ def use_retrieval_model(user_id):
     pipeline = DataPipelineBase(dataframe_path=views_path)
 
     pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
-    # pipeline.dataframe = pipeline.dataframe[: 100_000]
-    pipeline.dataframe = pipeline.dataframe[100_000: 110_000]
+    pipeline.dataframe = pipeline.dataframe[: 100_000]
+
+    new_clicks = pd.read_csv(os.path.join(dirname, "../datasets/clicks.csv"))
+    new_clicks = new_clicks.drop(['id'], axis=1)
+
+    pipeline.dataframe = pd.concat([pipeline.dataframe, new_clicks])
+
+    # old_data = pipeline.dataframe[: 100_000]
+    # new_data = pipeline.dataframe[100_000: 110_000]
+    # pipeline.dataframe = pd.concat([old_data, new_data])
     # pipeline.dataframe.loc[pipeline.dataframe['usuario_id'].isnull(), :] = pipeline.dataframe.loc[
     #     pipeline.dataframe['usuario_id'].isnull(), :].fillna(unique_user_id)
     
@@ -96,18 +104,28 @@ def use_retrieval_model(user_id):
         k_candidates=100
     )
 
-    # model.fit_model(
-    #     learning_rate=0.1,
-    #     num_epochs=1,
-    #     use_multiprocessing=True,
-    #     workers=16   
-    # )
-    # model.save_model("models")
-
-    model.load_model(
-        path="models",
-        model_name="Retrieval_Lite_534K_2024-07-10_050643926085"
+    model.fit_model(
+        learning_rate=0.1,
+        num_epochs=3,
+        use_multiprocessing=True,
+        workers=16   
     )
+    model.save_model("models")
+
+    # model.load_model(
+    #     path="models",
+    #     model_name="Retrieval_Lite_521K_2024-07-10_104647241411"
+    # )
+
+    # Para actualizar el modelo necesito 
+    # guardar y cargar de alguna forma 
+    # el modelo ya entrenado
+    # si guardo los pesos tengo que reconstruir el modelo
+    # cada vez que vaya a actualizarlo, pero, para 
+    # recostruir el modelo necesito tanto los datos viejos como
+    # los nuevo y si reconstruyo el modelo con los datos nnuevos y viejos juntos
+    # ya los pesos que habia guardado del entrenamiento no son compatibles
+    # con ese nuevo modelo reconstruido, entonces que carajo hago ?
 
     # model.evaluate_model()
 
