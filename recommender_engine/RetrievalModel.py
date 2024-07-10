@@ -6,6 +6,7 @@ import typing as typ
 from datetime import datetime
 import re
 import os
+dirname = os.path.dirname(__file__)
 
 class RetrievalModel(tfrs.models.Model):
     """
@@ -114,6 +115,7 @@ class RetrievalModel(tfrs.models.Model):
         query_embeddings = self.query_model(features)
         pubs_embeddings = self.candidate_model(features)
         return self.task(query_embeddings, pubs_embeddings)
+        
 
 
     def fit_model(self, 
@@ -196,6 +198,8 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def save_model(self, path: str) -> None:
+        path = os.path.join(dirname, path)
+
         def format_size(x):
             if x < 1000:
                 return str(x)
@@ -243,13 +247,10 @@ class RetrievalModel(tfrs.models.Model):
         #Problemas aqui para cargarlo 
 
         print("Salvando los pesos *******************************")
-        # model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
+        model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
         # Problemas aqui para guardarlo 
-        tf.saved_model.save(model, f"{path}/{name}/model")
+        # tf.saved_model.save(model, f"{path}/{name}/model")
         tf.saved_model.save(index, f"{path}/{name}/index")
-
-        print("Cargando los pesos *******************************")
-        model.load_weights(f"{path}/{name}/model/pesos.tf")
 
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
@@ -266,8 +267,13 @@ class RetrievalModel(tfrs.models.Model):
     #     return config
 
     def load_model(self, path: str, model_name: str) -> None:
+        path = os.path.join(dirname, path)
+        path = os.path.join(path, model_name)
+        path = os.path.join(path, "model")
+        path = os.path.join(path, "pesos.tf")
+        
         print("Cargando los pesos...")
-        self.load_weights(f"{path}/{model_name}/model/pesos.tf")
+        self.load_weights(path)
         print("Compilando...")
         self.compile(optimizer=tf.keras.optimizers.Adagrad(
             learning_rate=0.1)

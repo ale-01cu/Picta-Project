@@ -38,7 +38,8 @@ def use_retrieval_model(user_id):
     pipeline = DataPipelineBase(dataframe_path=views_path)
 
     pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
-    pipeline.dataframe = pipeline.dataframe[: 100_000]
+    # pipeline.dataframe = pipeline.dataframe[: 100_000]
+    pipeline.dataframe = pipeline.dataframe[100_000: 110_000]
     # pipeline.dataframe.loc[pipeline.dataframe['usuario_id'].isnull(), :] = pipeline.dataframe.loc[
     #     pipeline.dataframe['usuario_id'].isnull(), :].fillna(unique_user_id)
     
@@ -95,22 +96,25 @@ def use_retrieval_model(user_id):
         k_candidates=100
     )
 
-    model.fit_model(
-        learning_rate=0.1,
-        num_epochs=1,
-        use_multiprocessing=True,
-        workers=16   
+    # model.fit_model(
+    #     learning_rate=0.1,
+    #     num_epochs=1,
+    #     use_multiprocessing=True,
+    #     workers=16   
+    # )
+    # model.save_model("models")
+
+    model.load_model(
+        path="models",
+        model_name="Retrieval_Lite_534K_2024-07-10_050643926085"
     )
 
-    # model.load_model(
-    #     path="models",
-    #     model_name="Retrieval_Lite_521K_2024-07-09_111812265420"
-    # )
+    # model.evaluate_model()
+
 
     # inputs_shape = tf.keras.Input(shape=(1,))
     # outputs_shape = tf.keras.layers.Flatten(name='Flatten')(inputs_shape)
 
-    model.save_model("models")
 
     # index = model.index_model()
     # model.save_model(path="C:/Users/Picta/Desktop/Picta-Project/recommender_engine/models")
