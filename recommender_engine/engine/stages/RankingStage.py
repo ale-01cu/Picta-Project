@@ -1,0 +1,2 @@
+class RankingStage:
+    pass

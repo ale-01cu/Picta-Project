@@ -1,6 +1,6 @@
 from DataPipeline import DataPipeline
-from RetrievalModel import RetrievalModel
 import FeaturesTypes
+from stages.RetrievalStage import RetrievalStage
 
 
 def train():
@@ -76,7 +76,9 @@ def train():
 
     pipe.close()
 
-    model = RetrievalModel(
+    retrieval_stage = RetrievalStage()
+
+    model = retrieval_stage.retrieval_model(
         model_name="Retrieval Lite",
         towers_layers_sizes=[],
         vocabularies=vocabularies,
@@ -110,7 +112,7 @@ def train():
         cached_test=cached_test,
         cached_train=cached_train
     )
-    model.save_model("models")
+    model.save_model("service_models")
 
 
 if __name__ == "__main__":

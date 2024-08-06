@@ -8,7 +8,7 @@ dirname = os.path.dirname(__file__)
 # data = read_json("./models/info.json")
 
 retieval_model = tf.saved_model.load(
-    os.path.join(dirname, "models/Retrieval_Lite_534K_2024-08-05_224503797704/index"))
+    os.path.join(dirname, "service_models/Retrieval_Lite_534K_2024-08-05_224503797704/index"))
 # positive_model = tf.saved_model.load(BASE_PATH + "/" + data["positive_model_name"])
 
 

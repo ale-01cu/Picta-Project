@@ -1,6 +1,7 @@
 from DataPipeline import DataPipeline
-from RetrievalModel import RetrievalModel
+from recommender_engine.engine.models.RetrievalModel import RetrievalModel
 import FeaturesTypes
+from stages.RetrievalStage import RetrievalStage
 
 
 def fine_tunning():
@@ -75,8 +76,8 @@ def fine_tunning():
         test_batch=test_batch
     )
 
-    
-    model = RetrievalModel(
+    retrieval_stage = RetrievalStage()
+    model = retrieval_stage.retrieval_model(
         model_name="Retrieval Lite",
         towers_layers_sizes=[],
         vocabularies=vocabularies,
@@ -99,7 +100,7 @@ def fine_tunning():
     )
 
     model.load_model(
-        path="models",
+        path="service_models",
         model_name="Retrieval_Lite_534K_2024-08-05_224503797704",
         cached_test=cached_test,
         cached_train=cached_train
