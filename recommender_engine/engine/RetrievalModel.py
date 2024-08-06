@@ -1,7 +1,7 @@
 import tensorflow_recommenders as tfrs
 import tensorflow as tf
 import numpy as np
-from .tower.TowerModel import TowerModel
+from tower.TowerModel import TowerModel
 import typing as typ
 from datetime import datetime
 import re

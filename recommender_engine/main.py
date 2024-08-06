@@ -11,7 +11,7 @@ import tensorflow as tf
 from .data.DataPipelineItemToItem import DataPipelineItemToItem
 from .data.DataPipelineSecuential import DataPipelineSecuential
 from .data.DataPipelineLikes import DataPipelineLikes
-from .LikesModel import likesModel
+from .LikesModel import LikesModel
 import pandas as pd
 from recommender_engine.data.featurestypes import (
     StringText, CategoricalContinuous, CategoricalString, CategoricalInteger)
@@ -32,6 +32,7 @@ def use_retrieval_model(user_id):
     views_path = os.path.join(dirname, "../datasets/vistas_no_nulas.csv")
 
     features = ['usuario_id', 'id']
+    shuffle = 100_000
     # unique_user_id = int(time.time() * 1000)
 
     print('Cargando la data...')
@@ -39,7 +40,7 @@ def use_retrieval_model(user_id):
 
     pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
     # pipeline.dataframe = pipeline.dataframe[: 100_000]
-    pipeline.dataframe = pipeline.dataframe[100_000: 110_000]
+    pipeline.dataframe = pipeline.dataframe[: 100_000]
     # pipeline.dataframe.loc[pipeline.dataframe['usuario_id'].isnull(), :] = pipeline.dataframe.loc[
     #     pipeline.dataframe['usuario_id'].isnull(), :].fillna(unique_user_id)
     
@@ -62,7 +63,7 @@ def use_retrieval_model(user_id):
 
     train, val, test = pipeline.split_into_train_and_test(
         ds=ds,
-        shuffle=100_000,
+        shuffle=shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
@@ -70,6 +71,7 @@ def use_retrieval_model(user_id):
     )
 
     
+    # No pasar los datos al init del modelo
     print('Instanciando modelo...')
     model = RetrievalModel(
         model_name="Retrieval Lite",
@@ -85,31 +87,161 @@ def use_retrieval_model(user_id):
             # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
         },
         embedding_dimension=64, 
-        train=train, 
-        test=test, 
-        val=val,
-        shuffle=100_000, 
-        train_batch=8192, 
-        test_batch=4096, 
+        # test=test, 
+        # shuffle=10_000, 
+        # test_batch=512, 
         candidates=pubs_ds,
         candidates_batch=128, 
         k_candidates=100
     )
 
+    pipeline = DataPipelineBase(dataframe_path=views_path)
+
+    pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+    # pipeline.dataframe = pipeline.dataframe[: 100_000]
+    pipeline.dataframe = pipeline.dataframe[: 110_000]
+
+    df = pipeline.merge_data(
+        df_to_merge=pubs_df, 
+        left_on='publicacion_id',
+        right_on='id',
+        output_features=features
+    )
+
+    ds = pipeline.convert_to_tf_dataset(df)
+
+    print('Construyendo vocabulario...')
+    vocabularies = pipeline.build_vocabularies(
+        features=features, ds=ds, batch=1_000)
+    
+    total, train_Length, val_length, test_length = pipeline.get_lengths(ds)
+
+    train, val, test = pipeline.split_into_train_and_test(
+        ds=ds,
+        shuffle=shuffle,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
+    )
+
+    # Training
+    cached_train = train.shuffle(shuffle)\
+        .batch(1024).cache()
+    cached_val = val.batch(512).cache()
+    cached_test = test.batch(512).cache()
+
     # model.fit_model(
+    #     cached_train=cached_train,
+    #     cached_val=cached_val,
     #     learning_rate=0.1,
     #     num_epochs=1,
     #     use_multiprocessing=True,
-    #     workers=16   
+    #     workers=4   
+    # )
+    # model.evaluate_model(
+    #     cached_test=cached_test,
+    #     cached_train=cached_train
     # )
     # model.save_model("models")
 
+    # Fine Tunning
     model.load_model(
         path="models",
-        model_name="Retrieval_Lite_534K_2024-07-10_050643926085"
+        model_name="Retrieval_Lite_534K_2024-08-01_065308578507",
+        cached_test=cached_test,
+        cached_train=cached_train
     )
 
-    # model.evaluate_model()
+    pipeline = DataPipelineBase(dataframe_path=views_path)
+
+    pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+    # pipeline.dataframe = pipeline.dataframe[: 100_000]
+    pipeline.dataframe = pipeline.dataframe[110_000: 120_000]
+
+    df = pipeline.merge_data(
+        df_to_merge=pubs_df, 
+        left_on='publicacion_id',
+        right_on='id',
+        output_features=features
+    )
+
+    ds = pipeline.convert_to_tf_dataset(df)
+
+    print('Construyendo vocabulario...')
+    vocabularies = pipeline.build_vocabularies(
+        features=features, ds=ds, batch=1_000)
+    
+    total, train_Length, val_length, test_length = pipeline.get_lengths(ds)
+
+    train, val, test = pipeline.split_into_train_and_test(
+        ds=ds,
+        shuffle=shuffle,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
+    )
+
+    cached_train = train.shuffle(shuffle)\
+        .batch(1024).cache()
+    cached_val = val.batch(512).cache()
+    cached_test = test.batch(512).cache()
+
+
+    model.fit_model(
+        cached_train=cached_train,
+        cached_val=cached_val,
+        learning_rate=0.1,
+        num_epochs=1,
+        use_multiprocessing=True,
+        workers=4   
+    )
+
+
+    pipeline = DataPipelineBase(dataframe_path=views_path)
+
+    pipeline.dataframe = pipeline.dataframe.drop(['id'], axis=1)
+    # pipeline.dataframe = pipeline.dataframe[: 100_000]
+    pipeline.dataframe = pipeline.dataframe[: 120_000]
+
+    df = pipeline.merge_data(
+        df_to_merge=pubs_df, 
+        left_on='publicacion_id',
+        right_on='id',
+        output_features=features
+    )
+
+    ds = pipeline.convert_to_tf_dataset(df)
+
+    print('Construyendo vocabulario...')
+    vocabularies = pipeline.build_vocabularies(
+        features=features, ds=ds, batch=1_000)
+    
+    total, train_Length, val_length, test_length = pipeline.get_lengths(ds)
+
+    train, val, test = pipeline.split_into_train_and_test(
+        ds=ds,
+        shuffle=shuffle,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
+    )
+
+    cached_train = train.shuffle(shuffle)\
+        .batch(1024).cache()
+    cached_val = val.batch(512).cache()
+    cached_test = test.batch(512).cache()
+
+
+
+    model.evaluate_model(
+        cached_test=cached_test,
+        cached_train=cached_train
+    )
+
+    model.save_model("models")
 
 
     # inputs_shape = tf.keras.Input(shape=(1,))
