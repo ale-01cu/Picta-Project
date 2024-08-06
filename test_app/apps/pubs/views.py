@@ -40,12 +40,9 @@ class GetPubById(views.APIView):
         USER_ID = 111111111
         click_id = get_id()
         clicks_model = ClicksModel()
-        if clicks_model.get_by_id(click_id):
-            pass
-        else:
-            clicks_model.create(data=[
-                click_id, datetime.now(), USER_ID, pub_id
-            ])
+        clicks_model.create(data=[
+            click_id, datetime.now(), USER_ID, pub_id
+        ])
 
         pub = PubsModel().get_by_id(pub_id)
         return Response(pub, status=status.HTTP_200_OK)

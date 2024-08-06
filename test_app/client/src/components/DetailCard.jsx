@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import  getPub from "../apis/getPub"
 
 export const DetailCard = ({id, query}) => {
   const [detail, setDetail] = useState({})
+  const prevIdRef = useRef(null)
 
   useEffect(() => {
-    getPub(id)
-      .then(({data}) => {
-        setDetail(data)
-      })
-    
+    if (prevIdRef.current !== id) {
+      prevIdRef.current = id
+      getPub(id)
+        .then(({data}) => {
+          setDetail(data)
+        })
+    }
   }, [id])
 
   return (

@@ -8,16 +8,14 @@ import os
 dirname = os.path.dirname(__file__)
 
 
-try:
-    data = read_json(os.path.join(dirname, "models/info.json"))
+data = read_json(os.path.join(dirname, "models/info.json"))
 
-    BASE_PATH = os.path.join(dirname, "models")
+BASE_PATH = os.path.join(dirname, "models")
+retrieval_path = os.path.join(BASE_PATH, data["retrieval_model_name"])
 
-    retieval_model = tf.saved_model.load(os.path.join(BASE_PATH, data["retrieval_model_name"]))
-    positive_model = tf.saved_model.load(os.path.join(BASE_PATH, data["positive_model_name"]))
+retieval_model = tf.saved_model.load(os.path.join(retrieval_path, "index"))
+positive_model = tf.saved_model.load(os.path.join(BASE_PATH, data["positive_model_name"]))
 
-except:
-    print("Error loading models")
 
 
 
@@ -83,6 +81,6 @@ def engine(user_id, k):
 
 
 if __name__ == "__main__":
-    USER_ID = 15
+    USER_ID = 111111111
     K = 100
     engine(user_id=USER_ID, k=K)
