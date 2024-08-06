@@ -3,15 +3,16 @@ from RetrievalModel import RetrievalModel
 import FeaturesTypes
 
 
-def train():
-    print("***** Proceso de Entrenamiendo Iniciado *****")
+def fine_tunning():
+
+    print("***** Proceso de Fine Tunning Iniciado *****")
  
     features = ['usuario_id', 'id']
     shuffle = 100_000
     embedding_dimension = 64
     candidates_batch = 128
     k_candidates = 100
-    learning_rate = 0.1
+    learning_rate = 0.001
     num_epochs = 1
     use_multiprocessing = True
     workers = 4
@@ -74,8 +75,7 @@ def train():
         test_batch=test_batch
     )
 
-    pipe.close()
-
+    
     model = RetrievalModel(
         model_name="Retrieval Lite",
         towers_layers_sizes=[],
@@ -98,20 +98,127 @@ def train():
         k_candidates=k_candidates
     )
 
+    model.load_model(
+        path="models",
+        model_name="Retrieval_Lite_534K_2024-08-05_224503797704",
+        cached_test=cached_test,
+        cached_train=cached_train
+    )
+
+    pipe = DataPipeline()
+    views_df, = pipe.read_csv_data(paths=[
+        "../../datasets/vistas_no_nulas.csv"
+    ])
+    views_df = views_df[shuffle: shuffle + 10_000]
+    views_df = views_df.drop(['id'], axis=1)
+
+    views_df = pipe.merge_data(
+        left_data=views_df,
+        right_data=pubs_df,
+        left_on="publicacion_id",
+        right_on="id",
+        output_features=features
+    )
+
+    views_ds = pipe.convert_to_tf_dataset(views_df)
+
+    vocabularies = pipe.build_vocabularies(
+        features=features,
+        ds=views_ds,
+        batch=1_000
+    )
+
+    total, train_Length, val_length, test_length = pipe.get_lengths(
+        ds=views_ds,
+        train_length=60,
+        test_length=20,
+        val_length=20
+    )
+
+    train, val, test = pipe.split_into_train_and_test(
+        ds=views_ds,
+        shuffle=shuffle,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
+    )
+
+    cached_train, cached_val, cached_test = pipe.data_caching(
+        train=train,
+        val=val,
+        test=test,
+        shuffle=shuffle,
+        train_batch=train_batch,
+        val_batch=val_batch,
+        test_batch=test_batch
+    )
+
     model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
         learning_rate=learning_rate,
         num_epochs=num_epochs,
         use_multiprocessing=use_multiprocessing,
-        workers=workers   
+        workers=workers
     )
+
+    pipe = DataPipeline()
+    views_df, = pipe.read_csv_data(paths=[
+        "../../datasets/vistas_no_nulas.csv"
+    ])
+    views_df = views_df[: shuffle + 10_000]
+    views_df = views_df.drop(['id'], axis=1)
+
+    views_df = pipe.merge_data(
+        left_data=views_df,
+        right_data=pubs_df,
+        left_on="publicacion_id",
+        right_on="id",
+        output_features=features
+    )
+
+    views_ds = pipe.convert_to_tf_dataset(views_df)
+
+    vocabularies = pipe.build_vocabularies(
+        features=features,
+        ds=views_ds,
+        batch=1_000
+    )
+
+    total, train_Length, val_length, test_length = pipe.get_lengths(
+        ds=views_ds,
+        train_length=60,
+        test_length=20,
+        val_length=20
+    )
+
+    train, val, test = pipe.split_into_train_and_test(
+        ds=views_ds,
+        shuffle=shuffle,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
+    )
+
+    cached_train, cached_val, cached_test = pipe.data_caching(
+        train=train,
+        val=val,
+        test=test,
+        shuffle=shuffle,
+        train_batch=train_batch,
+        val_batch=val_batch,
+        test_batch=test_batch
+    )
+
     model.evaluate_model(
         cached_test=cached_test,
         cached_train=cached_train
     )
+
     model.save_model("models")
 
 
 if __name__ == "__main__":
-    train()
+    fine_tunning()
