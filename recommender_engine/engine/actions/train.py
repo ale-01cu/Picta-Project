@@ -1,12 +1,16 @@
 from DataPipeline import DataPipeline
 import FeaturesTypes
-from stages.RetrievalStage import RetrievalStage
-
+from stages.stages import retrieval_stage, ranking_Stage
 
 def train():
-    print("***** Proceso de Entrenamiendo Iniciado *****")
- 
-    features = ['usuario_id', 'id']
+    
+    # General Configs
+    engine_name = "Engine_v0.2"
+    service_models_path = f"service_models/{engine_name}"
+
+    # Retrieval Configs
+    retrieval_model_name = "Retrieval lite"
+    retrieval_features = ['usuario_id', 'id']
     shuffle = 100_000
     embedding_dimension = 64
     candidates_batch = 128
@@ -18,6 +22,13 @@ def train():
     train_batch = 8192
     val_batch = 4096
     test_batch = 4096
+
+    # Likes Configs
+    ranking_features = ['usuario_id', 'id', "like_dislike"]
+    likes_model_name = "Likes lite"
+
+    
+    print(f"***** Proceso de Entrenamiendo del Systema {engine_name} Iniciado *****")
  
     pipe = DataPipeline()
     pubs_df, views_df = pipe.read_csv_data(paths=[
@@ -36,14 +47,14 @@ def train():
         right_data=pubs_df,
         left_on="publicacion_id",
         right_on="id",
-        output_features=features
+        output_features=retrieval_features
     )
 
     pubs_ds = pipe.convert_to_tf_dataset(pubs_df)
     views_ds = pipe.convert_to_tf_dataset(views_df)
 
     vocabularies = pipe.build_vocabularies(
-        features=features,
+        features=retrieval_features,
         ds=views_ds,
         batch=1_000
     )
@@ -76,10 +87,8 @@ def train():
 
     pipe.close()
 
-    retrieval_stage = RetrievalStage()
-
     model = retrieval_stage.retrieval_model(
-        model_name="Retrieval Lite",
+        model_name=retrieval_model_name,
         towers_layers_sizes=[],
         vocabularies=vocabularies,
         features_data_q={
@@ -112,7 +121,92 @@ def train():
         cached_test=cached_test,
         cached_train=cached_train
     )
-    model.save_model("service_models")
+    model.save_model(service_models_path, views_ds)
+
+
+    pipe = DataPipeline()
+    likes_df, = pipe.read_csv_data(paths=[
+        "../../datasets/likes.csv"
+    ])
+    likes_df = likes_df.drop(['id'], axis=1)
+    likes_df['like_dislike'] = likes_df['valor']\
+        .map({True: 1, False: 0})
+
+    likes_df = pipe.merge_data(
+        left_data=likes_df,
+        right_data=pubs_df,
+        left_on="publicacion_id",
+        right_on="id",
+        output_features=ranking_features
+    )
+
+    likes_ds = pipe.convert_to_tf_dataset(likes_df)
+    
+    vocabularies = pipe.build_vocabularies(
+        features=ranking_features,
+        ds=likes_ds,
+        batch=1_000
+    )
+
+    total, train_Length, val_length, test_length = pipe.get_lengths(
+        ds=likes_ds,
+        train_length=60,
+        test_length=20,
+        val_length=20
+    )
+
+    train, val, test = pipe.split_into_train_and_test(
+        ds=likes_ds,
+        shuffle=shuffle,
+        train_length=train_Length,
+        val_length=val_length,
+        test_length=test_length,
+        seed=42
+    )
+
+    cached_train, cached_val, cached_test = pipe.data_caching(
+        train=train,
+        val=val,
+        test=test,
+        shuffle=shuffle,
+        train_batch=train_batch,
+        val_batch=val_batch,
+        test_batch=test_batch
+    )
+
+    model = ranking_Stage.likes_model(
+        model_name=likes_model_name,
+        towers_layers_sizes=[],
+        deep_layers_sizes=[],
+        vocabularies=vocabularies,
+        features_data_q={
+            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+        },
+        features_data_c={ 
+            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
+        },
+        embedding_dimension=64, 
+    )
+
+
+    model.fit_model(
+        cached_train=cached_train,
+        cached_val=cached_val,
+        learning_rate=learning_rate,
+        num_epochs=num_epochs,
+        use_multiprocessing=use_multiprocessing,
+        workers=workers   
+    )
+
+    model.evaluate_model(
+        cached_test=cached_test,
+        cached_train=cached_train
+    )
+
+    model.save_model(service_models_path, likes_ds)
 
 
 if __name__ == "__main__":

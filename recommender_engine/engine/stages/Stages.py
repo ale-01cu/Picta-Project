@@ -1,7 +1,5 @@
-from abc import ABC
+from stages.RetrievalStage import RetrievalStage
+from stages.RankingStage import RankingStage
 
-class Stages(ABC):
-    def inputs(self):
-        raise NotImplementedError()
-    def outputs(self):
-        raise NotImplementedError()
+retrieval_stage = RetrievalStage()
+ranking_Stage = RankingStage()

@@ -121,16 +121,15 @@ class DataPipeline:
 
 
     def save(self, dataset: tf.data.Dataset, path:str) -> None:
-        tf.data.experimental.save(
-            dataset, 
-            path
-        )
+        dataset.save(
+            os.path.join(self.dirname, path)
+        ), 
 
 
     def load(self, path:str) -> tf.data.Dataset:
-        return tf.data.experimental.load(
-            path, 
-            tf.TensorSpec(shape=(), dtype=tf.int64)
+        return tf.data.Dataset.load(
+            path
+            # tf.TensorSpec(shape=(), dtype=tf.int64)
         )
 
 
