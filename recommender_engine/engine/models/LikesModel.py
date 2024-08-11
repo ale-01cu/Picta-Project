@@ -31,6 +31,8 @@ class LikesModel(tfrs.models.Model):
         super().__init__()
         self.model_name = model_name
         self.model_filename = None
+        self.model_path = None
+        self.model_metadata_path = None
         self.epochs = None
         self.learning_rate = None
 
@@ -261,11 +263,13 @@ class LikesModel(tfrs.models.Model):
         name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
         name = name.replace(' ', '_')  # replace spaces with underscores
 
+        self.model_path = f"{path}/{name}"
         self.model_filename = name
         print("Salvando el modelo...")
         tf.saved_model.save(self, f"{path}/{name}")
         print("Salvando los datos de entrenamiento...")
         dataset.save(f"{path}/{name}")
         
+        self.model_metadata_path = f"{path}/{name}/Info.txt"
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")

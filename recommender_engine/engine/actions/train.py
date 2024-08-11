@@ -1,6 +1,13 @@
 from DataPipeline import DataPipeline
 import FeaturesTypes
 from stages.stages import retrieval_stage, ranking_Stage
+from db.cruds.EngineCRUD import EngineCRUD
+from db.cruds.ModelCRUD import ModelCRUD
+from db.config import engine
+from db.main import build_db
+
+
+build_db()
 
 def train():
     
@@ -87,7 +94,7 @@ def train():
 
     pipe.close()
 
-    model = retrieval_stage.retrieval_model(
+    retrieval_model = retrieval_stage.retrieval_model(
         model_name=retrieval_model_name,
         towers_layers_sizes=[],
         vocabularies=vocabularies,
@@ -109,7 +116,7 @@ def train():
         k_candidates=k_candidates
     )
 
-    model.fit_model(
+    retrieval_model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
         learning_rate=learning_rate,
@@ -117,11 +124,11 @@ def train():
         use_multiprocessing=use_multiprocessing,
         workers=workers   
     )
-    model.evaluate_model(
+    retrieval_model.evaluate_model(
         cached_test=cached_test,
         cached_train=cached_train
     )
-    model.save_model(service_models_path, views_ds)
+    retrieval_model.save_model(service_models_path, views_ds)
 
 
     pipe = DataPipeline()
@@ -174,7 +181,7 @@ def train():
         test_batch=test_batch
     )
 
-    model = ranking_Stage.likes_model(
+    likes_model = ranking_Stage.likes_model(
         model_name=likes_model_name,
         towers_layers_sizes=[],
         deep_layers_sizes=[],
@@ -192,7 +199,7 @@ def train():
     )
 
 
-    model.fit_model(
+    likes_model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
         learning_rate=learning_rate,
@@ -201,12 +208,36 @@ def train():
         workers=workers   
     )
 
-    model.evaluate_model(
+    likes_model.evaluate_model(
         cached_test=cached_test,
         cached_train=cached_train
     )
 
-    model.save_model(service_models_path, likes_ds)
+    likes_model.save_model(service_models_path, likes_ds)
+
+
+    engine_db = EngineCRUD(engine=engine)
+    engine = engine_db.create(name=engine_name)
+
+    model_crud = ModelCRUD(engine=engine)
+    
+    model_crud.create(
+        name=retrieval_model.model_name,
+        stage="retrieval",
+        model_path=retrieval_model.model_path,
+        data_train_path=retrieval_model.model_path,
+        metadata_path=retrieval_model.model_metadata_path,
+        engine_id=engine.id
+    )
+
+    model_crud.create(
+        name=likes_model.model_name,
+        stage="ranking",
+        model_path=likes_model.model_path,
+        data_train_path=likes_model.model_path,
+        metadata_path=likes_model.model_metadata_path,
+        engine_id=engine.id
+    )
 
 
 if __name__ == "__main__":
