@@ -5,20 +5,19 @@ from db.cruds.EngineCRUD import EngineCRUD
 from db.cruds.ModelCRUD import ModelCRUD
 from db.config import engine
 from db.main import build_db
-
-
 build_db()
 
 def train():
-    
+    global engine
+
     # General Configs
-    engine_name = "Engine_v0.2"
+    engine_name = "Engine_v0.3"
     service_models_path = f"service_models/{engine_name}"
 
     # Retrieval Configs
     retrieval_model_name = "Retrieval lite"
     retrieval_features = ['usuario_id', 'id']
-    shuffle = 100_000
+    shuffle = 10_000
     embedding_dimension = 64
     candidates_batch = 128
     k_candidates = 100
@@ -215,29 +214,33 @@ def train():
 
     likes_model.save_model(service_models_path, likes_ds)
 
-
     engine_db = EngineCRUD(engine=engine)
-    engine = engine_db.create(name=engine_name)
+    engine_db.turn_off_all()
+    new_engine = engine_db.create(name=engine_name)
 
     model_crud = ModelCRUD(engine=engine)
-    
-    model_crud.create(
+    model_crud.turn_off_all()
+
+    retrieval_model_db = model_crud.create(
         name=retrieval_model.model_name,
         stage="retrieval",
         model_path=retrieval_model.model_path,
         data_train_path=retrieval_model.model_path,
         metadata_path=retrieval_model.model_metadata_path,
-        engine_id=engine.id
+        engine_id=new_engine.id
     )
 
-    model_crud.create(
+
+    likes_model_db = model_crud.create(
         name=likes_model.model_name,
         stage="ranking",
         model_path=likes_model.model_path,
         data_train_path=likes_model.model_path,
         metadata_path=likes_model.model_metadata_path,
-        engine_id=engine.id
+        engine_id=new_engine.id
     )
+
+
 
 
 if __name__ == "__main__":

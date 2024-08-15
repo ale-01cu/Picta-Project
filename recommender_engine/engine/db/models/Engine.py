@@ -1,5 +1,5 @@
 from db.config import Base
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, Boolean
 import datetime
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,6 +17,13 @@ class Engine(Base):
         String(50), 
         nullable=False
     )
+
+    status = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+        comment="Indica si el engine se esta usando."
+    )
     
     createAt = Column(
         DateTime, 
@@ -25,9 +32,9 @@ class Engine(Base):
     
     models = relationship(
         "Model", 
-        backref="models"
+        back_populates="engine"
     )
 
-    def __repr__(self):
-        return f"Engine(nombre={self.name}, fecha_creacion={self.createAt})"
+    # def __repr__(self):
+    #     return f"Engine(nombre={self.name}, fecha_creacion={self.createAt})"
     

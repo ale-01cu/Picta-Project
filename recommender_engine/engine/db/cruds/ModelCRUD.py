@@ -6,9 +6,17 @@ class ModelCRUD:
     def __init__(self, engine):
         self.engine = engine
         self.Session = sessionmaker(bind=engine)
+        self.session = self.Session()
 
-    def create(self, name, stage, model_path, data_train_path, metadata_path, engine_id):
-        session = self.Session()
+    def create(self, 
+        name, 
+        stage, 
+        model_path, 
+        data_train_path, 
+        metadata_path, 
+        # engine,
+        engine_id
+    ):
         try:
             model = Model(
                 name=name,
@@ -16,35 +24,41 @@ class ModelCRUD:
                 model_path=model_path,
                 data_train_path=data_train_path,
                 metadata_path=metadata_path,
+                # engine=engine,
                 engine_id=engine_id
             )
-            session.add(model)
-            session.commit()
+            self.session.add(model)
+            self.session.commit()
             return model
         except IntegrityError as e:
-            session.rollback()
+            self.session.rollback()
             raise ValueError(f"Error creating model: {e}")
-        finally:
-            session.close()
+        # finally:
+        #     session.close(
+        
+    def readAll(self):
+        try:
+            return self.session.query(Model).all()
+        except Exception as e:
+            raise e
 
     def read(self, id=None, name=None):
-        session = self.Session()
         try:
             if id:
-                model = session.query(Model).filter_by(id=id).first()
+                model = self.session.query(Model).filter_by(id=id).first()
             elif name:
-                model = session.query(Model).filter_by(name=name).first()
+                model = self.session.query(Model).filter_by(name=name).all()
             else:
-                models = session.query(Model).all()
+                models = self.session.query(Model).all()
                 return models
             return model
-        finally:
-            session.close()
 
-    def update(self, id, name=None, model_path=None, data_train_path=None, metadata_path=None, engine_id=None):
-        session = self.Session()
+        except Exception as e:
+            raise e
+
+    def update(self, id, name=None, status=None, model_path=None, data_train_path=None, metadata_path=None, engine_id=None):
         try:
-            model = session.query(Model).filter_by(id=id).first()
+            model = self.session.query(Model).filter_by(id=id).first()
             if model:
                 if name:
                     model.name = name
@@ -56,12 +70,15 @@ class ModelCRUD:
                     model.metadata_path = metadata_path
                 if engine_id:
                     model.engine_id = engine_id
-                session.commit()
+                if status != None:
+                    model.status = status
+                self.session.commit()
                 return model
             else:
                 raise ValueError(f"Model with id {id} not found")
-        finally:
-            session.close()
+
+        except Exception as e:
+            raise e
 
     def delete(self, id):
         session = self.Session()
@@ -76,15 +93,35 @@ class ModelCRUD:
         finally:
             session.close()
 
-    def turn_off_model(self, name, stage, status):
-        session = self.Session()
-
+    def turn_off_all(self):
         try:
-            models = self.read(name=name)
+            models = self.read()
             if models:
                 for model in models:
-                    if model.stage == stage and model.status == status:
+                    if model.status:
+                        self.update(model.id, status=False)
+        
+        except Exception as e:
+            raise e
+
+    def turn_off_model(self, id, name, stage):
+        try:
+            models = self.read(name=name).filter(Model.id != id)
+            if models:
+                for model in models:
+                    if model.stage == stage and model.status:
                         self.update(model.id, status=False)
 
-        finally:
-            session.close()
+        except Exception as e:
+            raise e
+        
+
+    def turn_off_models(self, exceptions_ids: list[str]):
+        try:
+            models = self.session.query(Model).filter_by(status=True).all()
+            for model in models:
+                if model.id not in exceptions_ids:
+                    model.status = False
+        
+        except Exception as e:
+            raise e
