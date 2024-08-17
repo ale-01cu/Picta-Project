@@ -11,7 +11,7 @@ def train():
     global engine
 
     # General Configs
-    engine_name = "Engine_v0.3"
+    engine_name = "Engine_v0.2"
     service_models_path = f"service_models/{engine_name}"
 
     # Retrieval Configs
@@ -41,6 +41,8 @@ def train():
         "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
         "../../datasets/vistas_no_nulas.csv"
     ])
+
+    pubs_df = pubs_df[: 5000]
 
     views_df = views_df[: shuffle]
     views_df = views_df.drop(['id'], axis=1)
@@ -127,7 +129,8 @@ def train():
         cached_test=cached_test,
         cached_train=cached_train
     )
-    retrieval_model.save_model(service_models_path, views_ds)
+    retrieval_model.save_model(
+        service_models_path, views_ds)
 
 
     pipe = DataPipeline()
@@ -214,14 +217,15 @@ def train():
 
     likes_model.save_model(service_models_path, likes_ds)
 
-    engine_db = EngineCRUD(engine=engine)
-    engine_db.turn_off_all()
-    new_engine = engine_db.create(name=engine_name)
+    engine_crud = EngineCRUD(engine=engine)
+    engine_crud.turn_off_all()
+    new_engine = engine_crud.create(name=engine_name)
+    engine_crud.close_session()
 
     model_crud = ModelCRUD(engine=engine)
     model_crud.turn_off_all()
 
-    retrieval_model_db = model_crud.create(
+    model_crud.create(
         name=retrieval_model.model_name,
         stage="retrieval",
         model_path=retrieval_model.model_path,
@@ -231,7 +235,7 @@ def train():
     )
 
 
-    likes_model_db = model_crud.create(
+    model_crud.create(
         name=likes_model.model_name,
         stage="ranking",
         model_path=likes_model.model_path,
@@ -240,7 +244,7 @@ def train():
         engine_id=new_engine.id
     )
 
-
+    model_crud.close_session()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import numpy as np
 from typing import Dict, Text, Tuple, List
 import math
 import os
+import pickle
 
 class DataPipeline:
     # El dataframe con el que se va a entrenar el modelo
@@ -33,6 +34,10 @@ class DataPipeline:
             dataframes.append(df)
 
         return tuple(dataframes)
+    
+    
+    def load_dataset(self, path: str):
+        return tf.data.Dataset.load(path)
 
 
     def merge_data(self, 
@@ -64,6 +69,12 @@ class DataPipeline:
         print("Convirtiendo data...")
         return tf.data.Dataset.from_tensor_slices(dict(data))
     
+
+    def load_vocabularies(self, path: str):
+        with open(os.path.join(path, "vocabularies.pkl"), 'rb') as f:
+            vocabularies = pickle.load(f)
+            return vocabularies
+        
 
     def build_vocabularies(self, 
         features: list[str], 

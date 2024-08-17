@@ -223,6 +223,9 @@ class LikesModel(tfrs.models.Model):
     #     return config
     
     def save_model(self, path: str, dataset: tf.data.Dataset) -> None:
+        path = os.path.join(dirname, f"../{path}")
+
+
         def format_size(x):
             if x < 1000:
                 return str(x)

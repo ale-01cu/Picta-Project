@@ -6,6 +6,7 @@ import typing as typ
 from datetime import datetime
 import re
 import os
+import pickle
 dirname = os.path.dirname(__file__)
 
 class RetrievalModel(tfrs.models.Model):
@@ -44,6 +45,7 @@ class RetrievalModel(tfrs.models.Model):
         self.candidates_batch = candidates_batch
         self.k_candidates = k_candidates
         self.candidates = candidates
+        self.vocabularies = vocabularies
 
         # self.cached_train = train.shuffle(self.shuffle)\
         #     .batch(self.train_batch).cache()
@@ -256,13 +258,17 @@ class RetrievalModel(tfrs.models.Model):
         print(content)
         self.model_path = f"{path}/{name}"
         self.model_filename = name
+        
         print("Salvando los pesos...")
         model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
         # Problemas aqui para guardarlo 
         # tf.saved_model.save(model, f"{path}/{name}/model")
         print("Salvando los indices...")
         tf.saved_model.save(index, f"{path}/{name}/index")
+
         print("Salvando los datos de entrenamiento...")
+        with open(f"{path}/{name}/vocabularies.pkl", 'wb') as f:
+            pickle.dump(self.vocabularies, f)
         dataset.save(f"{path}/{name}")
 
         self.model_metadata_path = f"{path}/{name}/Info.txt"
@@ -280,14 +286,10 @@ class RetrievalModel(tfrs.models.Model):
     #     })
     #     return config
 
-    def load_model(self, path: str, model_name: str, cached_train, cached_test) -> None:
-        path = os.path.join(dirname, path)
-        path = os.path.join(path, model_name)
-        path = os.path.join(path, "model")
-        path = os.path.join(path, "pesos.tf")
+    def load_model(self, path: str, cached_train, cached_test) -> None:
         
         print("Cargando los pesos...")
-        self.load_weights(path)
+        self.load_weights(os.path.join(path, "model/pesos.tf"))
         print("Compilando...")
         self.compile(optimizer=tf.keras.optimizers.Adagrad(
             learning_rate=0.1)

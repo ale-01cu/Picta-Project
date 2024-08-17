@@ -22,9 +22,9 @@ class EngineCRUD:
         # finally:
         #     session.close()
 
-    def readAll(self):
+    def get_engine_running(self):
         try:
-            return self.session.query(Engine).all()
+            return self.session.query(Engine).filter_by(status=True).first()
         except Exception as e:
             raise e
 
@@ -71,7 +71,7 @@ class EngineCRUD:
         finally:
             session.close()
 
-    def get_models(self, id):
+    def get_engines(self, id):
         session = self.Session()
         try:
             engine = session.query(Engine).filter_by(id=id).first()
@@ -119,3 +119,6 @@ class EngineCRUD:
 
         # finally:
         #     self..close()
+
+    def close_session(self):
+        self.session.close()

@@ -1,12 +1,22 @@
 from DataPipeline import DataPipeline
-from recommender_engine.engine.models.RetrievalModel import RetrievalModel
+from models.RetrievalModel import RetrievalModel
 import FeaturesTypes
 from stages.RetrievalStage import RetrievalStage
+import pickle
+from db.cruds.ModelCRUD import ModelCRUD
+from db.cruds.EngineCRUD import EngineCRUD
+from db.main import build_db
+from db.config import engine
+import tensorflow as tf
+import os
 
-
+build_db()
 def fine_tunning():
 
     print("***** Proceso de Fine Tunning Iniciado *****")
+    engine_db = EngineCRUD(engine=engine).get_engine_running()
+    engine_name = engine_db.name
+    service_models_path = f"service_models/{engine_name}"
  
     features = ['usuario_id', 'id']
     shuffle = 100_000
@@ -20,35 +30,24 @@ def fine_tunning():
     train_batch = 8192
     val_batch = 4096
     test_batch = 4096
- 
+    
+    model_crud = ModelCRUD(engine=engine)
+    models = model_crud.get_models_running()
+    model_db = models[0]
+
+    # Reconstruye el modelo
     pipe = DataPipeline()
-    pubs_df, views_df = pipe.read_csv_data(paths=[
+    pubs_df, = pipe.read_csv_data(paths=[
         "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
-        "../../datasets/vistas_no_nulas.csv"
     ])
 
-    views_df = views_df[: shuffle]
-    views_df = views_df.drop(['id'], axis=1)
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
-
-    views_df = pipe.merge_data(
-        left_data=views_df,
-        right_data=pubs_df,
-        left_on="publicacion_id",
-        right_on="id",
-        output_features=features
-    )
-
     pubs_ds = pipe.convert_to_tf_dataset(pubs_df)
-    views_ds = pipe.convert_to_tf_dataset(views_df)
 
-    vocabularies = pipe.build_vocabularies(
-        features=features,
-        ds=views_ds,
-        batch=1_000
-    )
+    views_ds = pipe.load_dataset(model_db.data_train_path)
+    vocabularies = pipe.load_vocabularies(path=model_db.data_train_path)
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=views_ds,
@@ -76,6 +75,7 @@ def fine_tunning():
         test_batch=test_batch
     )
 
+
     retrieval_stage = RetrievalStage()
     model = retrieval_stage.retrieval_model(
         model_name="Retrieval Lite",
@@ -100,12 +100,12 @@ def fine_tunning():
     )
 
     model.load_model(
-        path="service_models",
-        model_name="Retrieval_Lite_534K_2024-08-05_224503797704",
+        path=model_db.model_path,
         cached_test=cached_test,
         cached_train=cached_train
     )
 
+    # Actualiza el modelo con los nuevos datos
     pipe = DataPipeline()
     views_df, = pipe.read_csv_data(paths=[
         "../../datasets/vistas_no_nulas.csv"
@@ -164,61 +164,74 @@ def fine_tunning():
         workers=workers
     )
 
-    pipe = DataPipeline()
-    views_df, = pipe.read_csv_data(paths=[
-        "../../datasets/vistas_no_nulas.csv"
-    ])
-    views_df = views_df[: shuffle + 10_000]
-    views_df = views_df.drop(['id'], axis=1)
+    # Comprueba el modelo con todos los datos luego de ser actualizado
+    # pipe = DataPipeline()
+    # views_df, = pipe.read_csv_data(paths=[
+    #     "../../datasets/vistas_no_nulas.csv"
+    # ])
+    # views_df = views_df[: shuffle + 10_000]
+    # views_df = views_df.drop(['id'], axis=1)
 
-    views_df = pipe.merge_data(
-        left_data=views_df,
-        right_data=pubs_df,
-        left_on="publicacion_id",
-        right_on="id",
-        output_features=features
+    # views_df = pipe.merge_data(
+    #     left_data=views_df,
+    #     right_data=pubs_df,
+    #     left_on="publicacion_id",
+    #     right_on="id",
+    #     output_features=features
+    # )
+
+    # views_ds = pipe.convert_to_tf_dataset(views_df)
+
+    # vocabularies = pipe.build_vocabularies(
+    #     features=features,
+    #     ds=views_ds,
+    #     batch=1_000
+    # )
+
+    # total, train_Length, val_length, test_length = pipe.get_lengths(
+    #     ds=views_ds,
+    #     train_length=60,
+    #     test_length=20,
+    #     val_length=20
+    # )
+
+    # train, val, test = pipe.split_into_train_and_test(
+    #     ds=views_ds,
+    #     shuffle=shuffle,
+    #     train_length=train_Length,
+    #     val_length=val_length,
+    #     test_length=test_length,
+    #     seed=42
+    # )
+
+    # cached_train, cached_val, cached_test = pipe.data_caching(
+    #     train=train,
+    #     val=val,
+    #     test=test,
+    #     shuffle=shuffle,
+    #     train_batch=train_batch,
+    #     val_batch=val_batch,
+    #     test_batch=test_batch
+    # )
+
+    # model.evaluate_model(
+    #     cached_test=cached_test,
+    #     cached_train=cached_train
+    # )
+
+    model.save_model(service_models_path, views_ds)
+
+
+    model_crud.turn_off_all()
+
+    model_crud.create(
+        name=model.model_name,
+        stage="retrieval",
+        model_path=model.model_path,
+        data_train_path=model.model_path,
+        metadata_path=model.model_metadata_path,
+        engine_id=engine_db.id
     )
-
-    views_ds = pipe.convert_to_tf_dataset(views_df)
-
-    vocabularies = pipe.build_vocabularies(
-        features=features,
-        ds=views_ds,
-        batch=1_000
-    )
-
-    total, train_Length, val_length, test_length = pipe.get_lengths(
-        ds=views_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
-    )
-
-    train, val, test = pipe.split_into_train_and_test(
-        ds=views_ds,
-        shuffle=shuffle,
-        train_length=train_Length,
-        val_length=val_length,
-        test_length=test_length,
-        seed=42
-    )
-
-    cached_train, cached_val, cached_test = pipe.data_caching(
-        train=train,
-        val=val,
-        test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
-    )
-
-    model.evaluate_model(
-        cached_test=cached_test,
-        cached_train=cached_train
-    )
-
-    model.save_model("models")
 
 
 if __name__ == "__main__":

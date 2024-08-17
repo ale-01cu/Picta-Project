@@ -74,5 +74,5 @@ class Model(Base):
     )
 
     def __repr__(self):
-        return f"Engine(nombre={self.name}, fecha_creacion={self.createAt})"
+        return f"Model(nombre={self.name}, fecha_creacion={self.createAt})"
 

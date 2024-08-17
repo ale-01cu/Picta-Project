@@ -36,9 +36,9 @@ class ModelCRUD:
         # finally:
         #     session.close(
         
-    def readAll(self):
+    def get_models_running(self):
         try:
-            return self.session.query(Model).all()
+            return self.session.query(Model).filter_by(status=True).all()
         except Exception as e:
             raise e
 
@@ -125,3 +125,6 @@ class ModelCRUD:
         
         except Exception as e:
             raise e
+        
+    def close_session(self):
+        self.session.close()
