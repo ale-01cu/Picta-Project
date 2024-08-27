@@ -167,6 +167,7 @@ def fine_tunning():
         workers=workers
     )
 
+    model.save_model(service_models_path, views_ds)
     # Comprueba el modelo con todos los datos luego de ser actualizado
     # pipe = DataPipeline()
     # views_df, = pipe.read_csv_data(paths=[
@@ -222,7 +223,6 @@ def fine_tunning():
     #     cached_train=cached_train
     # )
 
-    model.save_model(service_models_path, views_ds)
 
 
     # Reconstruye el modelo

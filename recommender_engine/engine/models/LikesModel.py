@@ -7,18 +7,20 @@ from datetime import datetime
 import re
 import os
 import pickle
+from models.ModelConfig import ModelConfig
 dirname = os.path.dirname(__file__)
 
 class LikesModel(tfrs.models.Model):
     
     def __init__(self,
-        model_name: str,
-        towers_layers_sizes: typ.List[int],
-        deep_layers_sizes: typ.List[int],
+        config: ModelConfig,
         vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
-        features_data_q: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
-        features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
-        embedding_dimension: int = 32,
+        # model_name: str,
+        # towers_layers_sizes: typ.List[int],
+        # deep_layers_sizes: typ.List[int],
+        # features_data_q: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
+        # features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
+        # embedding_dimension: int = 32,
         # train: tf.data.Dataset,
         # val: tf.data.Dataset,
         # test: tf.data.Dataset,
@@ -30,7 +32,8 @@ class LikesModel(tfrs.models.Model):
         print("Inicializando Modelo de Clasificacion de likes...")
         
         super().__init__()
-        self.model_name = model_name
+        self.config = config
+        self.model_name = config.model_name
         self.model_filename = None
         self.model_path = None
         self.data_train_path = None
@@ -50,11 +53,11 @@ class LikesModel(tfrs.models.Model):
         }
 
         self.hiperparams = (
-            f"Towers Layers Sizes: {towers_layers_sizes}",
-            f"Deep Layers Sizes: {deep_layers_sizes}",
-            f"Features Query: {[f for f in features_data_q.keys()]}",
-            f"Features Candidate: {[f for f in features_data_c.keys()]}",
-            f"Embedding Dimension: {embedding_dimension}",
+            f"Towers Layers Sizes: {config.towers_layers_sizes}",
+            f"Deep Layers Sizes: {config.deep_layers_sizes}",
+            f"Features Query: {[f for f in config.features_data_q.keys()]}",
+            f"Features Candidate: {[f for f in config.features_data_c.keys()]}",
+            f"Embedding Dimension: {config.embedding_dimension}",
             # f"Shuffle: {shuffle}",
             # f"Train Batch: {train_batch}",
             # f"Test Batch: {test_batch}", 
@@ -62,17 +65,17 @@ class LikesModel(tfrs.models.Model):
 
 
         self.query_model = TowerModel(
-            layer_sizes=towers_layers_sizes,
+            layer_sizes=config.towers_layers_sizes,
             vocabularies=vocabularies,
-            features_data=features_data_q,
-            embedding_dimension=embedding_dimension
+            features_data=config.features_data_q,
+            embedding_dimension=config.embedding_dimension
         )
 
         self.candidate_model = TowerModel(
-            layer_sizes=towers_layers_sizes,
+            layer_sizes=config.towers_layers_sizes,
             vocabularies=vocabularies,
-            features_data=features_data_c,
-            embedding_dimension=embedding_dimension,
+            features_data=config.features_data_c,
+            embedding_dimension=config.embedding_dimension,
         )
 
         # ********* Red De Clasificacion Binaria **********
@@ -82,7 +85,7 @@ class LikesModel(tfrs.models.Model):
         #     kernel_initializer=tf.keras.initializers.RandomNormal(
         #         mean=0.0, stddev=0.05), input_shape=(None, 128)))
         
-        for size in deep_layers_sizes:
+        for size in config.deep_layers_sizes:
             self.likes_model.add(tf.keras.layers.Dense(
                 size, activation='relu'))
 
@@ -129,25 +132,25 @@ class LikesModel(tfrs.models.Model):
         cached_train,
         cached_val,
         callbacks=None, 
-        learning_rate: float = 0.1, 
-        num_epochs: int = 1,
-        use_multiprocessing: bool = False, 
-        workers: int = 1
+        # learning_rate: float = 0.1, 
+        # num_epochs: int = 1,
+        # use_multiprocessing: bool = False, 
+        # workers: int = 1
     ) -> None:
         
         print(f'---------- Entrenando el modelo {self.model_name} ----------')
-        self.epochs = num_epochs
-        self.learning_rate = learning_rate
+        self.epochs = self.config.num_epochs
+        self.learning_rate = self.config.learning_rate
         model = self
         model.compile(optimizer=tf.keras.optimizers.Adam(
-            learning_rate=learning_rate))
+            learning_rate=self.config.learning_rate))
         model.fit(
             cached_train, 
-            epochs=num_epochs,
+            epochs=self.config.num_epochs,
             validation_data=cached_val,
             callbacks=callbacks,
-            use_multiprocessing=use_multiprocessing,
-            workers=workers
+            use_multiprocessing=self.config.use_multiprocessing,
+            workers=self.config.workers
         )
 
 
