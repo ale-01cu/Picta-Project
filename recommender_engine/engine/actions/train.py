@@ -137,6 +137,8 @@ def train():
     likes_df, = pipe.read_csv_data(paths=[
         "../../datasets/likes.csv"
     ])
+
+    likes_df = likes_df[: shuffle]
     likes_df = likes_df.drop(['id'], axis=1)
     likes_df['like_dislike'] = likes_df['valor']\
         .map({True: 1, False: 0})
@@ -220,7 +222,6 @@ def train():
     engine_crud = EngineCRUD(engine=engine)
     engine_crud.turn_off_all()
     new_engine = engine_crud.create(name=engine_name)
-    engine_crud.close_session()
 
     model_crud = ModelCRUD(engine=engine)
     model_crud.turn_off_all()
@@ -229,7 +230,7 @@ def train():
         name=retrieval_model.model_name,
         stage="retrieval",
         model_path=retrieval_model.model_path,
-        data_train_path=retrieval_model.model_path,
+        data_train_path=retrieval_model.data_train_path,
         metadata_path=retrieval_model.model_metadata_path,
         engine_id=new_engine.id
     )
@@ -239,11 +240,12 @@ def train():
         name=likes_model.model_name,
         stage="ranking",
         model_path=likes_model.model_path,
-        data_train_path=likes_model.model_path,
+        data_train_path=likes_model.data_train_path,
         metadata_path=likes_model.model_metadata_path,
         engine_id=new_engine.id
     )
 
+    engine_crud.close_session()
     model_crud.close_session()
 
 

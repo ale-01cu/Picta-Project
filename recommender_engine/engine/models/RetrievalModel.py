@@ -55,6 +55,7 @@ class RetrievalModel(tfrs.models.Model):
         self.model_name = model_name
         self.model_filename = None
         self.model_path = None
+        self.data_train_path = None
         self.model_metadata_path = None
         self.epochs = None
         self.learning_rate = None
@@ -267,9 +268,11 @@ class RetrievalModel(tfrs.models.Model):
         tf.saved_model.save(index, f"{path}/{name}/index")
 
         print("Salvando los datos de entrenamiento...")
-        with open(f"{path}/{name}/vocabularies.pkl", 'wb') as f:
+        data_path = f"{path}/{name}/data"
+        self.data_train_path = data_path
+        dataset.save(data_path)
+        with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
             pickle.dump(self.vocabularies, f)
-        dataset.save(f"{path}/{name}")
 
         self.model_metadata_path = f"{path}/{name}/Info.txt"
         with open(f"{path}/{name}/Info.txt", "w") as f:

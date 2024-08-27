@@ -6,6 +6,7 @@ from tower.TowerModel import TowerModel
 from datetime import datetime
 import re
 import os
+import pickle
 dirname = os.path.dirname(__file__)
 
 class LikesModel(tfrs.models.Model):
@@ -32,9 +33,11 @@ class LikesModel(tfrs.models.Model):
         self.model_name = model_name
         self.model_filename = None
         self.model_path = None
+        self.data_train_path = None
         self.model_metadata_path = None
         self.epochs = None
         self.learning_rate = None
+        self.vocabularies = vocabularies
 
         self.metric_labels = (
             "binary_accuracy",
@@ -268,11 +271,45 @@ class LikesModel(tfrs.models.Model):
 
         self.model_path = f"{path}/{name}"
         self.model_filename = name
-        print("Salvando el modelo...")
-        tf.saved_model.save(self, f"{path}/{name}")
+
+        # tf.saved_model.save(self, f"{path}/{name}")
+
+        # print("Salvando el modelo...")
+        # self.save(f"{path}/{name}")
+
+        print("Salvando los pesos...")
+        self.save_weights(
+            f"{self.model_path}/model/pesos.tf", 
+            save_format='tf'
+        )
+
         print("Salvando los datos de entrenamiento...")
-        dataset.save(f"{path}/{name}")
+        data_path = f"{path}/{name}/data"
+        self.data_train_path = data_path
+        dataset.save(data_path)
+        with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
+            pickle.dump(self.vocabularies, f)
         
         self.model_metadata_path = f"{path}/{name}/Info.txt"
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
+        
+
+    def load_model(self, path: str, cached_train, cached_test) -> None:
+        
+        print("Cargando los pesos...")
+        self.load_weights(os.path.join(path, "model/pesos.tf"))
+
+        print("Compilando...")
+        self.compile(optimizer=tf.keras.optimizers.Adagrad(
+            learning_rate=0.00001)
+        )
+        print("Inicializando...")
+        cached_train.map(lambda x: self(x))
+        
+        print("Evaluando...")
+        self.evaluate_model(
+            cached_test=cached_test,
+            cached_train=cached_train
+        )
+        
