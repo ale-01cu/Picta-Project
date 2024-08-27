@@ -286,6 +286,9 @@ class LikesModel(tfrs.models.Model):
             save_format='tf'
         )
 
+        print("Salvando el Modelo")
+        tf.saved_model.save(self, f"{self.model_path}/service")
+
         print("Salvando los datos de entrenamiento...")
         data_path = f"{path}/{name}/data"
         self.data_train_path = data_path
@@ -301,7 +304,8 @@ class LikesModel(tfrs.models.Model):
     def load_model(self, path: str, cached_train, cached_test) -> None:
         
         print("Cargando los pesos...")
-        self.load_weights(os.path.join(path, "model/pesos.tf"))
+        status = self.load_weights(os.path.join(path, "model/pesos.tf"))
+        status.expect_partial()
 
         print("Compilando...")
         self.compile(optimizer=tf.keras.optimizers.Adagrad(

@@ -1,16 +1,13 @@
 from DataPipeline import DataPipeline
-from models.RetrievalModel import RetrievalModel
 import FeaturesTypes
 from stages.stages import retrieval_stage, ranking_Stage
-import pickle
 from db.cruds.ModelCRUD import ModelCRUD
 from db.cruds.EngineCRUD import EngineCRUD
 from db.main import build_db
 from db.config import engine
-import tensorflow as tf
-import os
-
+from models.ModelConfig import ModelConfig
 build_db()
+
 def fine_tunning():
 
     print("***** Proceso de Fine Tunning Iniciado *****")
@@ -19,20 +16,77 @@ def fine_tunning():
     engine_name = engine_db.name
     service_models_path = f"service_models/{engine_name}"
  
-    features = ['usuario_id', 'id']
-    ranking_features = ['usuario_id', 'id', "like_dislike"]
+    retrieval_config = ModelConfig(
+        model_name="Retrieval lite",
+        features=['usuario_id', 'id'],
+        data_paths=[
+            "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
+        ],
+        towers_layers_sizes=[],
+        shuffle=10_000,
+        embedding_dimension=64,
+        candidates_batch=128,
+        k_candidates=100,
+        learning_rate=0.0001,
+        num_epochs=1,
+        use_multiprocessing=True,
+        workers=4,
+        train_batch=8192,
+        val_batch=4096,
+        test_batch=4096,
+        vocabularies_batch=1000,
+        train_Length=60,
+        test_length=20,
+        val_length=20,
+        seed=42,
+        features_data_q={
+            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+        },
+        features_data_c={ 
+            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
+        }
+    )
+    
 
-    shuffle = 100_000
-    embedding_dimension = 64
-    candidates_batch = 128
-    k_candidates = 100
-    learning_rate = 0.001
-    num_epochs = 1
-    use_multiprocessing = True
-    workers = 4
-    train_batch = 8192
-    val_batch = 4096
-    test_batch = 4096
+
+    # Likes Configs
+    likes_config = ModelConfig(
+        model_name="Likes lite",
+        features=['usuario_id', 'id', "like_dislike"],
+        data_paths=["../../datasets/likes.csv"],
+        towers_layers_sizes=[],
+        deep_layers_sizes = [],
+        shuffle=10_000,
+        embedding_dimension=64,
+        learning_rate=0.000001,
+        num_epochs=1,
+        use_multiprocessing=True,
+        target_column={
+            "current": "valor",
+            "new": "like_dislike"
+        },
+        workers=4,
+        train_batch=8192,
+        val_batch=4096,
+        test_batch=4096,
+        vocabularies_batch=1000,
+        train_Length=60,
+        test_length=20,
+        val_length=20,
+        seed=42,
+        features_data_q={
+            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+        },
+        features_data_c={ 
+            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
+        }
+    )
 
     
     model_crud = ModelCRUD(engine=engine)
@@ -41,9 +95,7 @@ def fine_tunning():
 
     # Reconstruye el modelo
     pipe = DataPipeline()
-    pubs_df, = pipe.read_csv_data(paths=[
-        "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
-    ])
+    pubs_df, = pipe.read_csv_data(paths=retrieval_config.data_paths)
 
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
@@ -55,51 +107,35 @@ def fine_tunning():
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=views_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
+        train_length=retrieval_config.train_length,
+        test_length=retrieval_config.test_length,
+        val_length=retrieval_config.val_length
     )
 
     train, val, test = pipe.split_into_train_and_test(
         ds=views_ds,
-        shuffle=shuffle,
+        shuffle=retrieval_config.shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
-        seed=42
+        seed=retrieval_config.seed
     )
 
     cached_train, cached_val, cached_test = pipe.data_caching(
         train=train,
         val=val,
         test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
+        shuffle=retrieval_config.shuffle,
+        train_batch=retrieval_config.train_batch,
+        val_batch=retrieval_config.val_batch,
+        test_batch=retrieval_config.test_batch
     )
 
 
     model = retrieval_stage.retrieval_model(
-        model_name=model_db.name,
-        towers_layers_sizes=[],
+        config=retrieval_config,
         vocabularies=vocabularies,
-        features_data_q={
-            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-        },
-        features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-        },
-        embedding_dimension=embedding_dimension, 
-        # test=test, 
-        # shuffle=10_000, 
-        # test_batch=512, 
         candidates=pubs_ds,
-        candidates_batch=candidates_batch, 
-        k_candidates=k_candidates
     )
 
     model.load_model(
@@ -113,7 +149,7 @@ def fine_tunning():
     views_df, = pipe.read_csv_data(paths=[
         "../../datasets/vistas_no_nulas.csv"
     ])
-    views_df = views_df[shuffle: shuffle + 10_000]
+    views_df = views_df[retrieval_config.shuffle: retrieval_config.shuffle + 10_000]
     views_df = views_df.drop(['id'], axis=1)
 
     views_df = pipe.merge_data(
@@ -121,52 +157,56 @@ def fine_tunning():
         right_data=pubs_df,
         left_on="publicacion_id",
         right_on="id",
-        output_features=features
+        output_features=retrieval_config.features
     )
 
     views_ds = pipe.convert_to_tf_dataset(views_df)
 
     vocabularies = pipe.build_vocabularies(
-        features=features,
+        features=retrieval_config.features,
         ds=views_ds,
-        batch=1_000
+        batch=retrieval_config.vocabularies_batch
     )
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=views_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
+        train_length=retrieval_config.train_length,
+        test_length=retrieval_config.test_length,
+        val_length=retrieval_config.val_length
     )
 
     train, val, test = pipe.split_into_train_and_test(
         ds=views_ds,
-        shuffle=shuffle,
+        shuffle=retrieval_config.shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
-        seed=42
+        seed=retrieval_config.seed
     )
 
     cached_train, cached_val, cached_test = pipe.data_caching(
         train=train,
         val=val,
         test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
+        shuffle=retrieval_config.shuffle,
+        train_batch=retrieval_config.train_batch,
+        val_batch=retrieval_config.val_batch,
+        test_batch=retrieval_config.test_batch
     )
 
     model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
-        learning_rate=learning_rate,
-        num_epochs=num_epochs,
-        use_multiprocessing=use_multiprocessing,
-        workers=workers
+        # learning_rate=learning_rate,
+        # num_epochs=num_epochs,
+        # use_multiprocessing=use_multiprocessing,
+        # workers=workers
     )
 
+    model.evaluate_model(
+        cached_test=cached_test,
+        cached_train=cached_train
+    )
     model.save_model(service_models_path, views_ds)
     # Comprueba el modelo con todos los datos luego de ser actualizado
     # pipe = DataPipeline()
@@ -236,47 +276,35 @@ def fine_tunning():
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=likes_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
+        train_length=likes_config.train_length,
+        test_length=likes_config.test_length,
+        val_length=likes_config.val_length
     )
 
     train, val, test = pipe.split_into_train_and_test(
         ds=likes_ds,
-        shuffle=shuffle,
+        shuffle=likes_config.shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
-        seed=42
+        seed=likes_config.seed
     )
 
     cached_train, cached_val, cached_test = pipe.data_caching(
         train=train,
         val=val,
         test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
+        shuffle=likes_config.shuffle,
+        train_batch=likes_config.train_batch,
+        val_batch=likes_config.val_batch,
+        test_batch=likes_config.test_batch
     )
 
 
     
     likes_model = ranking_Stage.likes_model(
-        model_name=likes_model_db.name,
-        towers_layers_sizes=[],
-        deep_layers_sizes=[],
+        config=likes_config,
         vocabularies=vocabularies,
-        features_data_q={
-            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-        },
-        features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-        },
-        embedding_dimension=64, 
     )
 
     likes_model.load_model(
@@ -291,9 +319,9 @@ def fine_tunning():
     likes_df, = pipe.read_csv_data(paths=[
         "../../datasets/likes.csv"
     ])
-    likes_df = likes_df[shuffle: shuffle + 10_000]
+    likes_df = likes_df[likes_config.shuffle: likes_config.shuffle + 10_000]
     likes_df = likes_df.drop(['id'], axis=1)
-    likes_df['like_dislike'] = likes_df['valor']\
+    likes_df[likes_config.target_column['new']] = likes_df[likes_config.target_column['current']]\
         .map({True: 1, False: 0})
 
     likes_df = pipe.merge_data(
@@ -301,78 +329,55 @@ def fine_tunning():
         right_data=pubs_df,
         left_on="publicacion_id",
         right_on="id",
-        output_features=ranking_features
+        output_features=likes_config.features
     )
 
     likes_ds = pipe.convert_to_tf_dataset(likes_df)
 
     vocabularies = pipe.build_vocabularies(
-        features=features,
+        features=likes_config.features,
         ds=likes_ds,
-        batch=1_000
+        batch=likes_config.vocabularies_batch
     )
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=likes_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
+        train_length=likes_config.train_length,
+        test_length=likes_config.test_length,
+        val_length=likes_config.val_length
     )
 
     train, val, test = pipe.split_into_train_and_test(
         ds=likes_ds,
-        shuffle=shuffle,
+        shuffle=likes_config.shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
-        seed=42
+        seed=likes_config.seed
     )
 
     cached_train, cached_val, cached_test = pipe.data_caching(
         train=train,
         val=val,
         test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
+        shuffle=likes_config.shuffle,
+        train_batch=likes_config.train_batch,
+        val_batch=likes_config.val_batch,
+        test_batch=likes_config.test_batch
     )
 
     # Ajusta los hiperparámetros para fine-tuning
     likes_model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
-        learning_rate=0.00001,
-        num_epochs=1,
-        use_multiprocessing=use_multiprocessing,
-        workers=workers   
+
     )
 
+    likes_model.evaluate_model(
+        cached_test=cached_test,
+        cached_train=cached_train
+    )
     likes_model.save_model(service_models_path, likes_ds)
-
-
-    # likes_model = ranking_Stage.likes_model(
-    #     model_name=likes_model_db.name,
-    #     towers_layers_sizes=[],
-    #     deep_layers_sizes=[],
-    #     vocabularies=vocabularies,
-    #     features_data_q={
-    #         'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-    #         # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-    #     },
-    #     features_data_c={ 
-    #         'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-    #         # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-    #         # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-    #     },
-    #     embedding_dimension=64, 
-    # )
-
-    # likes_model.load_model(
-    #     path=model_db.model_path,
-    #     cached_test=cached_test,
-    #     cached_train=cached_train
-    # )
 
 
     model_crud.turn_off_all()
@@ -381,7 +386,7 @@ def fine_tunning():
         name=model.model_name,
         stage="retrieval",
         model_path=model.model_path,
-        data_train_path=model.model_path,
+        data_train_path=model.data_train_path,
         metadata_path=model.model_metadata_path,
         engine_id=engine_db.id
     )
