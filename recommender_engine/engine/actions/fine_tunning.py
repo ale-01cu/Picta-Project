@@ -6,6 +6,7 @@ from db.cruds.EngineCRUD import EngineCRUD
 from db.main import build_db
 from db.config import engine
 from models.ModelConfig import ModelConfig
+from utils import read_json
 build_db()
 
 def fine_tunning():
@@ -15,83 +16,75 @@ def fine_tunning():
     engine_db = engine_crud.get_engine_running()
     engine_name = engine_db.name
     service_models_path = f"service_models/{engine_name}"
+
+    model_crud = ModelCRUD(engine=engine)
+    models = model_crud.get_models_running()
+    retrieval_model_db = models[0]
+    likes_model_db = models[1]
+
+    retrieval_hiperparams = read_json(retrieval_model_db.metadata_path)
+    likes_hiperparams = read_json(likes_model_db.metadata_path)
+
+    print(retrieval_hiperparams)
  
     retrieval_config = ModelConfig(
-        model_name="Retrieval lite",
-        features=['usuario_id', 'id'],
-        data_paths=[
-            "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
-        ],
-        towers_layers_sizes=[],
-        shuffle=10_000,
-        embedding_dimension=64,
-        candidates_batch=128,
-        k_candidates=100,
-        learning_rate=0.0001,
-        num_epochs=1,
-        use_multiprocessing=True,
-        workers=4,
-        train_batch=8192,
-        val_batch=4096,
-        test_batch=4096,
-        vocabularies_batch=1000,
-        train_Length=60,
-        test_length=20,
-        val_length=20,
-        seed=42,
-        features_data_q={
-            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-        },
-        features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-        }
+        model_name=retrieval_hiperparams['model_name'],
+        features=retrieval_hiperparams['features'],
+        data_paths=["../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv"],
+        towers_layers_sizes=retrieval_hiperparams['towers_layers_sizes'],
+        shuffle=retrieval_hiperparams['shuffle'],
+        embedding_dimension=retrieval_hiperparams['embedding_dimension'],
+        candidates_batch=retrieval_hiperparams['candidates_batch'],
+        k_candidates=retrieval_hiperparams['k_candidates'],
+        learning_rate=retrieval_hiperparams['learning_rate'],
+        num_epochs=retrieval_hiperparams['num_epochs'],
+        use_multiprocessing=retrieval_hiperparams['use_multiprocessing'],
+        workers=retrieval_hiperparams['workers'],
+        train_batch=retrieval_hiperparams['train_batch'],
+        val_batch=retrieval_hiperparams['val_batch'],
+        test_batch=retrieval_hiperparams['test_batch'],
+        vocabularies_batch=retrieval_hiperparams['vocabularies_batch'],
+        train_length=retrieval_hiperparams['train_length'],
+        test_length=retrieval_hiperparams['test_length'],
+        val_length=retrieval_hiperparams['val_length'],
+        seed=retrieval_hiperparams['seed'],
+        features_data_q=retrieval_hiperparams["features_data_q"],
+        features_data_c=retrieval_hiperparams['features_data_c'],
+        to_map=True
     )
     
 
 
     # Likes Configs
     likes_config = ModelConfig(
-        model_name="Likes lite",
-        features=['usuario_id', 'id', "like_dislike"],
-        data_paths=["../../datasets/likes.csv"],
-        towers_layers_sizes=[],
-        deep_layers_sizes = [],
-        shuffle=10_000,
-        embedding_dimension=64,
-        learning_rate=0.000001,
-        num_epochs=1,
-        use_multiprocessing=True,
+        model_name=likes_hiperparams['model_name'],
+        features=likes_hiperparams['features'],
+        data_paths=likes_hiperparams['data_paths'],
+        towers_layers_sizes=likes_hiperparams['towers_layers_sizes'],
+        deep_layers_sizes=likes_hiperparams['deep_layers_sizes'],
+        shuffle=likes_hiperparams['shuffle'],
+        embedding_dimension=likes_hiperparams['embedding_dimension'],
+        learning_rate=likes_hiperparams['learning_rate'],
+        num_epochs=likes_hiperparams['num_epochs'],
+        use_multiprocessing=likes_hiperparams['use_multiprocessing'],
         target_column={
-            "current": "valor",
-            "new": "like_dislike"
+            "current": likes_hiperparams['target_column']['current'],
+            "new": likes_hiperparams['target_column']['new']
         },
-        workers=4,
-        train_batch=8192,
-        val_batch=4096,
-        test_batch=4096,
-        vocabularies_batch=1000,
-        train_Length=60,
-        test_length=20,
-        val_length=20,
-        seed=42,
-        features_data_q={
-            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-        },
-        features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-        }
+        workers=likes_hiperparams['workers'],
+        train_batch=likes_hiperparams['train_batch'],
+        val_batch=likes_hiperparams['val_batch'],
+        test_batch=likes_hiperparams['test_batch'],
+        vocabularies_batch=likes_hiperparams['vocabularies_batch'],
+        train_length=likes_hiperparams['train_length'],
+        test_length=likes_hiperparams['test_length'],
+        val_length=likes_hiperparams['val_length'],
+        seed=likes_hiperparams['seed'],
+        features_data_q=likes_hiperparams["features_data_q"],
+        features_data_c=likes_hiperparams['features_data_c'],
+        to_map=True
     )
 
-    
-    model_crud = ModelCRUD(engine=engine)
-    models = model_crud.get_models_running()
-    model_db = models[0]
 
     # Reconstruye el modelo
     pipe = DataPipeline()
@@ -102,8 +95,8 @@ def fine_tunning():
 
     pubs_ds = pipe.convert_to_tf_dataset(pubs_df)
 
-    views_ds = pipe.load_dataset(model_db.data_train_path)
-    vocabularies = pipe.load_vocabularies(path=model_db.data_train_path)
+    views_ds = pipe.load_dataset(retrieval_model_db.data_train_path)
+    vocabularies = pipe.load_vocabularies(path=retrieval_model_db.data_train_path)
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=views_ds,
@@ -139,7 +132,7 @@ def fine_tunning():
     )
 
     model.load_model(
-        path=model_db.model_path,
+        path=retrieval_model_db.model_path,
         cached_test=cached_test,
         cached_train=cached_train
     )
@@ -268,7 +261,6 @@ def fine_tunning():
     # Reconstruye el modelo
     pipe = DataPipeline()
 
-    likes_model_db = models[1]
 
     likes_ds = pipe.load_dataset(likes_model_db.data_train_path)
     vocabularies = pipe.load_vocabularies(

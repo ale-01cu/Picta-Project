@@ -296,7 +296,8 @@ class LikesModel(tfrs.models.Model):
         with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
             pickle.dump(self.vocabularies, f)
         
-        self.model_metadata_path = f"{path}/{name}/Info.txt"
+        self.model_metadata_path = f"{self.model_path}/hiperparams.json"
+        self.config.save_as_json(self.model_metadata_path)
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
         

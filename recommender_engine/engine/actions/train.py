@@ -70,8 +70,6 @@ def train():
         }
     )
     
-
-
     # Likes Configs
     likes_config = ModelConfig(
         model_name="Likes lite",
@@ -196,7 +194,6 @@ def train():
     )
     retrieval_model.save_model(
         service_models_path, views_ds)
-
 
     pipe = DataPipeline()
     likes_df, = pipe.read_csv_data(paths=[

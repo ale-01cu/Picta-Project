@@ -42,3 +42,11 @@ class StringText():
         if isinstance(value, Text):
             return self.datatype == value.datatype
         return False
+    
+
+features_types_map = {
+    CategoricalContinuous.__name__: CategoricalContinuous,
+    CategoricalInteger.__name__: CategoricalInteger,
+    CategoricalString.__name__: CategoricalString,
+    StringText.__name__: StringText,
+}
