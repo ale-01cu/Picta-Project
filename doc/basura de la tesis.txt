@@ -1,0 +1,20 @@
+Basura del resumen: 
+. Este trabajo presenta el desarrollo e implementación de un sistema de recomendación basado en deep learning diseñado para los productos del proyecto z17. Z17 es un equipo de jóvenes con una cultura ágil para el desarrollo de soluciones disruptivas e innovadoras, con un alcance global y enfocado entregar productos de calidad a los cubanos. Entre sus principales soluciones se encuentran 
+Apklis: Es el Centro Cubano de Aplicaciones Android enfocado en la distribución actualización y comercialización de aplicaciones.
+toDus: La plataforma cubana de mensajería instantánea y colaborativa que permite el intercambio de mensajes, archivos y mucho más de forma inmediata.
+Picta: Una plataforma de contenido multimedia que permite la reproducción y transmisión en vivo.
+El equipo de Z17 se dedica al desarrollo de soluciones tecnológicas disruptivas y vanguardistas, con el objetivo de ofrecer productos de alta calidad que respondan a las necesidades del mercado cubano. Entre sus desarrollos más destacados se encuentra Apklis, el centro de aplicaciones Android de Cuba, que se especializa en la distribución y comercialización de aplicaciones móviles. Asimismo, toDus, una plataforma de mensajería instantánea que facilita la comunicación y colaboración mediante el intercambio eficiente de mensajes y archivos. Por último, Picta se presenta como una innovadora plataforma de contenido multimedia, ofreciendo servicios de reproducción y transmisión en vivo, satisfaciendo la demanda de contenido digital en tiempo real.
+
+
+
+
+
+Los resultados obtenidos con el uso del deep learning en este tipo de sistemas han desmostrado la gran eficacia y potencia en la personalización y la visibilidad de enormes volumnes de datos que satisfacen las preferencias individuales de los usuarios. Esto se puede ver fácilmente hoy en dia en plataformas como youtube, netflix o google play store donde al navegar por ellas se percibe una muy buena experiencia de usuario que engancha al publico horas y horas scroleandolas.
+
+Esto no solo mejora la satisfacción del usuario, sino que también aumenta el tiempo de interacción con la plataforma, ya que los usuarios encuentran contenido relevante y atractivo con mayor facilidad. Además, el deep learning facilita la detección de tendencias emergentes, lo que permite a estas plataformas anticiparse a las necesidades de los usuarios y mantenerse a la vanguardia en la entrega de una experiencia de usuario excepcional.
+
+Además, la capacidad de adaptarse a nuevos datos a través del ajuste fino garantiza la longevidad y relevancia del sistema en un entorno dinámico.
+
+
+
+En este capítulo se abordara una detallada explicación de cómo funcionan los sistemas de recomendaciones y cómo funcionan los modernos, los que se utilizan a gran escala hoy en día en las grandes plataformas digitales como el que se producirá en este trabajo, abordaremos los diferentes algoritmos que existen para este tipo de sistemas 
