@@ -18,3 +18,16 @@ Además, la capacidad de adaptarse a nuevos datos a través del ajuste fino gara
 
 
 En este capítulo se abordara una detallada explicación de cómo funcionan los sistemas de recomendaciones y cómo funcionan los modernos, los que se utilizan a gran escala hoy en día en las grandes plataformas digitales como el que se producirá en este trabajo, abordaremos los diferentes algoritmos que existen para este tipo de sistemas 
+
+
+Objetivos Especificos
+
+1.	Recopilar y buscar información sobre trabajos anteriores que traten sobre un tema similar al nuestro: Estudiar bien estos trabajos y formular una idea de qué manera se querrá hacer el recomendador. 
+
+2.	Recopilar y procesar datos: Se debe recopilar información sobre los datos disponibles y sobre los usuarios que utilizarán el sistema de recomendación. Es importante procesar y analizar esta información para prepararla para el uso de los modelos. 
+
+3.	Diseñar e implementar los modelo de aprendizaje profundo: Se debe diseñar y programar los modelos que utilizará el sistema de recomendación. Esto implica la implementación de algoritmos y técnicas de análisis de datos para encontrar similitudes entre los usuarios y proporcionar recomendaciones basadas en estas similitudes. 
+
+4.	Validar y optimizar el modelo de recomendación: Es importante evaluar la precisión y efectividad del modelo de recomendación y optimizarlo para mejorar su rendimiento. Esto significa que hay que realizar pruebas y validaciones. 
+5.	Finalmente, intentar integrar el sistema de recomendación en las plataformas.
+
