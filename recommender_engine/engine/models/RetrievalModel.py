@@ -124,7 +124,6 @@ class RetrievalModel(tfrs.models.Model):
         return self.task(query_embeddings, pubs_embeddings)
         
 
-
     def fit_model(self, 
         # train: tf.data.Dataset, 
         # val: tf.data.Dataset,
@@ -181,7 +180,6 @@ class RetrievalModel(tfrs.models.Model):
             output = f"{metric} (test): {test_accuracy[metric]:.2f}."
             print(output)
             self.evaluation_result["test"].append(output)
-
 
 
     def index_model(self) -> tfrs.layers.factorized_top_k.BruteForce:
@@ -282,16 +280,6 @@ class RetrievalModel(tfrs.models.Model):
         with open(f"{path}/{name}/Info.txt", "w") as f:
             f.write(f"{content}")
 
-    # def get_config(self):
-    #     config = super().get_config()
-    #     config.update({
-    #         'model_name': self.model_name,
-    #         'towers_layers_sizes': self.towers_layers_sizes,
-    #         'vocabularies': self.vocabularies,
-    #         'features_data_q': self.features_data_q,
-    #         'features_data_c': self.features_data_c
-    #     })
-    #     return config
 
     def load_model(self, path: str, cached_train, cached_test) -> None:
         
@@ -308,4 +296,15 @@ class RetrievalModel(tfrs.models.Model):
             cached_test=cached_test,
             cached_train=cached_train
         )
+
+    # def get_config(self):
+    #     config = super().get_config()
+    #     config.update({
+    #         'model_name': self.model_name,
+    #         'towers_layers_sizes': self.towers_layers_sizes,
+    #         'vocabularies': self.vocabularies,
+    #         'features_data_q': self.features_data_q,
+    #         'features_data_c': self.features_data_c
+    #     })
+    #     return config
         
