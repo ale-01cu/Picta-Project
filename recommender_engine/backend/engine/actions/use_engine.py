@@ -1,14 +1,13 @@
 import tensorflow as tf
 import numpy as np
-import pandas as pd
 import os
 from engine.db.cruds.ModelCRUD import ModelCRUD
 from engine.stages.stages import retrieval_stage, ranking_Stage
 from settings.db import engine
 from engine.utils import read_json
-from engine.models.ModelConfig import ModelConfig
-from engine.FeaturesTypes import map_feature
-from engine.DataPipeline import DataPipeline
+from engine.data.FeaturesTypes import map_feature
+from engine.data.DataPipeline import DataPipeline
+import time
 dirname = os.path.dirname(__file__)
 from engine.db.main import build_db
 
@@ -56,12 +55,13 @@ def get_recommendations(user_id, k, params):
         model_input, 
         training=False
     )
-    
-    for id, score in zip(ids.numpy()[0][: k], scores.numpy()[0][: k]):
+
+
+    for id, score in zip(ids.numpy()[0], scores.numpy()[0]):
         yield id, score
 
 
-def ranking_recommendations(user_id, pubs_ids: list): 
+def ranking_recommendations(user_id, pubs_ids: list, params: dict): 
     likes_model_db = model_crud.get_model_running_by_stage(
         stage=ranking_Stage.name)
     
@@ -86,6 +86,26 @@ def ranking_recommendations(user_id, pubs_ids: list):
             name=key
         )
     
+    context_input = {
+        key: tf.constant(
+            [params[key]], 
+            dtype=tf.int64 
+                    if map_feature(
+                        to_class=True, 
+                        feature_type=feature_data_merged[key]['dtype'])().datatype == tf.int32 
+                    else map_feature(
+                        to_class=True, 
+                        feature_type=feature_data_merged[key]['dtype'])().datatype,
+            name=key
+        )
+        for key in metadata['features_data_q'].keys() if key != user_identier_name
+    }
+
+    if 'fecha' in context_input:
+        context_input['fecha'] = tf.constant([params['fecha']], dtype=tf.int32)
+
+    for key, value in user_id_data.items():
+        context_input[key] = value
     
     model = tf.saved_model.load(
         os.path.join(dirname, f"{likes_model_db.model_path}/service"))
@@ -124,7 +144,7 @@ def ranking_recommendations(user_id, pubs_ids: list):
             for key, value in model_input.items()
         }
 
-        for key, value in user_id_data.items():
+        for key, value in context_input.items():
             model_input[key] = value
 
 
@@ -144,13 +164,19 @@ def ranking_recommendations(user_id, pubs_ids: list):
     return result
 
 
+from engine.data.data_preprocessing.transform_date_to_timestamp import transform_date_to_timestamp
 def get_full_data(hiperparams):
-    candidate_path, data_path = hiperparams['candidate_data_path'], hiperparams['data_path']
+    candidate_path, data_path = (
+        "../../../../datasets/picta_publicaciones_crudas.csv", 
+        hiperparams['data_path']
+    )
+
     pipe = DataPipeline()
     candidate_df, data_df = pipe.read_csv_data(paths=[
         candidate_path,
         data_path
     ])
+    data_df = transform_date_to_timestamp(data_df, 'fecha')
     # pubs_path = '../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
     # pubs_df = pd.read_csv(pubs_path)
     candidate_df['descripcion'] = candidate_df['descripcion'].astype(str)
@@ -199,9 +225,23 @@ def get_row_as_dict(id: str, data: dict):
 
 def use_models(user_id, k, params):
     print(params)
-    recommendations = get_recommendations(user_id=user_id, k=k, params=params)
-    ids = [id for id, _ in recommendations]
-    results = ranking_recommendations(user_id, ids)
+    recommendations = get_recommendations(
+        user_id=user_id, k=k, params=params)
+    
+
+    ids = [(id, score) for id, score in recommendations]
+    ids_aux = sorted(
+        ids, 
+        key=lambda x: x[1], 
+        reverse=True
+    )
+    print("Recomendados por recuperacion...............")
+    print(ids_aux)
+    results = ranking_recommendations(user_id, ids, params)
+
+    # for id, score in results:
+    #     print("id ", id, "Score ", score)
+
     response = []
 
     for i in results:
@@ -212,15 +252,21 @@ def use_models(user_id, k, params):
         # print(id)
         # print(get_row_as_dict(id), "Score: ", score)
 
-    return response
+    return response[: k]
+
 
 if __name__ == "__main__":
-    USER_ID = 2005
+    USER_ID = 8599
     K = 10
-    use_models(user_id=USER_ID, k=K, params={
-        "id": 74,
-        'fecha':'2018-04-09%2021:29:59.769471+02:00'
-    })
+    params = {
+        "edad": 19,
+        'fecha': int(time.time() * 1000) #+ (7 * 24 * 60 * 60 * 1000)
+
+    }
+
+    print(params)
+    res = use_models(user_id=USER_ID, k=K, params=params)
+    print(res)
 
 
 

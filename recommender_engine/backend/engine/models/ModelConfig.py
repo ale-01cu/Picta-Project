@@ -1,13 +1,14 @@
 import json
 import copy
-from engine.FeaturesTypes import features_types_map
+from engine.data.FeaturesTypes import features_types_map
 
 class ModelConfig:
-    def __init__(self, model_name, features, candidate_data_path, data_path, user_id_data,**kwargs):
+    def __init__(self, model_name, features, candidate_data_path, data_path, user_id_data, isTrain, **kwargs):
         self.model_name = model_name
         self.features = features
         self.candidate_data_path = candidate_data_path
         self.data_path = data_path
+        self.isTrain = isTrain
         self.candidate_feature_merge = kwargs.get('candidate_feature_merge', '')
         self.data_feature_merge = kwargs.get('data_feature_merge', '')
         self.towers_layers_sizes = kwargs.get('towers_layers_sizes', [])
@@ -73,3 +74,38 @@ class ModelConfig:
 
         with open(path, 'w') as f:
             json.dump(config, f, indent=4)
+
+    def get_config(self):
+        return {
+            'model_name': self.model_name,
+            'features': self.features,
+            'candidate_data_path': self.candidate_data_path,
+            'data_path': self.data_path,
+            'user_id_data': self.user_id_data,
+            'isTrain': self.isTrain,
+            'candidate_feature_merge': self.candidate_feature_merge,
+            'data_feature_merge': self.data_feature_merge,
+            'towers_layers_sizes': self.towers_layers_sizes,
+            'deep_layers_sizes': self.deep_layers_sizes,
+            'shuffle': self.shuffle,
+            'embedding_dimension': self.embedding_dimension,
+            'candidates_batch': self.candidates_batch,
+            'k_candidates': self.k_candidates,
+            'learning_rate': self.learning_rate,
+            'num_epochs': self.num_epochs,
+            'use_multiprocessing': self.use_multiprocessing,
+            'workers': self.workers,
+            'train_batch': self.train_batch,
+            'val_batch': self.val_batch,
+            'test_batch': self.test_batch,
+            'vocabularies_batch': self.vocabularies_batch,
+            'train_length': self.train_length,
+            'test_length': self.test_length,
+            'val_length': self.val_length,
+            'seed': self.seed,
+            'features_data_q': self.features_data_q,
+            'features_data_c': self.features_data_c,
+            'target_column': self.target_column,
+            'to_map': self.to_map,
+        }
+    

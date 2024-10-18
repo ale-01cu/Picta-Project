@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_recommenders as tfrs
 import typing as typ
 import numpy as np
-from engine.tower.TowerModel import TowerModel
+from engine.models.tower.TowerModel import TowerModel
 from datetime import datetime
 import re
 import os
@@ -15,6 +15,7 @@ class LikesModel(tfrs.models.Model):
     def __init__(self,
         config: ModelConfig,
         vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
+        regularization_l2: float
         # model_name: str,
         # towers_layers_sizes: typ.List[int],
         # deep_layers_sizes: typ.List[int],
@@ -68,7 +69,8 @@ class LikesModel(tfrs.models.Model):
             layer_sizes=config.towers_layers_sizes,
             vocabularies=vocabularies,
             features_data=config.features_data_q,
-            embedding_dimension=config.embedding_dimension
+            embedding_dimension=config.embedding_dimension,
+            regularization_l2=regularization_l2
         )
 
         self.candidate_model = TowerModel(
@@ -76,6 +78,7 @@ class LikesModel(tfrs.models.Model):
             vocabularies=vocabularies,
             features_data=config.features_data_c,
             embedding_dimension=config.embedding_dimension,
+            regularization_l2=regularization_l2
         )
 
         # ********* Red De Clasificacion Binaria **********
@@ -261,9 +264,11 @@ class LikesModel(tfrs.models.Model):
         content.append("\n ********** Parametros **********")
         total_params = 0
         for param in self.variables[:-1]:
-            params = param.shape[0] if len(param.shape) == 1 else param.shape[0] * param.shape[1]
-            total_params += params
-            content.append(f"{param.name}: {params}")
+            if hasattr(param, 'shape'):
+                params = 1
+                for p in param.shape: params *= p 
+                total_params += params
+                content.append(f"{param.name}: {params}")
         content.append(f"Total params: {total_params}")
 
         content = "\n".join(content)

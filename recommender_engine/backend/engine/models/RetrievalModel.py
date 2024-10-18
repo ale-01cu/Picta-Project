@@ -1,14 +1,15 @@
 import tensorflow_recommenders as tfrs
 import tensorflow as tf
 import numpy as np
-from engine.tower.TowerModel import TowerModel
+from engine.models.tower.TowerModel import TowerModel
 import typing as typ
 from datetime import datetime
 import re
 import os
 import pickle
 from engine.models.ModelConfig import ModelConfig
-from engine import FeaturesTypes
+from engine.data import FeaturesTypes
+from engine.data.DataPipeline import DataPipeline
 dirname = os.path.dirname(__file__)
 
 class RetrievalModel(tfrs.models.Model):
@@ -28,6 +29,7 @@ class RetrievalModel(tfrs.models.Model):
         # model_name: str,
         # towers_layers_sizes: typ.List[int],
         vocabularies: typ.Dict[typ.Text, typ.Dict[typ.Text, tf.Tensor]],
+        regularization_l2: float,
         # features_data_q: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
         # features_data_c: typ.Dict[typ.Text, typ.Dict[typ.Text, object]],
         # # train: tf.data.Dataset, 
@@ -93,13 +95,15 @@ class RetrievalModel(tfrs.models.Model):
             layer_sizes=config.towers_layers_sizes,
             vocabularies=vocabularies,
             features_data=config.features_data_q,
-            embedding_dimension=config.embedding_dimension
+            embedding_dimension=config.embedding_dimension,
+            regularization_l2=regularization_l2
         )
         self.candidate_model = TowerModel(
             layer_sizes=config.towers_layers_sizes,
             vocabularies=vocabularies,
             features_data=config.features_data_c,
             embedding_dimension=config.embedding_dimension,
+            regularization_l2=regularization_l2
         )
 
         self.task = tfrs.tasks.Retrieval(
@@ -184,15 +188,7 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def index_model(self) -> tfrs.layers.factorized_top_k.BruteForce:
-        index = tfrs.layers.factorized_top_k.BruteForce(
-            self.query_model, 
-            k=self.k_candidates
-        )
-
-        index.index_from_dataset(
-            self.candidates.batch(self.candidates_batch).map(
-                lambda x: (x['id'], self.candidate_model(x)))
-        )
+        print("Indexando...")
 
         data_test = {}
 
@@ -211,7 +207,70 @@ class RetrievalModel(tfrs.models.Model):
 
             data_test[key] = new_value
 
-        index(data_test)
+        self.query_model(data_test)
+
+        index = tfrs.layers.factorized_top_k.BruteForce(
+            self.query_model, 
+            k=self.k_candidates
+        )
+
+        index.index_from_dataset(
+            self.candidates.batch(self.candidates_batch).map(
+                lambda x: (x['id'], self.candidate_model(x)))
+        )
+
+        data_test = [
+            {
+                "usuario_id": np.array([320]),
+                "edad": np.array([32])
+            },
+            {
+                "usuario_id": np.array([161]),
+                "edad": np.array([37])
+            },
+            {
+                "usuario_id": np.array([3040]),
+                "edad": np.array([51])
+            },
+            {
+                "usuario_id": np.array([8097]),
+                "edad": np.array([45])
+            },
+            {
+                "usuario_id": np.array([9364]),
+                "edad": np.array([22])
+            },
+        ]
+
+        # index.build(input_shape=(None, self.config.embedding_dimension))
+
+        data_test = {}
+
+        for key, value in self.config.features_data_q.items():
+           new_value = None
+           feature_type = value['dtype']
+
+           if(feature_type == FeaturesTypes.CategoricalString):
+               new_value = np.array(["test"])
+           elif(feature_type == FeaturesTypes.CategoricalInteger):
+               new_value = np.array([0])
+           elif(feature_type == FeaturesTypes.CategoricalContinuous):
+               new_value = np.array([0])
+           elif(feature_type == FeaturesTypes.StringText):
+               new_value = np.array(["test"])
+
+           data_test[key] = new_value
+
+        score, titles = index(data_test, self.k_candidates)
+        ids = [id for id, score in zip(titles.numpy()[0], score.numpy()[0])]
+        print(ids[: 10])
+
+        #for data in data_test:
+        #    print(data)
+        #    score, titles = index(data, self.k_candidates)
+        #    ids = [id for id, score in zip(titles.numpy()[0], score.numpy()[0])]
+        #    print(ids[: 10])
+        #    print("")
 
         return index
 
@@ -259,7 +318,8 @@ class RetrievalModel(tfrs.models.Model):
         total_params = 0
         for param in self.variables[:-1]:
             if hasattr(param, 'shape'):
-                params = param.shape[0] * param.shape[1]
+                params = 1
+                for p in param.shape: params *= p 
                 total_params += params
                 content.append(f"{param.name}: {params}")
         content.append(f"Total params: {total_params}")
@@ -319,11 +379,17 @@ class RetrievalModel(tfrs.models.Model):
     # def get_config(self):
     #     config = super().get_config()
     #     config.update({
-    #         'model_name': self.model_name,
-    #         'towers_layers_sizes': self.towers_layers_sizes,
     #         'vocabularies': self.vocabularies,
-    #         'features_data_q': self.features_data_q,
-    #         'features_data_c': self.features_data_c
+    #         'regularization_l2': self.query_model.embedding_model.get_config()['regularization_l2'],
+    #         'candidates_batch': self.candidates_batch,
+    #         'k_candidates': self.k_candidates,
+    #         'config': self.config.get_config(),
     #     })
     #     return config
+
+    # @classmethod
+    # def from_config(cls, config):
+    #     # Deserializar la configuración del objeto ModelConfig
+    #     config['config'] = ModelConfig.from_config(config['config'])
         
+    #     return cls(**config)

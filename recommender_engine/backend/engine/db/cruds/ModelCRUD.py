@@ -48,12 +48,14 @@ class ModelCRUD:
         except Exception as e:
             raise e
 
-    def read(self, id=None, name=None):
+    def read(self, id=None, name=None, stage=None):
         try:
             if id:
                 model = self.session.query(Model).filter_by(id=id).first()
             elif name:
                 model = self.session.query(Model).filter_by(name=name).all()
+            elif stage:
+                model = self.session.query(Model).filter_by(stage=stage).all()
             else:
                 models = self.session.query(Model).all()
                 return models
@@ -99,9 +101,9 @@ class ModelCRUD:
         finally:
             session.close()
 
-    def turn_off_all(self):
+    def turn_off_all(self, stage=None):
         try:
-            models = self.read()
+            models = self.read(stage=stage)
             if models:
                 for model in models:
                     if model.status:
@@ -109,6 +111,7 @@ class ModelCRUD:
         
         except Exception as e:
             raise e
+        
 
     def turn_off_model(self, id, name, stage):
         try:

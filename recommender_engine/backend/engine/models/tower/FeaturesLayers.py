@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.types.core import Tensor
 from typing import Dict, Text, Optional
-from engine.FeaturesTypes import (
+from engine.data.FeaturesTypes import (
     StringText, 
     CategoricalContinuous, 
     CategoricalString, 
@@ -15,7 +15,6 @@ class FeaturesLayers(tf.keras.Model):
     features_data = Dict[Text, Dict[Text, object]]
     features_weights = Dict[Text, float]
     max_tokens: int
-    models: Dict[Text, tf.keras.Sequential]
     extra_layers: Dict[Text, tf.keras.layers.Layer]
 
     def __init__(self, 
@@ -33,6 +32,7 @@ class FeaturesLayers(tf.keras.Model):
 
         self.max_tokens = max_tokens
         self.models = {}
+        self.aditional_layers = aditional_layers
         self.extra_layers = {}
 
 
@@ -48,8 +48,12 @@ class FeaturesLayers(tf.keras.Model):
             print(f'Building {feature_name} feature...')
 
             if feature_type == CategoricalInteger:
+                #normalization_layer = tf.keras.layers.Normalization(axis=None)
+                #normalization_layer.adapt(vocabulary)
+
                 model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + 'input', dtype = tf.int32),
+                    #normalization_layer,
                     tf.keras.layers.IntegerLookup(
                         vocabulary=vocabulary, mask_token=None),
                     tf.keras.layers.Embedding(len(
@@ -117,8 +121,8 @@ class FeaturesLayers(tf.keras.Model):
                 ])
 
 
-            if aditional_layers:
-                for layer in aditional_layers:
+            if self.aditional_layers:
+                for layer in self.aditional_layers:
                     model.add(layer)
             self.models[feature_name] = model
 
@@ -140,3 +144,29 @@ class FeaturesLayers(tf.keras.Model):
             features_embeddings.append(extra_layers) 
         
         return tf.concat(features_embeddings, axis=1)
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'embedding_dimension': self.embedding_dimension,
+            'vocabularies': self.vocabularies,
+            'features_data': self.features_data,
+            'max_tokens': self.max_tokens,
+            'extra_layers': self.extra_layers,
+            'models': {name: model.get_config() for name, model in self.models.items()},
+            'aditional_layers': [layer.get_config() for layer in self.aditional_layers ]
+        })
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+        # Deserializar las configuraciones de los modelos
+        config["models"] = {name: tf.keras.models.model_from_config(model_config) 
+                            for name, model_config in config["models"].items()}
+        
+        # Deserializar las capas adicionales si existen
+        if "aditional_layers" in config:
+            config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config) 
+                                          for layer_config in config["aditional_layers"]]
+        
+        return cls(**config)

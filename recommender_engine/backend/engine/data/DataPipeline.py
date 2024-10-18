@@ -10,13 +10,15 @@ class DataPipeline:
     # El dataframe con el que se va a entrenar el modelo
     history: List[str]
 
-    def __init__(self) -> None:
-        print("*** Tuberia de datos Inicialzada ***")
+    def __init__(self, logging = True) -> None:
+        if logging: 
+            print("*** Tuberia de datos Inicialzada ***")
         # self.total = 0
         # self.train_Length = 0 
         # self.test_length = 0
         self.history = []
         self.dirname = os.path.dirname(__file__)
+        self.logging = logging
         
 
 
@@ -28,7 +30,8 @@ class DataPipeline:
     
 
     def read_csv_data(self, paths: List[str]) -> Tuple[pd.DataFrame]:
-        print("Leyendo datos...")
+        if self.logging:
+            print("Leyendo datos...")
         dataframes = []
         for path in paths:
             df = pd.read_csv(self.get_path(path))
@@ -48,7 +51,8 @@ class DataPipeline:
         right_on: str, 
         output_features: list[str] = []
     ) -> pd.DataFrame:
-        print("Megeando data...")
+        if self.logging:
+            print("Megeando data...")
         
         new_df = left_data.merge(
             right_data, 
@@ -67,7 +71,8 @@ class DataPipeline:
 
     
     def convert_to_tf_dataset(self, data: pd.DataFrame) -> tf.data.Dataset:
-        print("Convirtiendo data...")
+        if self.logging: 
+            print("Convirtiendo data...")
         return tf.data.Dataset.from_tensor_slices(dict(data))
     
 
@@ -83,7 +88,8 @@ class DataPipeline:
         batch: int
     ) -> Dict[Text, tf.Tensor]:
         
-        print("Construyendo Vocabulario...")
+        if self.logging: 
+            print("Construyendo Vocabulario...")
         vocaburaries = {}
         for feature_name in features:
             vocab = ds.map(lambda x: x[feature_name], 
@@ -163,4 +169,5 @@ class DataPipeline:
 
 
     def close(self):
-        print("*** Tuberia de datos Cerrada ***")
+        if self.logging:
+            print("*** Tuberia de datos Cerrada ***")
