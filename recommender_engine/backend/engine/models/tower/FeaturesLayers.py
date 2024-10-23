@@ -78,16 +78,16 @@ class FeaturesLayers(tf.keras.Model):
 
 
                 max_timestamp = vocabulary.reduce(
-                    tf.cast(0, tf.int32), tf.maximum).numpy().max()
+                    tf.cast(0, tf.int64), tf.maximum).numpy().max()
                 min_timestamp = vocabulary.reduce(
-                    np.int32(1e9), tf.minimum).numpy().min()
+                    np.int64(1e9), tf.minimum).numpy().min()
 
                 timestamp_buckets = np.linspace(
                     min_timestamp, max_timestamp, num=1000)
 
 
                 model = tf.keras.Sequential([
-                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.int32),
+                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.int64),
                     tf.keras.layers.Discretization(timestamp_buckets.tolist()),
                     tf.keras.layers.Embedding(len(timestamp_buckets) + 2, self.embedding_dimension),
                     tf.keras.layers.Flatten(name='Flatten_' + feature_name)
@@ -145,28 +145,28 @@ class FeaturesLayers(tf.keras.Model):
         
         return tf.concat(features_embeddings, axis=1)
     
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'embedding_dimension': self.embedding_dimension,
-            'vocabularies': self.vocabularies,
-            'features_data': self.features_data,
-            'max_tokens': self.max_tokens,
-            'extra_layers': self.extra_layers,
-            'models': {name: model.get_config() for name, model in self.models.items()},
-            'aditional_layers': [layer.get_config() for layer in self.aditional_layers ]
-        })
-        return config
+    # def get_config(self):
+    #     config = super().get_config()
+    #     config.update({
+    #         'embedding_dimension': self.embedding_dimension,
+    #         'vocabularies': self.vocabularies,
+    #         'features_data': self.features_data,
+    #         'max_tokens': self.max_tokens,
+    #         'extra_layers': self.extra_layers,
+    #         'models': {name: model.get_config() for name, model in self.models.items()},
+    #         'aditional_layers': [layer.get_config() for layer in self.aditional_layers ]
+    #     })
+    #     return config
     
-    @classmethod
-    def from_config(cls, config):
-        # Deserializar las configuraciones de los modelos
-        config["models"] = {name: tf.keras.models.model_from_config(model_config) 
-                            for name, model_config in config["models"].items()}
+    # @classmethod
+    # def from_config(cls, config):
+    #     # Deserializar las configuraciones de los modelos
+    #     config["models"] = {name: tf.keras.models.model_from_config(model_config) 
+    #                         for name, model_config in config["models"].items()}
         
-        # Deserializar las capas adicionales si existen
-        if "aditional_layers" in config:
-            config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config) 
-                                          for layer_config in config["aditional_layers"]]
+    #     # Deserializar las capas adicionales si existen
+    #     if "aditional_layers" in config:
+    #         config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config) 
+    #                                       for layer_config in config["aditional_layers"]]
         
-        return cls(**config)
+    #     return cls(**config)

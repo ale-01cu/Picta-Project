@@ -47,6 +47,11 @@ def get_recommendations(user_id, k, params):
         for key in metadata['features_data_q'].keys() if key != user_identier_name
     }
 
+    if 'fecha' in model_input:
+        model_input['fecha'] = tf.constant([params['fecha']], dtype=tf.int64)
+    if 'timestamp' in model_input:
+        model_input['timestamp'] = tf.constant([params['timestamp']], dtype=tf.int64)
+
     for key, value in user_id_data.items():
         model_input[key] = value
 
@@ -205,7 +210,7 @@ def get_row_as_dict(id: str, data: dict):
     metadata = read_json(retrieval_model_db.metadata_path)
 
     try:
-        # Filtrar el DataFrame para solo la fila donde el id coincide con el proporcionado
+    # Filtrar el DataFrame para solo la fila donde el id coincide con el proporcionado
         df_filtered = data[data[metadata['candidate_feature_merge']] == id]
         
         # Convertir la primera (y única) fila del DataFrame filtrado a un diccionario
@@ -229,38 +234,83 @@ def use_models(user_id, k, params):
         user_id=user_id, k=k, params=params)
     
 
-    ids = [(id, score) for id, score in recommendations]
-    ids_aux = sorted(
-        ids, 
-        key=lambda x: x[1], 
-        reverse=True
-    )
+    ids = [id for id, _ in recommendations]
     print("Recomendados por recuperacion...............")
-    print(ids_aux)
-    results = ranking_recommendations(user_id, ids, params)
+    for id in ids[: 10]:
+        print("id ", id)
+    # results = ranking_recommendations(user_id, ids, params)
 
+    # print("Recomendaciones por clasificacion............")
     # for id, score in results:
     #     print("id ", id, "Score ", score)
 
-    response = []
+    # response = []
 
-    for i in results:
-        response.append({ "id": i[0].item() })
-    # print("Top ", k, " recomendaciones para el usuario ", user_id)
-    # for id, score in recommendations:
-    #     response.append({ "id": id.item() })
-        # print(id)
-        # print(get_row_as_dict(id), "Score: ", score)
+    # for i in results:
+    #     response.append({ "id": i[0].item() })
+    # # print("Top ", k, " recomendaciones para el usuario ", user_id)
+    # # for id, score in recommendations:
+    # #     response.append({ "id": id.item() })
+    #     # print(id)
+    #     # print(get_row_as_dict(id), "Score: ", score)
 
-    return response[: k]
+    # return response[: k]
+
+
+data_test = [
+    {
+        "usuario_id": np.array([320]),
+        "edad": np.array([32])
+    },
+    {
+        "usuario_id": np.array([161]),
+        "edad": np.array([37])
+    },
+    {
+        "usuario_id": np.array([3040]),
+        "edad": np.array([51])
+    },
+    {
+        "usuario_id": np.array([8097]),
+        "edad": np.array([45])
+    },
+    {
+        "usuario_id": np.array([9364]),
+        "edad": np.array([22])
+    },
+]
+data_test = [
+    {
+        "user_id": np.array([b'138']),
+        "bucketized_user_age": np.array([45])
+    },
+    {
+        "user_id": np.array([b'92']),
+        "bucketized_user_age": np.array([25])
+    },
+    {
+        "user_id": np.array([b'301']),
+        "bucketized_user_age": np.array([18])
+    },
+    {
+        "user_id": np.array([b'60']),
+        "bucketized_user_age": np.array([50])
+    },
+    {
+        "user_id": np.array([b'197']),
+        "bucketized_user_age": np.array([50])
+    },
+]
 
 
 if __name__ == "__main__":
-    USER_ID = 8599
+    data = data_test[0]
+    #USER_ID = data['usuario_id'].item()
+    USER_ID = data['user_id'].item()
     K = 10
     params = {
-        "edad": 19,
-        'fecha': int(time.time() * 1000) #+ (7 * 24 * 60 * 60 * 1000)
+        "bucketized_user_age": data['bucketized_user_age'].item(),
+        'timestamp': int(time.time() * 1000)#+ (7 * 24 * 60 * 60 * 1000)
 
     }
 
@@ -268,6 +318,16 @@ if __name__ == "__main__":
     res = use_models(user_id=USER_ID, k=K, params=params)
     print(res)
 
+# id  b'323'
+# id  b'117'
+# id  b'332'
+# id  b'301'
+# id  b'245'
+# id  b'682'
+# id  b'313'
+# id  b'293'
+# id  b'751'
+# id  b'547'
 
 
 # import tensorflow as tf

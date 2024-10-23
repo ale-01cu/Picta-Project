@@ -56,24 +56,24 @@ class TowerModel(tf.keras.Model):
         return self.dense_layers(feature_embedding)
 
 
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'vocabularies': self.embedding_model.get_config()['vocabularies'],
-            'features_data': self.embedding_model.get_config()['features_data'],
-            'embedding_dimension': self.embedding_model.get_config()['embedding_dimension'],
-            'max_tokens': self.embedding_model.get_config()['max_tokens'],
-            'layer_sizes': [layer.units for layer in self.dense_layers.layers],
-            'regularization_l2': self.dense_layers.layers[-1].kernel_regularizer.l2,
-            'aditional_layers': self.embedding_model.get_config()['aditional_layers'],
-        })
-        return config
+    # def get_config(self):
+    #     config = super().get_config()
+    #     config.update({
+    #         'vocabularies': self.embedding_model.get_config()['vocabularies'],
+    #         'features_data': self.embedding_model.get_config()['features_data'],
+    #         'embedding_dimension': self.embedding_model.get_config()['embedding_dimension'],
+    #         'max_tokens': self.embedding_model.get_config()['max_tokens'],
+    #         'layer_sizes': [layer.units for layer in self.dense_layers.layers],
+    #         'regularization_l2': self.dense_layers.layers[-1].kernel_regularizer.l2,
+    #         'aditional_layers': self.embedding_model.get_config()['aditional_layers'],
+    #     })
+    #     return config
     
-    @classmethod
-    def from_config(cls, config):
-        # Deserializar las capas adicionales si existen
-        if "aditional_layers" in config:
-            config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config) 
-                                          for layer_config in config["aditional_layers"]]
+    # @classmethod
+    # def from_config(cls, config):
+    #     # Deserializar las capas adicionales si existen
+    #     if "aditional_layers" in config:
+    #         config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config) 
+    #                                       for layer_config in config["aditional_layers"]]
         
-        return cls(**config)
+    #     return cls(**config)

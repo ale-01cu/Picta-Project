@@ -10,6 +10,7 @@ import pandas as pd
 import shutil
 from engine.actions.data_preprocessing import data_preprocessing
 from engine.data.data_preprocessing.transform_date_to_timestamp import transform_date_to_timestamp
+from engine.test.movie_lens_datasets import get_datasets
 dirname = os.path.dirname(__file__)
 
 # def dinamic_train(config: ModelConfig): 
@@ -31,7 +32,7 @@ def train():
 
     # General Configs
     engine_name = "Engine_vTest"
-    is_training_by = False
+    is_training_by = True
     service_models_path = f"service_models/{engine_name}"
 
     engine_crud = EngineCRUD(engine=engine)
@@ -47,13 +48,14 @@ def train():
 
     # Retrieval Configs
     retrieval_config = ModelConfig(
-        isTrain=False,
+        isTrain=True,
         model_name="Retrieval lite",
-        features=['usuario_id', 'id', 'fecha', 'nombre', 'edad', 'descripcion'],
+        features=['usuario_id', 'id'],
+        # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
         candidate_data_path="../../../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
         data_path="../../datasets/vistas.csv",
         towers_layers_sizes=[],
-        shuffle=10_000,
+        shuffle=100_000,
         embedding_dimension=64,
         candidates_batch=128,
         k_candidates=100,
@@ -61,7 +63,7 @@ def train():
         num_epochs=1,
         use_multiprocessing=True,
         workers=4,
-        train_batch=8192,
+        train_batch=16_384,
         val_batch=4096,
         test_batch=4096,
         vocabularies_batch=1000,
@@ -72,22 +74,27 @@ def train():
         candidate_feature_merge="id",
         data_feature_merge="publicacion_id",
         user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
+        # user_id_data={ 'user_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         features_data_q={
             # 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             #'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            #'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
+            # 'timestamp': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 0.1 }    
+            #'bucketized_user_age': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 0.5 }    
         },
         features_data_c={ 
+            # 'movie_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            # 'movie_title': { 'dtype': FeaturesTypes.CategoricalString, 'w': 0.5 },
             'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 0.5 },
+            #'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 0.5 },
             #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
         }
     )
     
     # Likes Configs
     likes_config = ModelConfig(
-        isTrain=True,
+        isTrain=False,
         model_name="Likes lite",
         features=['usuario_id', 'id', 'fecha', 'nombre', 'edad', 'descripcion'],
         candidate_data_path="../../../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
@@ -97,7 +104,7 @@ def train():
         shuffle=154_396,
         embedding_dimension=64,
         learning_rate=0.0001,
-        num_epochs=15,
+        num_epochs=10,
         use_multiprocessing=True,
         target_column={
             "current": "valor",
@@ -117,14 +124,14 @@ def train():
         user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
         features_data_q={
             'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
+            'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
         },
         features_data_c={ 
             'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
-            #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
+            'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
         }
     )
 
@@ -165,6 +172,11 @@ def train():
 
         pubs_ds = pipe.convert_to_tf_dataset(pubs_df)
         views_ds = pipe.convert_to_tf_dataset(views_df)
+
+        # views_ds, pubs_ds = get_datasets()
+
+        # print(views_ds)
+        # print(pubs_ds)
 
         vocabularies = pipe.build_vocabularies(
             features=retrieval_config.features,

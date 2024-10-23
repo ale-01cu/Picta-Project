@@ -10,6 +10,8 @@ import pickle
 from engine.models.ModelConfig import ModelConfig
 from engine.data import FeaturesTypes
 from engine.data.DataPipeline import DataPipeline
+import time
+
 dirname = os.path.dirname(__file__)
 
 class RetrievalModel(tfrs.models.Model):
@@ -186,28 +188,27 @@ class RetrievalModel(tfrs.models.Model):
             print(output)
             self.evaluation_result["test"].append(output)
 
-
     def index_model(self) -> tfrs.layers.factorized_top_k.BruteForce:
         print("Indexando...")
 
-        data_test = {}
+        # data_test = {}
 
-        for key, value in self.config.features_data_q.items():
-            new_value = None
-            feature_type = value['dtype']
+        # for key, value in self.config.features_data_q.items():
+        #     new_value = None
+        #     feature_type = value['dtype']
 
-            if(feature_type == FeaturesTypes.CategoricalString):
-                new_value = np.array(["test"])
-            elif(feature_type == FeaturesTypes.CategoricalInteger):
-                new_value = np.array([0])
-            elif(feature_type == FeaturesTypes.CategoricalContinuous):
-                new_value = np.array([0])
-            elif(feature_type == FeaturesTypes.StringText):
-                new_value = np.array(["test"])
+        #     if(feature_type == FeaturesTypes.CategoricalString):
+        #         new_value = np.array(["test"])
+        #     elif(feature_type == FeaturesTypes.CategoricalInteger):
+        #         new_value = np.array([0])
+        #     elif(feature_type == FeaturesTypes.CategoricalContinuous):
+        #         new_value = np.array([0])
+        #     elif(feature_type == FeaturesTypes.StringText):
+        #         new_value = np.array(["test"])
 
-            data_test[key] = new_value
+        #     data_test[key] = new_value
 
-        self.query_model(data_test)
+        # self.query_model(data_test)
 
         index = tfrs.layers.factorized_top_k.BruteForce(
             self.query_model, 
@@ -216,29 +217,38 @@ class RetrievalModel(tfrs.models.Model):
 
         index.index_from_dataset(
             self.candidates.batch(self.candidates_batch).map(
-                lambda x: (x['id'], self.candidate_model(x)))
+                lambda x: (x['movie_id'], self.candidate_model(x)))
         )
+        # index.index_from_dataset(
+        #     self.candidates.batch(self.candidates_batch).map(
+        #         lambda x: (x['id'], self.candidate_model(x)))
+        # )
 
         data_test = [
             {
-                "usuario_id": np.array([320]),
-                "edad": np.array([32])
-            },
-            {
-                "usuario_id": np.array([161]),
-                "edad": np.array([37])
-            },
-            {
-                "usuario_id": np.array([3040]),
-                "edad": np.array([51])
+                "usuario_id": np.array([9364]),
+                "edad": np.array([22]),
+                "fecha": np.array([int(time.time() * 1000)])
             },
             {
                 "usuario_id": np.array([8097]),
-                "edad": np.array([45])
+                "edad": np.array([45]),
+                "fecha": np.array([int(time.time() * 1000) + (60 * 1000)])
             },
             {
-                "usuario_id": np.array([9364]),
-                "edad": np.array([22])
+                "usuario_id": np.array([3040]),
+                "edad": np.array([51]),
+                "fecha": np.array([int(time.time() * 1000)  + (2 * 60 * 1000)])
+            },
+            {
+                "usuario_id": np.array([161]),
+                "edad": np.array([37]),
+                "fecha": np.array([int(time.time() * 1000) + (3 * 60 * 1000)])
+            },
+            {
+                "usuario_id": np.array([320]),
+                "edad": np.array([32]),
+                "fecha": np.array([int(time.time() * 1000) + (4 * 60 * 1000)])
             },
         ]
 
@@ -255,19 +265,20 @@ class RetrievalModel(tfrs.models.Model):
            elif(feature_type == FeaturesTypes.CategoricalInteger):
                new_value = np.array([0])
            elif(feature_type == FeaturesTypes.CategoricalContinuous):
-               new_value = np.array([0])
+               new_value = np.array([int(time.time() * 1000)])
+            #    new_value = np.array(int(time.time() * 1000))
            elif(feature_type == FeaturesTypes.StringText):
                new_value = np.array(["test"])
 
            data_test[key] = new_value
 
-        score, titles = index(data_test, self.k_candidates)
+        score, titles = index(data_test)
         ids = [id for id, score in zip(titles.numpy()[0], score.numpy()[0])]
         print(ids[: 10])
 
-        #for data in data_test:
+        # for data in data_test:
         #    print(data)
-        #    score, titles = index(data, self.k_candidates)
+        #    score, titles = index(data)
         #    ids = [id for id, score in zip(titles.numpy()[0], score.numpy()[0])]
         #    print(ids[: 10])
         #    print("")
@@ -275,7 +286,10 @@ class RetrievalModel(tfrs.models.Model):
         return index
 
 
-    def predict_model(self, index: tfrs.layers.factorized_top_k.BruteForce, user_id: int) -> tuple[tf.Tensor, tf.Tensor]:
+    def predict_model(self, 
+        index: tfrs.layers.factorized_top_k.BruteForce, 
+        user_id: int
+    ) -> tuple[tf.Tensor, tf.Tensor]:
         print('--------- Prediciendo con el modelo ----------')
         score, titles = index(
             {'user_id': np.array([user_id])}, 
@@ -361,7 +375,6 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def load_model(self, path: str, cached_train, cached_test) -> None:
-        
         print("Cargando los pesos...")
         self.load_weights(os.path.join(path, "model/pesos.tf"))
         print("Compilando...")
