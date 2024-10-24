@@ -1,13 +1,24 @@
-from fastapi import FastAPI, Query, HTTPException, status, Response, Request
-from settings.db import get_db
-from sqlalchemy.orm import Session
-from engine.db.main import build_db
+from fastapi import FastAPI, Body, Query, HTTPException, status, Response, Request
 from engine.actions.use_engine import use_models
 from engine.actions.train import train
+from app.routes import (
+    config_routes,
+    features_routes,
+    auth_routes,
+    engine_routes
+)
 import time
 
-build_db()
+# build_db()
 app = FastAPI()
+
+
+
+app.include_router(config_routes.router)
+app.include_router(features_routes.router)
+app.include_router(auth_routes.router)
+app.include_router(engine_routes.router)
+
 
 @app.get("/train")
 async def train_api():

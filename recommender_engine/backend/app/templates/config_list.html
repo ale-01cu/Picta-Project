@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Configuraciones</title>
+</head>
+<body>
+    <h1>Configuraciones</h1>
+    <ul>
+      {% for config in configs %}
+        <li>
+          <a href="/config/{{ config._id }}">
+            <h2>Configuración {{ loop.index }}</h2>
+            <ul>
+              <li><strong>Entrenar:</strong> {{ config.isTrain }}</li>
+              <li><strong>Nombre:</strong> {{ config.name }}</li>
+              <!-- <li><strong>Características:</strong>
+                <ul>
+                  {% for feature in config.features %}
+                  <li>{{ feature }}</li>
+                  {% endfor %}
+                </ul>
+              </li> -->
+              <li><strong>Nombre de datos de candidatos:</strong> {{ config.candidate_data_path }}</li>
+              <li><strong>Nombre de datos de historial de usuario:</strong> {{ config.data_path }}</li>
+              <li><strong>K candidatos:</strong> {{ config.k_candidates }}</li>
+              <li>
+                <strong>Características:</strong>
+                <ul>
+                    {% for feat in config.features %}
+                        <li>
+                            {{ feat }}
+                        </li>
+                    {% endfor %}
+                </ul>
+              </li>
+              <li>
+                <strong>Caracteristicas de contexto:</strong> 
+                <ul>
+                  {% for feat in config.features_data_q.keys() %}
+                    <li>
+                      {{ feat }}
+                    </li>
+                  
+                  {% endfor %}
+                </ul>
+              </li>
+              <li>
+                <strong>Caracteristicas de los candidatos:</strong>
+                <ul>
+                  {% for feat in config.features_data_c.keys() %}
+                    <li>
+                      {{ feat }}
+                    </li>
+                  
+                  {% endfor %}
+                </ul>
+              </li>
+            </ul>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <a href="/add-config">
+      <button>Nueva Configuración</button>
+    </a>  
+</body>
+</html>

@@ -4,6 +4,7 @@ import tensorflow as tf
 class Categorical():
     def __init__(self) -> None:
         self.datatype = None
+        self.label = ""
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} {self.datatype}"
@@ -18,23 +19,27 @@ class CategoricalContinuous(Categorical):
     def __init__(self) -> None:
         super().__init__()
         self.datatype = tf.int32
+        self.label = "Continuo Categorico"
 
 
 class CategoricalInteger(Categorical):
     def __init__(self) -> None:
         super().__init__()
         self.datatype = tf.int32
+        self.label = "Entero Categorico"
 
 
 class CategoricalString(Categorical):
     def __init__(self) -> None:
         super().__init__()
         self.datatype = tf.string
+        self.label = "Texto Categorico"
 
 
 class StringText():
     def __init__(self) -> None:
         self.datatype = tf.string
+        self.label = "Texto Largo"
 
     def __str__(self) -> str:
         return f"{self/__class__.__name__} {self.datatype}"

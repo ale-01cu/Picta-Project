@@ -1,0 +1,18 @@
+<!-- app/templates/formulario.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario de Registro</title>
+</head>
+<body>
+    <form method="post" action="/signin">
+        {% for field in form_fields %}
+            <label for="{{ field }}">{{ field.capitalize() }}</label>
+            <input type="text" id="{{ field }}" name="{{ field }}" required>
+            <br>
+        {% endfor %}
+        <button type="submit">Registrar</button>
+    </form>
+</body>
+</html>
