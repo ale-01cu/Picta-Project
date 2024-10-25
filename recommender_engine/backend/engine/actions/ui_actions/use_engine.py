@@ -3,24 +3,25 @@ import numpy as np
 import os
 from engine.db.cruds.ModelCRUD import ModelCRUD
 from engine.stages.stages import retrieval_stage, ranking_Stage
-from engine.db.config import engine
-from engine.db.main import build_db
+from settings.db import engine
 from engine.utils import read_json
 from engine.data.FeaturesTypes import map_feature
 from engine.data.DataPipeline import DataPipeline
+from settings.mongodb import engine_collection, config_collection
+from bson import ObjectId
 import time
 dirname = os.path.dirname(__file__)
 
-
-model_crud = ModelCRUD(engine=engine)
+engine = engine_collection.find_one({ "is_active": True })
 
 def get_recommendations(user_id, k, params):
-    retrieval_model_db = model_crud.get_model_running_by_stage(
-        stage=retrieval_stage.name)
-    metadata = read_json(retrieval_model_db.metadata_path)
+    retrieval_config_db = config_collection.find_one(
+        { "_id": ObjectId(engine['retrieval_model_id']) })
+
+    metadata = read_json(retrieval_config_db["metadata_path"])
 
     retieval_model = tf.saved_model.load(
-        os.path.join(dirname, f"{retrieval_model_db.model_path}/index"))
+        os.path.join(dirname, f"{retrieval_config_db['modelPath']}/index"))
     
     user_identier_name = next(iter(metadata['user_id_data']))
     
@@ -66,10 +67,10 @@ def get_recommendations(user_id, k, params):
 
 
 def ranking_recommendations(user_id, pubs_ids: list, params: dict): 
-    likes_model_db = model_crud.get_model_running_by_stage(
-        stage=ranking_Stage.name)
-    
-    metadata = read_json(likes_model_db.metadata_path)
+    ranking_config_db = config_collection.find_one(
+            { "_id": ObjectId(engine['ranking_model_id']) })
+
+    metadata = read_json(ranking_config_db['metadata_path'])
     user_identier_name = next(iter(metadata['user_id_data']))
 
     feature_data_merged = {
@@ -112,7 +113,7 @@ def ranking_recommendations(user_id, pubs_ids: list, params: dict):
         context_input[key] = value
     
     model = tf.saved_model.load(
-        os.path.join(dirname, f"{likes_model_db.model_path}/service"))
+        os.path.join(dirname, f"{ranking_config_db['modelPath']}/service"))
     
     test_ratings = {}
 
@@ -180,7 +181,7 @@ def get_full_data(hiperparams):
         candidate_path,
         data_path
     ])
-    data_df = transform_date_to_timestamp(data_df, 'fecha')
+    #data_df = transform_date_to_timestamp(data_df, 'fecha')
     # pubs_path = '../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
     # pubs_df = pd.read_csv(pubs_path)
     candidate_df['descripcion'] = candidate_df['descripcion'].astype(str)
@@ -204,9 +205,10 @@ def get_full_data(hiperparams):
 
 
 def get_row_as_dict(id: str, data: dict):
-    retrieval_model_db = model_crud.get_model_running_by_stage(
-        stage=retrieval_stage.name)
-    metadata = read_json(retrieval_model_db.metadata_path)
+    retrieval_config_db = config_collection.find_one(
+        { "_id": ObjectId(engine['retrieval_model_id']) })
+
+    metadata = read_json(retrieval_config_db["metadata_path"])
 
     try:
     # Filtrar el DataFrame para solo la fila donde el id coincide con el proporcionado
@@ -278,44 +280,38 @@ data_test = [
         "edad": np.array([22])
     },
 ]
-# data_test = [
-#     {
-#         "user_id": np.array([b'138']),
-#         "bucketized_user_age": np.array([45])
-#     },
-#     {
-#         "user_id": np.array([b'92']),
-#         "bucketized_user_age": np.array([25])
-#     },
-#     {
-#         "user_id": np.array([b'301']),
-#         "bucketized_user_age": np.array([18])
-#     },
-#     {
-#         "user_id": np.array([b'60']),
-#         "bucketized_user_age": np.array([50])
-#     },
-#     {
-#         "user_id": np.array([b'197']),
-#         "bucketized_user_age": np.array([50])
-#     },
-# ]
+data_test = [
+    {
+        "user_id": np.array([b'138']),
+        "bucketized_user_age": np.array([45])
+    },
+    {
+        "user_id": np.array([b'92']),
+        "bucketized_user_age": np.array([25])
+    },
+    {
+        "user_id": np.array([b'301']),
+        "bucketized_user_age": np.array([18])
+    },
+    {
+        "user_id": np.array([b'60']),
+        "bucketized_user_age": np.array([50])
+    },
+    {
+        "user_id": np.array([b'197']),
+        "bucketized_user_age": np.array([50])
+    },
+]
 
 
 if __name__ == "__main__":
-    build_db()
     data = data_test[0]
-    USER_ID = data['usuario_id'].item()
-    #USER_ID = data['user_id'].item()
+    #USER_ID = data['usuario_id'].item()
+    USER_ID = data['user_id'].item()
     K = 10
-    # params = {
-    #     "bucketized_user_age": data['bucketized_user_age'].item(),
-    #     'timestamp': int(time.time() * 1000)#+ (7 * 24 * 60 * 60 * 1000)
-
-    # }
     params = {
-        #"bucketized_user_age": data['bucketized_user_age'].item(),
-        #'timestamp': int(time.time() * 1000)#+ (7 * 24 * 60 * 60 * 1000)
+        "bucketized_user_age": data['bucketized_user_age'].item(),
+        'timestamp': int(time.time() * 1000)#+ (7 * 24 * 60 * 60 * 1000)
 
     }
 

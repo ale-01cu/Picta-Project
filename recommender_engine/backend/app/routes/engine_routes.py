@@ -33,21 +33,24 @@ async def retrieve_engine(request: Request, engine_id: str):
         if engine is None:
             raise HTTPException(status_code=404, detail="Engine not found")
         
-        if not engine.get('retrieval_model_id') or not engine.get('ranking_model_id'):
-            return templates.TemplateResponse(
-                "detail_engine.html",
-                {"request": request, "engine": engine}
-            )
+        # if not engine.get('retrieval_model_id') or not engine.get('ranking_model_id'):
+        #     return templates.TemplateResponse(
+        #         "detail_engine.html",
+        #         {"request": request, "engine": engine}
+        #     )
         
-        engine['retrieval_model_id'] = config_collection.find_one({
-                "_id": ObjectId(engine['retrieval_model_id']), 
-                "is_active": True
-            })
-        engine['ranking_model_id'] = config_collection.find_one({
-                "_id": ObjectId(engine['ranking_model_id']), 
-                "is_active": True
-            })
+        if engine['retrieval_model_id']:
+            engine['retrieval_model_id'] = config_collection.find_one({
+                    "_id": ObjectId(engine['retrieval_model_id']), 
+                    "is_active": True
+                })
+        if engine['ranking_model_id']:
+            engine['ranking_model_id'] = config_collection.find_one({
+                    "_id": ObjectId(engine['ranking_model_id']), 
+                    "is_active": True
+                })
         
+        print(engine)
         return templates.TemplateResponse(
             "detail_engine.html",
             {"request": request, "engine": engine}

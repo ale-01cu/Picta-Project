@@ -77,6 +77,23 @@
               {% endfor %}
             </ul>
           </li>
+          <li>
+            <strong>Etapa</strong>
+            {{ config.stage }}
+          </li>
+          {% if config.stage == "ranking" %}
+          <li>
+            <strong>Columna Objetivo</strong>
+            <ul>
+              <li>
+                Actual: {{ config.target_column.current }}
+              </li>
+              <li>
+                Nueva: {{ config.target_column.new }}
+              </li>
+            </ul>
+          </li>
+          {% endif %}
     </ul>
 
     <!-- Botón para actualizar la configuración -->

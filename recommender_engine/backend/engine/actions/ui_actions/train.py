@@ -30,16 +30,18 @@ def delete_path(path):
         print(f"El engine no existe: {path}")
 
 def train(engine_id):
-    global engine
+    engine = engine_collection.find_one({ "_id": ObjectId(engine_id) })
 
-    engine = engine_collection.find_one({ "_id": engine_id })
-    retrieval_config_db = config_collection.find_one(
-        { "_id": ObjectId(engine['retrieval_model_id']) })
-    ranking_config_db = config_collection.find_one(
-        { "_id": ObjectId(engine['ranking_model_id']) })
+    if engine['retrieval_model_id']:
+        retrieval_config_db = config_collection.find_one(
+            { "_id": ObjectId(engine['retrieval_model_id']) })
+        
+    if engine['ranking_model_id']:
+        ranking_config_db = config_collection.find_one(
+            { "_id": ObjectId(engine['ranking_model_id']) })
 
     # General Configs
-    engine_name = engine['engine_name']
+    engine_name = engine['name']
     is_training_by = engine['is_training_by']
     service_models_path = f"service_models/{engine_name}"
 
@@ -49,8 +51,8 @@ def train(engine_id):
         model_name=retrieval_config_db['name'],
         features=retrieval_config_db['features'],
         # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
-        candidate_data_path=f"datasets/{retrieval_config_db['candidate_data_path']}.csv",
-        data_path=f"datasets/{retrieval_config_db['data_path']}.csv",
+        candidate_data_path=f"../../datasets/{retrieval_config_db['candidate_data_path']}.csv",
+        data_path=f"../../datasets/{retrieval_config_db['data_path']}.csv",
         towers_layers_sizes=[],
         shuffle=100_000,
         embedding_dimension=64,
@@ -73,16 +75,19 @@ def train(engine_id):
         user_id_data=retrieval_config_db['user_id_data'],
         # user_id_data={ 'user_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         features_data_q=retrieval_config_db['features_data_q'],
-        features_data_c=retrieval_config_db['features_data_c']
+        features_data_c=retrieval_config_db['features_data_c'],
+        to_map=True
     )
+
+    print(retrieval_config)
     
     # Likes Configs
-    _config = ModelConfig(
+    ranking_config = ModelConfig(
         isTrain=ranking_config_db['isTrain'],
         model_name=ranking_config_db['name'],
         features=ranking_config_db['features'],
-        candidate_data_path=f"datasets/{ranking_config_db['candidate_data_path']}.csv",
-        data_path=f"datasets/{ranking_config_db['data_path']}.csv",
+        candidate_data_path=f"../../datasets/{ranking_config_db['candidate_data_path']}.csv",
+        data_path=f"../../datasets/{ranking_config_db['data_path']}.csv",
         towers_layers_sizes=[],
         deep_layers_sizes = [],
         shuffle=154_396,
@@ -90,10 +95,7 @@ def train(engine_id):
         learning_rate=0.0001,
         num_epochs=10,
         use_multiprocessing=True,
-        target_column={
-            "current": "valor",
-            "new": "like_dislike"
-        },
+        target_column=ranking_config_db['target_column'],
         workers=4,
         train_batch=1024,
         val_batch=256,
@@ -107,8 +109,11 @@ def train(engine_id):
         data_feature_merge=ranking_config_db['data_feature_merge'],
         user_id_data=ranking_config_db['user_id_data'],
         features_data_q=ranking_config_db['features_data_q'],
-        features_data_c=ranking_config_db['features_data_c']
+        features_data_c=ranking_config_db['features_data_c'],
+        to_map=True
     )
+
+    print(ranking_config)
 
     
     print(f"***** Proceso de Entrenamiendo del Systema {engine_name} Iniciado *****")
@@ -128,7 +133,6 @@ def train(engine_id):
 
         pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
-
 
 
         views_df = pipe.merge_data(
@@ -227,7 +231,7 @@ def train(engine_id):
                 "stage": retrieval_stage.name,
                 "modelPath": retrieval_model.model_path,
                 "data_train_path": retrieval_model.data_train_path,
-                "metadata_path": retrieval_model.metadata_path
+                "metadata_path": retrieval_model.model_metadata_path
             }}
         )
 
@@ -241,29 +245,29 @@ def train(engine_id):
         # )
 
 
-    if not is_training_by or _config.isTrain:
+    if not is_training_by or ranking_config.isTrain:
         pipe = DataPipeline()
         likes_df, pubs_df = pipe.read_csv_data(paths=[
-            _config.data_path,
-            _config.candidate_data_path
+            ranking_config.data_path,
+            ranking_config.candidate_data_path
         ])
 
         pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
-        likes_df = likes_df[: _config.shuffle]
+        likes_df = likes_df[: ranking_config.shuffle]
         likes_df = likes_df.drop(['id'], axis=1)
-        likes_df[_config.target_column['new']] = likes_df[_config.target_column['current']]\
+        likes_df[ranking_config.target_column['new']] = likes_df[ranking_config.target_column['current']]\
             .map({True: 1, False: 0})
         likes_df['fecha'] = likes_df['fecha'].astype("int32")
         
 
-        all_features = _config.features + [_config.target_column['new']]
+        all_features = ranking_config.features + [ranking_config.target_column['new']]
         likes_df = pipe.merge_data(
             left_data=pubs_df,
             right_data=likes_df,
-            left_on=_config.candidate_feature_merge,
-            right_on=_config.data_feature_merge,
+            left_on=ranking_config.candidate_feature_merge,
+            right_on=ranking_config.data_feature_merge,
             output_features=all_features
         )
 
@@ -276,37 +280,37 @@ def train(engine_id):
         vocabularies = pipe.build_vocabularies(
             features=all_features,
             ds=likes_ds,
-            batch=_config.vocabularies_batch
+            batch=ranking_config.vocabularies_batch
         )
 
         total, train_Length, val_length, test_length = pipe.get_lengths(
             ds=likes_ds,
-            train_length=_config.train_length,
-            test_length=_config.test_length,
-            val_length=_config.val_length
+            train_length=ranking_config.train_length,
+            test_length=ranking_config.test_length,
+            val_length=ranking_config.val_length
         )
 
         train, val, test = pipe.split_into_train_and_test(
             ds=likes_ds,
-            shuffle=_config.shuffle,
+            shuffle=ranking_config.shuffle,
             train_length=train_Length,
             val_length=val_length,
             test_length=test_length,
-            seed=_config.seed
+            seed=ranking_config.seed
         )
 
         cached_train, cached_val, cached_test = pipe.data_caching(
             train=train,
             val=val,
             test=test,
-            shuffle=_config.shuffle,
-            train_batch=_config.train_batch,
-            val_batch=_config.val_batch,
-            test_batch=_config.test_batch
+            shuffle=ranking_config.shuffle,
+            train_batch=ranking_config.train_batch,
+            val_batch=ranking_config.val_batch,
+            test_batch=ranking_config.test_batch
         )
 
         ranking_model = ranking_Stage.model(
-            config=_config,
+            config=ranking_config,
             vocabularies=vocabularies,
             regularization_l2=0.05,
             # model_name=ranking_model_name,
@@ -340,7 +344,7 @@ def train(engine_id):
                 "stage": ranking_Stage.name,
                 "modelPath": ranking_model.model_path,
                 "data_train_path": ranking_model.data_train_path,
-                "metadata_path": ranking_model.metadata_path
+                "metadata_path": ranking_model.model_metadata_path
             }}
         )
 

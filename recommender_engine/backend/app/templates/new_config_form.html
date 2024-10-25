@@ -79,6 +79,27 @@
             Agregar Campo
           </button>
         </div>
+
+        <div>
+          <label>Etapa</label>
+          <select name="stage" id="stage-select" required>
+            {% for stage in stages %}
+              <option value="{{ stage }}">{{ stage }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="target-column-div" style="display: none;">
+          <label>Columna Objetivo</label>
+          <label for="">
+            Actual
+            <input type="text" name="current" id="">
+          </label>
+          <label for="">
+            Nueva
+            <input type="text" name="new" id="">
+          </label>
+        </div>
   
       <button type="button" onclick="submitForm()">
         Enviar
@@ -89,6 +110,15 @@
 
 <script>
   let counter = 1;
+
+  document.getElementById('stage-select').addEventListener('change', function() {
+    var targetDiv = document.getElementById('target-column-div');
+    if (this.value === 'ranking') {
+      targetDiv.style.display = 'block';
+    } else {
+      targetDiv.style.display = 'none';
+    }
+  });
 
   function addFeature() {
     const container = document.getElementById('features_container');
@@ -226,7 +256,12 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
           dtype: features_data_c['feature_c_dtype'],
           w: features_data_c['feature_c_weight']
         }
-      } : {} // Si feature_c está vacío, asigna un objeto vacío
+      } : {}, // Si feature_c está vacío, asigna un objeto vacío
+      stage: formData.get('stage'),
+      target_column: {
+        "current": formData.get('current'),
+        "new": formData.get('new')
+      }
     };
 
     console.log(data);
@@ -245,7 +280,8 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
       }
       return response.json();
     })
-    .then(data => null)
+    // .then(data => null)
+    .then(data => window.location.href = "/add-config")
     .catch(error => console.error('Error:', error));
   }
   function getFeatureData(containerId) {

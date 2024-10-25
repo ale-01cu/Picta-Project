@@ -113,6 +113,30 @@
         </div>
         {% endfor %}
       </div>
+
+      <div>
+        <label>Etapa</label>
+        <select name="stage" id="stage-select" required>
+          {% for stage in stages %}
+            <option value="{{ stage }}" {% if config.stage == stage %}selected{% endif %}>{{ stage }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if config.stage == "ranking" %}
+        <div id="target-column-div">
+          <label>Columna Objetivo</label>
+          <label for="">
+            Actual
+            <input type="text" name="current" id="" value="{{ config.target_column.current }}">
+          </label>
+          <label for="">
+            Nueva
+            <input type="text" name="new" id="" value="{{ config.target_column.new }}">
+          </label>
+        </div>
+      {% endif %}
+
   
       <button type="button" onclick="submitForm()">
         Enviar
@@ -122,6 +146,14 @@
 </html>
 
 <script>
+   document.getElementById('stage-select').addEventListener('change', function() {
+    var targetDiv = document.getElementById('target-column-div');
+    if (this.value === 'ranking') {
+      targetDiv.style.display = 'block';
+    } else {
+      targetDiv.style.display = 'none';
+    }
+  });
 
   function addFeature() {
     const container = document.getElementById('features_container');
@@ -259,7 +291,12 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
           dtype: features_data_c['feature_c_dtype'],
           w: features_data_c['feature_c_weight']
         }
-      } : {} // Si feature_c está vacío, asigna un objeto vacío
+      } : {}, // Si feature_c está vacío, asigna un objeto vacío
+      stage: formData.get('stage'),
+      target_column: {
+        "current": formData.get('current'),
+        "new": formData.get('new')
+      }
     };
 
     console.log(data);

@@ -34,6 +34,7 @@ class FeaturesLayers(tf.keras.Model):
         self.models = {}
         self.aditional_layers = aditional_layers
         self.extra_layers = {}
+        self.model = None
 
 
         for feature_name, feature_data in self.features_data.items():
@@ -51,7 +52,7 @@ class FeaturesLayers(tf.keras.Model):
                 #normalization_layer = tf.keras.layers.Normalization(axis=None)
                 #normalization_layer.adapt(vocabulary)
 
-                model = tf.keras.Sequential([
+                self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + 'input', dtype = tf.int32),
                     #normalization_layer,
                     tf.keras.layers.IntegerLookup(
@@ -63,7 +64,7 @@ class FeaturesLayers(tf.keras.Model):
                 ])
             
             elif feature_type == CategoricalString:
-                model = tf.keras.Sequential([
+                self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.string),
                     tf.keras.layers.StringLookup(
                         vocabulary=vocabulary, mask_token=None),
@@ -86,7 +87,7 @@ class FeaturesLayers(tf.keras.Model):
                     min_timestamp, max_timestamp, num=1000)
 
 
-                model = tf.keras.Sequential([
+                self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.int64),
                     tf.keras.layers.Discretization(timestamp_buckets.tolist()),
                     tf.keras.layers.Embedding(len(timestamp_buckets) + 2, self.embedding_dimension),
@@ -106,7 +107,7 @@ class FeaturesLayers(tf.keras.Model):
                     max_tokens=self.max_tokens)
                 vectorization_layer.adapt(vocabulary)
 
-                model = tf.keras.Sequential([
+                self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(
                         input_shape=(1,), 
                         name = feature_name + '_input', 
@@ -123,8 +124,10 @@ class FeaturesLayers(tf.keras.Model):
 
             if self.aditional_layers:
                 for layer in self.aditional_layers:
-                    model.add(layer)
-            self.models[feature_name] = model
+                    self.model.add(layer)
+            self.models[feature_name] = self.model
+
+            self.model = None
 
 
     def call(self, inputs) -> Tensor:

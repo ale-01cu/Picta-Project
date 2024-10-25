@@ -3,14 +3,13 @@ from engine.data import FeaturesTypes
 from engine.stages.stages import retrieval_stage, ranking_Stage
 from engine.db.cruds.EngineCRUD import EngineCRUD
 from engine.db.cruds.ModelCRUD import ModelCRUD
-from settings.db import engine
+from engine.db.config import engine
 from engine.models.ModelConfig import ModelConfig
 import os
 import pandas as pd
 import shutil
-from engine.actions.data_preprocessing import data_preprocessing
-from engine.data.data_preprocessing.transform_date_to_timestamp import transform_date_to_timestamp
-from engine.test.movie_lens_datasets import get_datasets
+from engine.db.main import build_db
+
 dirname = os.path.dirname(__file__)
 
 # def dinamic_train(config: ModelConfig): 
@@ -31,8 +30,8 @@ def train():
     global engine
 
     # General Configs
-    engine_name = "Engine_vTest"
-    is_training_by = True
+    engine_name = "Engine Local v0.1"
+    is_training_by = False
     service_models_path = f"service_models/{engine_name}"
 
     engine_crud = EngineCRUD(engine=engine)
@@ -96,7 +95,8 @@ def train():
     likes_config = ModelConfig(
         isTrain=False,
         model_name="Likes lite",
-        features=['usuario_id', 'id', 'fecha', 'nombre', 'edad', 'descripcion'],
+        # features=['usuario_id', 'id', 'fecha', 'nombre', 'edad', 'descripcion'],
+        features=['usuario_id', 'id'],
         candidate_data_path="../../../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
         data_path="../../datasets/likes.csv",
         towers_layers_sizes=[],
@@ -123,15 +123,15 @@ def train():
         data_feature_merge="publicacion_id",
         user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
         features_data_q={
-            'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
+            #'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
         },
         features_data_c={ 
             'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
-            'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
+            #'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
+            #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
         }
     )
 
@@ -364,4 +364,5 @@ def train():
 
 
 if __name__ == "__main__":
+    build_db()
     train()

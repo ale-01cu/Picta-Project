@@ -58,14 +58,14 @@ async def get_config(config_id: str):
             detail="ID de configuración no válido"
         )
 
-
+from engine.stages.stages import stages
 @router.get("/add-config", response_class=HTMLResponse)
 async def new_config_form():
-    form_fields = ModelConfigUserInput.model_fields.keys()
+    # form_fields = ModelConfigUserInput.model_fields.keys()
     # Renderizar un formulario para crear una nueva configuración
     return templates.TemplateResponse(
         "new_config_form.html",
-        {"request": {}, "form_fields": form_fields}
+        {"request": {}, "stages": stages}
     )
 
 
@@ -119,10 +119,16 @@ async def update_config_form(config_id: str):
             for key, value in features_types_map.items() 
         }
 
+        print(documento)
         documento['_id'] = str(documento['_id'])
         return templates.TemplateResponse(
             "update_config_form.html",
-            {"request": {}, 'config': documento, "features_types": fearues_types}
+            {
+                "request": {}, 
+                'config': documento, 
+                "features_types": fearues_types,
+                "stages": stages
+            }
         )
     else:
         raise HTTPException(

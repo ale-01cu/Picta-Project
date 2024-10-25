@@ -56,7 +56,7 @@
           <li>
               <strong>Caracteristicas de usuario:</strong> 
               <ul>
-                {% for feat in engine.retrieval_model_id.user_data.keys() %}
+                {% for feat in engine.retrieval_model_id.user_id_data.keys() %}
                   <li>
                     {{ feat }}
                   </li>
@@ -134,7 +134,7 @@
           <li>
               <strong>Caracteristicas de usuario:</strong> 
               <ul>
-                {% for feat in engine.ranking_model_id.user_data.keys() %}
+                {% for feat in engine.ranking_model_id.user_id_data.keys() %}
                   <li>
                     {{ feat }}
                   </li>
@@ -175,5 +175,40 @@
 <form action="/edit-engines/{{ engine._id }}" method="get" style="display:inline;">
     <button type="submit">Actualizar</button>
 </form>
+<button id="trainButton">Entrenar</button>
+<span id="spinner" style="display:none;">Entrenando<span id="dots">...</span></span>
+
+<script>
+  document.getElementById('trainButton').addEventListener('click', function() {
+      document.getElementById('trainButton').style.display = 'none';
+      document.getElementById('spinner').style.display = 'inline';
+
+      let dots = document.getElementById('dots');
+      let dotCount = 0;
+      setInterval(function() {
+          dotCount = (dotCount + 1) % 4;
+          dots.textContent = '.'.repeat(dotCount);
+      }, 500);
+
+      fetch(`/train/{{ engine._id }}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error en el servidor');
+              }
+              return response.json();
+          })
+          .then(data => {
+              // Aquí puedes manejar la respuesta de la petición
+              console.log(data);
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Ocurrió un error al comunicarse con el servidor. Por favor, inténtelo de nuevo más tarde.');
+              document.getElementById('trainButton').style.display = 'inline';
+              document.getElementById('spinner').style.display = 'none';
+          });
+  });
+</script>
+</script>
 </body>
 </html>

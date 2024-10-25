@@ -215,14 +215,17 @@ class RetrievalModel(tfrs.models.Model):
             k=self.k_candidates
         )
 
-        index.index_from_dataset(
-            self.candidates.batch(self.candidates_batch).map(
-                lambda x: (x['movie_id'], self.candidate_model(x)))
-        )
         # index.index_from_dataset(
         #     self.candidates.batch(self.candidates_batch).map(
-        #         lambda x: (x['id'], self.candidate_model(x)))
+        #         lambda x: (x['movie_id'], self.candidate_model(x)))
         # )
+        index.index_from_dataset(
+            self.candidates.batch(self.candidates_batch).map(
+                lambda x: (
+                    x[self.config.candidate_feature_merge], 
+                    self.candidate_model(x)
+                ))
+        )
 
         data_test = [
             {
@@ -261,14 +264,14 @@ class RetrievalModel(tfrs.models.Model):
            feature_type = value['dtype']
 
            if(feature_type == FeaturesTypes.CategoricalString):
-               new_value = np.array(["test"])
+               new_value = np.array([""])
            elif(feature_type == FeaturesTypes.CategoricalInteger):
                new_value = np.array([0])
            elif(feature_type == FeaturesTypes.CategoricalContinuous):
                new_value = np.array([int(time.time() * 1000)])
             #    new_value = np.array(int(time.time() * 1000))
            elif(feature_type == FeaturesTypes.StringText):
-               new_value = np.array(["test"])
+               new_value = np.array([""])
 
            data_test[key] = new_value
 

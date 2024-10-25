@@ -26,7 +26,7 @@
             <select id="retrieval_model_id" name="retrieval_model_id">
               <option value="">Seleccione un modelo</option>
                 {% for config in configs %}
-                  <option value="{{ config._id }}" {% if config._id == retrieval_model_id %}selected{% endif %}>{{ config._name }}</option>
+                  <option value="{{ config._id }}" {% if config._id == retrieval_model_id %}selected{% endif %}>{{ config.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -35,7 +35,7 @@
             <select id="ranking_model_id" name="ranking_model_id">
               <option value="">Seleccione un modelo</option>
                 {% for config in configs %}
-                  <option value="{{ config._id }}" {% if config._id == ranking_model_id %}selected{% endif %}>{{ config._name }}</option>
+                  <option value="{{ config._id }}" {% if config._id == ranking_model_id %}selected{% endif %}>{{ config.name }}</option>
                 {% endfor %}
             </select>
         </div>

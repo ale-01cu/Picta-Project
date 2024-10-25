@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Crear un objeto engine que se conecte a la base de datos SQLite
-engine = create_engine('sqlite:///database.db')
+engine = create_engine('sqlite:///engine/engine_db.db')
 Base = declarative_base()
 
 

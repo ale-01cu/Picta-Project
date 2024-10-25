@@ -34,7 +34,7 @@ class ModelConfig:
         self.features_data_c = kwargs.get('features_data_c', {})
         self.target_column = kwargs.get('target_column', {})
         self.to_map = kwargs.get("to_map", False)
-        
+
         for key, value in self.user_id_data.items():
             self.features_data_q[key] = value
 
@@ -42,19 +42,34 @@ class ModelConfig:
             new_dict = self.replace_name_with_class(self.__dict__)
             self.features_data_q = new_dict['features_data_q']
             self.features_data_c = new_dict['features_data_c']
-            self.user_id_data = new_dict['user_id_data']
+            # self.user_id_data = new_dict['user_id_data']
 
 
     def __str__(self):
-        return f"ModelConfig: {self.model_name}"
+        attributes = vars(self)
+        # Calcular el ancho máximo para las columnas
+        max_key_length = max(len(str(key)) for key in attributes.keys())
+        max_value_length = max(len(str(value)) for value in attributes.values())
+
+        # Crear la cabecera de la tabla
+        header = f"{'Atributo'.ljust(max_key_length)} | {'Valor'.ljust(max_value_length)}"
+        separator = '-' * (max_key_length + max_value_length + 3)
+
+        # Crear las filas de la tabla
+        rows = [f"{str(key).ljust(max_key_length)} | {str(value).ljust(max_value_length)}" for key, value in attributes.items()]
+
+        # Unir todo en una sola cadena
+        return f"{header}\n{separator}\n" + "\n".join(rows)
     
     def replace_name_with_class(self, d):
         data = copy.deepcopy(d)
-        features = ['features_data_q', 'features_data_c', 'user_id_data']
+        features = ['features_data_q', 'features_data_c']
 
         for feature in features:
             for key, value in data[feature].items():
+                print(value)
                 data[feature][key]['dtype'] = features_types_map[value['dtype']]
+                data[feature][key]['w'] = int(value['w'])
 
         return data
     

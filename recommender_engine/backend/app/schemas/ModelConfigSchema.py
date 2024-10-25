@@ -1,9 +1,11 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class ModelConfigUserInput(BaseModel):
     is_active: bool
     isTrain: bool
     name: str
+    stage: str
     features: list
     candidate_data_path: str
     data_path: str
@@ -13,12 +15,15 @@ class ModelConfigUserInput(BaseModel):
     user_id_data: dict
     features_data_q: dict
     features_data_c: dict
+    target_column: Optional[dict] = None
+
     
 
 class ModelConfig(BaseModel):
     is_active: bool
     isTrain: bool
     name: str
+    stage: str
     features: list
     candidate_data_path: str
     data_path: str
@@ -45,7 +50,7 @@ class ModelConfig(BaseModel):
     features_data_q: dict
     features_data_c: dict
     deep_layers_sizes: list
-    target_column: dict
+    target_column: Optional[dict] = None
     to_map: bool
     stage: str
     modelPath: str

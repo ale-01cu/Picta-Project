@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Body, Query, HTTPException, status, Response, Request
-from engine.actions.use_engine import use_models
-from engine.actions.train import train
+from engine.actions.ui_actions.use_engine import use_models
+from engine.actions.ui_actions.train import train
 from app.routes import (
     config_routes,
     features_routes,
@@ -20,20 +20,20 @@ app.include_router(auth_routes.router)
 app.include_router(engine_routes.router)
 
 
-@app.get("/train")
-async def train_api():
-    try:
-        train()
-        return Response(
-            None, 
-            status_code=status.HTTP_201_CREATED
-        )
-    except Exception as e:
-        print(e)
-        return HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Train Failed"
-        ) 
+@app.get("/train/{engine_id}")
+async def train_api(engine_id: str):
+    # try:
+    train(engine_id)
+    return Response(
+        None, 
+        status_code=status.HTTP_200_OK
+    )
+    # except Exception as e:
+    #     print(e)
+    #     return HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="Train Failed"
+    #     ) 
 
 
 @app.get("/recommend/{user_id}")
