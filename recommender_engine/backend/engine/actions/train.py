@@ -101,7 +101,7 @@ def train():
         data_path="../../datasets/likes.csv",
         towers_layers_sizes=[],
         deep_layers_sizes = [],
-        shuffle=154_396,
+        shuffle=100_000,
         embedding_dimension=64,
         learning_rate=0.0001,
         num_epochs=10,
@@ -153,7 +153,6 @@ def train():
 
         pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
-
 
 
         views_df = pipe.merge_data(

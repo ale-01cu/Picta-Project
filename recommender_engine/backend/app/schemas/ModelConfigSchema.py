@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ModelConfigUserInput(BaseModel):
-    is_active: bool
     isTrain: bool
     name: str
     stage: str
@@ -15,12 +14,12 @@ class ModelConfigUserInput(BaseModel):
     user_id_data: dict
     features_data_q: dict
     features_data_c: dict
+    data_tunning_name: str
     target_column: Optional[dict] = None
 
-    
 
 class ModelConfig(BaseModel):
-    is_active: bool
+    is_active: bool = True
     isTrain: bool
     name: str
     stage: str
@@ -56,3 +55,5 @@ class ModelConfig(BaseModel):
     modelPath: str
     data_train_path: str
     metadata_path: str
+    is_tunned: bool
+    is_trainned: bool

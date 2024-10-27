@@ -3,7 +3,7 @@ import copy
 from engine.data.FeaturesTypes import features_types_map
 
 class ModelConfig:
-    def __init__(self, model_name, features, candidate_data_path, data_path, user_id_data, isTrain, **kwargs):
+    def __init__(self, model_name, features, candidate_data_path, data_path, user_id_data, isTrain=False, **kwargs):
         self.model_name = model_name
         self.features = features
         self.candidate_data_path = candidate_data_path
@@ -34,6 +34,11 @@ class ModelConfig:
         self.features_data_c = kwargs.get('features_data_c', {})
         self.target_column = kwargs.get('target_column', {})
         self.to_map = kwargs.get("to_map", False)
+        
+        self.learning_rate_tunning = kwargs.get('learning_rate_tunning', 0.01)
+        self.train_batch_tunning = kwargs.get('train_batch_tunning', 8)
+        self.val_batch_tunning = kwargs.get('val_batch_tunning', 4)
+        self.test_batch_tunning = kwargs.get('test_batch_tunning', 4)
 
         for key, value in self.user_id_data.items():
             self.features_data_q[key] = value

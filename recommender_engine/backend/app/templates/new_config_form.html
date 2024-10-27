@@ -10,9 +10,6 @@
       <label for="isTrain">Entrenar</label>
       <input type="checkbox" id="isTrain" name="isTrain">
 
-      <label for="is_active">Activo</label>
-      <input type="checkbox" id="is_active" name="is_active">
-  
       <label for="name">Nombre</label>
       <input type="text" id="name" name="name" required>
   
@@ -99,6 +96,11 @@
             Nueva
             <input type="text" name="new" id="">
           </label>
+        </div>
+        
+        <div>
+          <label for="data_tunning_name">Nombre del fichero con los datos para tunnear</label>
+          <input type="text" id="data_tunning_name" name="data_tunning_name" required>
         </div>
   
       <button type="button" onclick="submitForm()">
@@ -231,7 +233,6 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
 
     const data = {
       isTrain: formData.get('isTrain') === 'on',
-      is_active: formData.get('is_active') === 'on',
       name: formData.get('name'),
       features: Array.from(document.querySelectorAll('input[name="feature"]')).map(input => input.value),
       candidate_data_path: formData.get('candidate_data_path'),
@@ -261,7 +262,8 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
       target_column: {
         "current": formData.get('current'),
         "new": formData.get('new')
-      }
+      },
+      data_tunning_name: formData.get("data_tunning_name")
     };
 
     console.log(data);

@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, status, Body, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.encoders import jsonable_encoder
 from fastapi.requests import Request
 from bson import ObjectId
 from settings.mongodb import engine_collection, config_collection
-from app.schemas.EngineSchema import EngineSchema, EngineUserInput
+from app.schemas.EngineSchema import EngineUserInput
 from fastapi.templating import Jinja2Templates
 from datetime import datetime
 
@@ -50,7 +50,6 @@ async def retrieve_engine(request: Request, engine_id: str):
                     "is_active": True
                 })
         
-        print(engine)
         return templates.TemplateResponse(
             "detail_engine.html",
             {"request": request, "engine": engine}

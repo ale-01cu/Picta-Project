@@ -137,6 +137,17 @@
         </div>
       {% endif %}
 
+      <div>
+        <label for="data_tunning_name">Nombre del fichero con los datos para tunnear</label>
+        <input 
+          type="text" 
+          id="data_tunning_name" 
+          name="data_tunning_name" 
+          value="{{ config.data_tunning_name }}" 
+          required
+        >
+      </div>
+
   
       <button type="button" onclick="submitForm()">
         Enviar
@@ -296,7 +307,9 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
       target_column: {
         "current": formData.get('current'),
         "new": formData.get('new')
-      }
+      },
+      data_tunning_name: formData.get("data_tunning_name")
+
     };
 
     console.log(data);

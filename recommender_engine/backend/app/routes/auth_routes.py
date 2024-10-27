@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status, Request, Form
+from fastapi import APIRouter, HTTPException, status, Request, Form, Response
 from settings.mongodb import db
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from app.schemas.UserSchema import UserSchema, UserSignInSchema
@@ -22,45 +23,37 @@ async def get_form(request: Request):
         )
 
 
-@router.post("/signup")
-async def signup(
-    name: str = Form(...), 
+@router.post("/signin", response_class=HTMLResponse)
+async def signin(
+    request: Request,
     email: str = Form(...), 
     password: str = Form(...)
 ):
     try:
-        # Validación básica de email
-        if "@" not in email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="Email inválido"
-            )
-
-        nuevo_usuario = UserSchema(
-            name=name, 
-            email=email, 
-            password=password
-        )
         collection = db["users"]
-
-        # Verificar si el usuario ya existe
-        if collection.find_one({"email": email}):
+        
+        # Buscar el usuario por email
+        user = collection.find_one({"email": email})
+        
+        if not user or user["password"] != password:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="El usuario ya existe"
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Credenciales incorrectas"
             )
         
-        if collection.find_one({"name": name}):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="El usuario ya existe"
-            )
-
-        collection.insert_one(nuevo_usuario.model_dump())
-        return templates.TemplateResponse(
-            "signin.html",
-            {"request": {}}   
+        # Crear un token simple
+        token = "usuario_autenticado"
+        
+        # Crear una respuesta de redirección
+        response = RedirectResponse(
+            "/config",
+            status_code=status.HTTP_303_SEE_OTHER
         )
+        
+        # Establecer la cookie con el token
+        response.set_cookie(key="auth_token", value=token, httponly=True)
+        
+        return response
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
@@ -68,7 +61,6 @@ async def signup(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=str(e)
         )
-    
 
 @router.get("/signin", response_class=HTMLResponse)
 async def get_signin_form(request: Request):

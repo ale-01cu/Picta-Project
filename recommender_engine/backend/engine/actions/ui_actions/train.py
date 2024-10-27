@@ -6,7 +6,6 @@ from engine.db.cruds.ModelCRUD import ModelCRUD
 from settings.db import engine
 from engine.models.ModelConfig import ModelConfig
 import os
-import pandas as pd
 import shutil
 from engine.actions.data_preprocessing import data_preprocessing
 from engine.data.data_preprocessing.transform_date_to_timestamp import transform_date_to_timestamp
@@ -66,7 +65,7 @@ def train(engine_id):
         val_batch=4096,
         test_batch=4096,
         vocabularies_batch=1000,
-        train_Length=60,
+        train_length=60,
         test_length=20,
         val_length=20,
         seed=8,
@@ -101,7 +100,7 @@ def train(engine_id):
         val_batch=256,
         test_batch=256,
         vocabularies_batch=512,
-        train_Length=60,
+        train_length=60,
         test_length=20,
         val_length=20,
         seed=8,
@@ -231,7 +230,25 @@ def train(engine_id):
                 "stage": retrieval_stage.name,
                 "modelPath": retrieval_model.model_path,
                 "data_train_path": retrieval_model.data_train_path,
-                "metadata_path": retrieval_model.model_metadata_path
+                "metadata_path": retrieval_model.model_metadata_path,
+                "is_trainned": True,
+                "candidates_batch": retrieval_config.candidates_batch,
+                "towers_layers_sizes": retrieval_config.towers_layers_sizes,
+                "deep_layers_sizes": retrieval_config.deep_layers_sizes,
+                "shuffle": retrieval_config.shuffle,
+                "embedding_dimension": retrieval_config.embedding_dimension,
+                "learning_rate": retrieval_config.learning_rate,
+                "num_epochs": retrieval_config.num_epochs,
+                "use_multiprocessing": retrieval_config.use_multiprocessing,
+                "workers": retrieval_config.workers,
+                "train_batch": retrieval_config.train_batch,
+                "val_batch": retrieval_config.val_batch,
+                "test_batch": retrieval_config.test_batch,
+                "vocabularies_batch": retrieval_config.vocabularies_batch,
+                "train_length": retrieval_config.train_length,
+                "test_length": retrieval_config.test_length,
+                "val_length": retrieval_config.val_length,
+                "seed": retrieval_config.seed,
             }}
         )
 
@@ -344,7 +361,24 @@ def train(engine_id):
                 "stage": ranking_Stage.name,
                 "modelPath": ranking_model.model_path,
                 "data_train_path": ranking_model.data_train_path,
-                "metadata_path": ranking_model.model_metadata_path
+                "metadata_path": ranking_model.model_metadata_path,
+                "is_trainned": True,
+                "towers_layers_sizes": ranking_config.towers_layers_sizes,
+                "deep_layers_sizes": ranking_config.deep_layers_sizes,
+                "shuffle": ranking_config.shuffle,
+                "embedding_dimension": ranking_config.embedding_dimension,
+                "learning_rate": ranking_config.learning_rate,
+                "num_epochs": ranking_config.num_epochs,
+                "use_multiprocessing": ranking_config.use_multiprocessing,
+                "workers": ranking_config.workers,
+                "train_batch": ranking_config.train_batch,
+                "val_batch": ranking_config.val_batch,
+                "test_batch": ranking_config.test_batch,
+                "vocabularies_batch": ranking_config.vocabularies_batch,
+                "train_length": ranking_config.train_length,
+                "test_length": ranking_config.test_length,
+                "val_length": ranking_config.val_length,
+                "seed": ranking_config.seed,
             }}
         )
 

@@ -121,7 +121,7 @@ class LikesModel(tfrs.models.Model):
         training: bool = False
     ) -> tf.Tensor:
         
-        labels = features.pop("like_dislike")
+        labels = features.pop(self.config.target_column['new'])
         likes_predictions = self(features)
         # The task computes the loss and the metrics.
 
@@ -311,18 +311,18 @@ class LikesModel(tfrs.models.Model):
         
         print("Cargando los pesos...")
         status = self.load_weights(os.path.join(path, "model/pesos.tf"))
-        status.expect_partial()
+        # status.expect_partial()
 
-        print("Compilando...")
-        self.compile(optimizer=tf.keras.optimizers.Adagrad(
-            learning_rate=0.00001)
-        )
-        print("Inicializando...")
-        cached_train.map(lambda x: self(x))
+        # print("Compilando...")
+        # self.compile(optimizer=tf.keras.optimizers.Adam(
+        #     learning_rate=self.config.learning_rate)
+        # )
+        # print("Inicializando...")
+        # cached_train.map(lambda x: self(x))
         
-        print("Evaluando...")
-        self.evaluate_model(
-            cached_test=cached_test,
-            cached_train=cached_train
-        )
+        # print("Evaluando...")
+        # self.evaluate_model(
+        #     cached_test=cached_test,
+        #     cached_train=cached_train
+        # )
         

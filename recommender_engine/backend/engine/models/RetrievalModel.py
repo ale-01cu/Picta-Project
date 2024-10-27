@@ -382,7 +382,7 @@ class RetrievalModel(tfrs.models.Model):
         self.load_weights(os.path.join(path, "model/pesos.tf"))
         print("Compilando...")
         self.compile(optimizer=tf.keras.optimizers.Adagrad(
-            learning_rate=0.1)
+            learning_rate=self.config.learning_rate)
         )
         print("Inicializando...")
         cached_train.map(lambda x: self(x))

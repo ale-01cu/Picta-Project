@@ -86,6 +86,31 @@
                 {% endfor %}
               </ul>
             </li>
+            <li>
+              <strong>Etapa</strong>
+              {{ engine.retrieval_model_id.stage }}
+            </li>
+            {% if engine.retrieval_model_id.stage == "ranking" %}
+            <li>
+              <strong>Columna Objetivo</strong>
+              <ul>
+                <li>
+                  Actual: {{ engine.retrieval_model_id.target_column.current }}
+                </li>
+                <li>
+                  Nueva: {{ engine.retrieval_model_id.target_column.new }}
+                </li>
+              </ul>
+            </li>
+            {% endif %}
+            <li>
+              <strong>Esta Entrenado</strong>
+              {{ engine.retrieval_model_id.is_trainned }}
+            </li>
+            <li>
+              <strong>Esta Tunneado</strong>
+              {{ engine.retrieval_model_id.is_tunned }}
+            </li>
       </ul>
     </li>
     {% else %}
@@ -164,7 +189,32 @@
                 {% endfor %}
               </ul>
             </li>
-      </ul>
+            <li>
+              <strong>Etapa</strong>
+              {{ engine.ranking_model_id.stage }}
+            </li>
+            {% if engine.ranking_model_id.stage == "ranking" %}
+            <li>
+              <strong>Columna Objetivo</strong>
+              <ul>
+                <li>
+                  Actual: {{ engine.ranking_model_id.target_column.current }}
+                </li>
+                <li>
+                  Nueva: {{ engine.ranking_model_id.target_column.new }}
+                </li>
+              </ul>
+            </li>
+            {% endif %}
+            <li>
+              <strong>Esta Entrenado</strong>
+              {{ engine.ranking_model_id.is_trainned }}
+            </li>
+            <li>
+              <strong>Esta Tunneado</strong>
+              {{ engine.ranking_model_id.is_tunned }}
+            </li>
+        </ul>
     </li>
     {% else %}
     <li><strong>Modelo de Ranking:</strong> No Seleccionado</li>
@@ -177,6 +227,11 @@
 </form>
 <button id="trainButton">Entrenar</button>
 <span id="spinner" style="display:none;">Entrenando<span id="dots">...</span></span>
+
+<button id="tuneButton" {% if not (engine.retrieval_model_id.is_trainned or engine.ranking_model_id.is_trainned) %}disabled{% endif %}>
+  Tunear
+</button>
+<span id="tuneSpinner" style="display:none;">Tuneando<span id="tuneDots">...</span></span>
 
 <script>
   document.getElementById('trainButton').addEventListener('click', function() {
@@ -195,18 +250,44 @@
               if (!response.ok) {
                   throw new Error('Error en el servidor');
               }
-              return response.json();
-          })
-          .then(data => {
-              // Aquí puedes manejar la respuesta de la petición
-              console.log(data);
+              window.location.reload()
           })
           .catch(error => {
               console.error('Error:', error);
-              alert('Ocurrió un error al comunicarse con el servidor. Por favor, inténtelo de nuevo más tarde.');
-              document.getElementById('trainButton').style.display = 'inline';
-              document.getElementById('spinner').style.display = 'none';
-          });
+              alert('Ocurrió un error al entrenar el Modelo');
+          })
+          .finally(() => {
+            document.getElementById('trainButton').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+          })
+          
+  });
+
+  document.getElementById('tuneButton').addEventListener('click', function() {
+      document.getElementById('tuneButton').style.display = 'none';
+      document.getElementById('tuneSpinner').style.display = 'inline';
+
+      let tuneDots = document.getElementById('tuneDots');
+      let tuneDotCount = 0;
+      setInterval(function() {
+          tuneDotCount = (tuneDotCount + 1) % 4;
+          tuneDots.textContent = '.'.repeat(tuneDotCount);
+      }, 500);
+
+      fetch(`/tunning/{{ engine._id }}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error en el servidor');
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Ocurrió un error al tunear el Modelo');
+          })
+          .finally(() => {
+            document.getElementById('tuneButton').style.display = 'block';
+            document.getElementById('tuneSpinner').style.display = 'none';
+          })
   });
 </script>
 </script>
