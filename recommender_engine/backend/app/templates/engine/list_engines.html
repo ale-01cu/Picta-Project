@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Motores</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <h1>Lista de Motores</h1>
+  <ul>
+      {% for engine in engines %}
+      <li>
+          <a href="/engines/{{ engine._id }}">
+              Nombre: {{ engine.name }}
+              Activo: {{ "Sí" if engine.is_active else "No" }}, 
+              En Entrenamiento: {{ "Sí" if engine.is_training_by else "No" }}, 
+              Ruta de Modelos: {{ engine.service_models_path }}, 
+              Creado En: {{ engine.createAt.strftime('%Y-%m-%d %H:%M:%S') }}, 
+              Modelo de Recuperación: 
+              {% if engine.retrieval_model_id %}
+              Modelo {{ engine.retrieval_model_id }}
+              {% else %}
+              N/A
+              {% endif %}, 
+              Modelo de Ranking: 
+              {% if engine.ranking_model_id %}
+              Modelo {{ engine.ranking_model_id }}
+              {% else %}
+              N/A
+              {% endif %}
+          </a>
+      </li>
+      {% endfor %}
+  </ul>
+
+  <a href="/create-engines">
+    <button>Nuevo Motor</button>
+  </a>  
+</body>
+</html>

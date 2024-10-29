@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de Configuración</title>
+</head>
+<body>
+    <h1>Detalle de Configuración</h1>
+    <ul>
+        <li><strong>Activo:</strong> {{ config.is_active }}</li>
+        <li><strong>Nombre:</strong> {{ config.name }}</li>
+        <li>
+            <strong>Características:</strong>
+            <ul>
+                {% for feat in config.features %}
+                    <li>
+                        {{ feat }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li><strong>Tamaños de capas de torres:</strong> {{ config.towers_layers_sizes }}</li>
+        <li><strong>Tamaños de capas profundas:</strong> {{ config.deep_layers_sizes }}</li>
+        <li><strong>Barajar:</strong> {{ config.shuffle }}</li>
+        <li><strong>Dimensión de incrustación:</strong> {{ config.embedding_dimension }}</li>
+        <li><strong>Lote de candidatos:</strong> {{ config.candidates_batch }}</li>
+        <li><strong>Tasa de aprendizaje:</strong> {{ config.learning_rate }}</li>
+        <li><strong>Número de épocas:</strong> {{ config.num_epochs }}</li>
+        <li><strong>Uso de multiprocesamiento:</strong> {{ config.use_multiprocessing }}</li>
+        <li><strong>Trabajadores:</strong> {{ config.workers }}</li>
+        <li><strong>Lote de entrenamiento:</strong> {{ config.train_batch }}</li>
+        <li><strong>Lote de validación:</strong> {{ config.val_batch }}</li>
+        <li><strong>Lote de prueba:</strong> {{ config.test_batch }}</li>
+        <li><strong>Lote de vocabularios:</strong> {{ config.vocabularies_batch }}</li>
+        <li><strong>Longitud de entrenamiento:</strong> {{ config.train_length }}</li>
+        <li><strong>Longitud de prueba:</strong> {{ config.test_length }}</li>
+        <li><strong>Longitud de validación:</strong> {{ config.val_length }}</li>
+        <li><strong>Semilla:</strong> {{ config.seed }}</li>
+        <li><strong>Columna objetivo:</strong> {{ config.target_column }}</li>
+        <li><strong>Mapear:</strong> {{ config.to_map }}</li>
+        <li><strong>Entrenar:</strong> {{ config.isTrain }}</li>
+        <li><strong>Ruta de datos de candidatos:</strong> {{ config.candidate_data_path }}</li>
+        <li><strong>Ruta de datos de historial de usuario:</strong> {{ config.user_history_data_path }}</li>
+        <li><strong>K candidatos:</strong> {{ config.k_candidates }}</li>
+        <li><strong>Fusión de características de candidatos:</strong> {{ config.candidate_feature_merge }}</li>
+        <li><strong>Fusión de características de historial de usuario:</strong> {{ config.user_history_feature_merge }}</li>
+        <li>
+            <strong>Caracteristicas de usuario:</strong> 
+            <ul>
+              {% for feat in config.user_id_data.keys() %}
+                <li>
+                  {{ feat }}
+                </li>
+              
+              {% endfor %}
+            </ul>
+          </li>
+        <li>
+            <strong>Caracteristicas de contexto:</strong> 
+            <ul>
+              {% for feat in config.features_data_q.keys() %}
+                <li>
+                  {{ feat }}
+                </li>
+              
+              {% endfor %}
+            </ul>
+        </li>
+        <li>
+            <strong>Caracteristicas de los candidatos:</strong>
+            <ul>
+              {% for feat in config.features_data_c.keys() %}
+                <li>
+                  {{ feat }}
+                </li>
+              
+              {% endfor %}
+            </ul>
+          </li>
+          <li>
+            <strong>Etapa</strong>
+            {{ config.stage }}
+          </li>
+          {% if config.stage == "ranking" %}
+          <li>
+            <strong>Columna Objetivo</strong>
+            <ul>
+              <li>
+                Actual: {{ config.target_column.current }}
+              </li>
+              <li>
+                Nueva: {{ config.target_column.new }}
+              </li>
+            </ul>
+          </li>
+          {% endif %}
+    </ul>
+
+    <!-- Botón para actualizar la configuración -->
+    <form action="/update-config/{{ config._id }}" method="get" style="display:inline;">
+        <button type="submit">Actualizar</button>
+    </form>
+
+    <!-- Botón para eliminar la configuración -->
+    <form action="/delete-config/{{ config._id }}" method="get" style="display:inline;">
+        <button type="submit" onclick="return confirm('¿Estás seguro de que deseas eliminar esta configuración?');">
+          Eliminar
+        </button>
+    </form>
+</body>
+</html>

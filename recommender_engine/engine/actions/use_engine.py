@@ -3,13 +3,23 @@ import numpy as np
 import pandas as pd
 from utils import read_json
 import os
+from db.cruds.ModelCRUD import ModelCRUD
+from db.config import engine
+from db.main import build_db
 dirname = os.path.dirname(__file__)
+build_db()
 
+model_crud = ModelCRUD(engine=engine)
+models = model_crud.get_models_running()
+retrieval_model_db = models[0]
+likes_model_db = models[1]
 # data = read_json("./models/info.json")
 
 retieval_model = tf.saved_model.load(
-    os.path.join(dirname, "service_models/Retrieval_Lite_534K_2024-08-05_224503797704/index"))
-# positive_model = tf.saved_model.load(BASE_PATH + "/" + data["positive_model_name"])
+    os.path.join(dirname, f"{retrieval_model_db.model_path}/index"))
+
+likes_model = tf.saved_model.load(
+    os.path.join(dirname, f"{likes_model_db.model_path}/service"))
 
 
 pubs_path = '../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv'
@@ -27,24 +37,24 @@ def get_recommendations(user_id, k):
         yield id, score
 
 
-# def ranking_recommendations(user_id, pubs_ids: list): 
-#     model = positive_model
-#     test_ratings = {}
+def ranking_recommendations(user_id, pubs_ids: list): 
+    model = likes_model
+    test_ratings = {}
 
-#     for id in pubs_ids:
-#         model_input = get_row_as_dict(id)
-#         model_input['usuario_id'] = np.array([user_id])
+    for id in pubs_ids:
+        model_input = get_row_as_dict(id)
+        model_input['usuario_id'] = np.array([user_id])
 
-#         model_input = {
-#             'id': tf.constant([id], dtype=tf.int64),
-#             'usuario_id': tf.constant([user_id], dtype=tf.int64)
-#         }
-#         predictions = model(model_input, training=False)
-#         prediction = sum(predictions.numpy()[0]) / 300
-#         test_ratings[id] = prediction
+        model_input = {
+            'id': tf.constant([id], dtype=tf.int64),
+            'usuario_id': tf.constant([user_id], dtype=tf.int64)
+        }
+        predictions = model(model_input, training=False)
+        prediction = sum(predictions.numpy()[0]) / 300
+        test_ratings[id] = prediction
 
-#     result = sorted(test_ratings.items(), key=lambda x: x[1], reverse=True)
-#     return result
+    result = sorted(test_ratings.items(), key=lambda x: x[1], reverse=True)
+    return result
 
 
 def get_row_as_dict(id: str, columns=["id", "nombre"]):
@@ -73,7 +83,7 @@ def use_models(user_id, k):
 
 
 if __name__ == "__main__":
-    USER_ID = 15
+    USER_ID = 2005
     K = 10
     use_models(user_id=USER_ID, k=K)
 

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Nuevo Motor</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Crear Nuevo Motor</h1>
+    <form id="create-engine-form">
+        <div>
+            <label for="name">Nombre:</label>
+            <input type="text" id="name" name="name" value="{{ engine.name }}" required>
+        </div>
+        <div>
+            <label for="is_active">Activo:</label>
+            <input type="checkbox" id="is_active" name="is_active" {{ 'checked' if engine.is_active else '' }}>
+        </div>
+        <div>
+            <label for="is_training_by">En Entrenamiento:</label>
+            <input type="checkbox" id="is_training_by" name="is_training_by" {{ 'checked' if engine.is_training_by else '' }}>
+        </div>
+        <div>
+            <label for="retrieval_model_id">Modelo de Recuperación (opcional):</label>
+            <select id="retrieval_model_id" name="retrieval_model_id">
+              <option value="">Seleccione un modelo</option>
+                {% for config in configs %}
+                  <option value="{{ config._id }}" {% if config._id == retrieval_model_id %}selected{% endif %}>{{ config.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="ranking_model_id">Modelo de Ranking (opcional):</label>
+            <select id="ranking_model_id" name="ranking_model_id">
+              <option value="">Seleccione un modelo</option>
+                {% for config in configs %}
+                  <option value="{{ config._id }}" {% if config._id == ranking_model_id %}selected{% endif %}>{{ config.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit">Actualizar Motor</button>
+    </form>
+
+    <script>
+      document.getElementById('create-engine-form').addEventListener('submit', function(event) {
+          event.preventDefault();
+
+          const formData = {
+              name: document.getElementById('name').value,
+              is_active: document.getElementById('is_active').checked,
+              is_training_by: document.getElementById('is_training_by').checked,
+              retrieval_model_id: document.getElementById('retrieval_model_id').value,
+              ranking_model_id: document.getElementById('ranking_model_id').value
+          };
+          console.log(formData);
+          
+          const pathSegments = window.location.pathname.split('/');
+          const engineId = pathSegments[pathSegments.length - 1];
+
+          fetch('/engines/' + engineId, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(formData)
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error en la respuesta del servidor: ' + response.statusText);
+              }
+              return response.json();
+          })
+          .then(data => {
+              window.location.href = "/engines/" + engineId;
+              // Aquí puedes manejar la respuesta, por ejemplo, redirigir o mostrar un mensaje
+          })
+          .catch((error) => {
+              console.error('Error:', error);
+              alert('Hubo un problema al actualizar el motor. Por favor, inténtelo de nuevo.');
+          });
+      });
+  </script>
+</body>
+</html>

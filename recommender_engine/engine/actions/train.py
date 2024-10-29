@@ -4,8 +4,27 @@ from stages.stages import retrieval_stage, ranking_Stage
 from db.cruds.EngineCRUD import EngineCRUD
 from db.cruds.ModelCRUD import ModelCRUD
 from db.config import engine
+from models.ModelConfig import ModelConfig
+import os
+import shutil
 from db.main import build_db
+dirname = os.path.dirname(__file__)
+
 build_db()
+
+# def dinamic_train(config: ModelConfig): 
+#     pipe = DataPipeline()
+#     data_train_df, = pipe.read_csv_data(paths=config.data_paths)
+
+def delete_path(path):
+    path = os.path.join(dirname, f"../{path}")
+    if os.path.exists(path):
+        try:
+            shutil.rmtree(path)
+        except OSError as e:
+            print(f"Error al eliminar engine: {e}")
+    else:
+        print(f"El engine no existe: {path}")
 
 def train():
     global engine
@@ -13,38 +32,88 @@ def train():
     # General Configs
     engine_name = "Engine_v0.2"
     service_models_path = f"service_models/{engine_name}"
+    delete_path(service_models_path)
 
     # Retrieval Configs
-    retrieval_model_name = "Retrieval lite"
-    retrieval_features = ['usuario_id', 'id']
-    shuffle = 10_000
-    embedding_dimension = 64
-    candidates_batch = 128
-    k_candidates = 100
-    learning_rate = 0.1
-    num_epochs = 1
-    use_multiprocessing = True
-    workers = 4
-    train_batch = 8192
-    val_batch = 4096
-    test_batch = 4096
-
+    retrieval_config = ModelConfig(
+        model_name="Retrieval lite",
+        features=['usuario_id', 'id'],
+        data_paths=[
+            "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
+            "../../datasets/vistas_no_nulas.csv"
+        ],
+        towers_layers_sizes=[],
+        shuffle=10_000,
+        embedding_dimension=64,
+        candidates_batch=128,
+        k_candidates=100,
+        learning_rate=0.1,
+        num_epochs=1,
+        use_multiprocessing=True,
+        workers=4,
+        train_batch=8192,
+        val_batch=4096,
+        test_batch=4096,
+        vocabularies_batch=1000,
+        train_Length=60,
+        test_length=20,
+        val_length=20,
+        seed=42,
+        features_data_q={
+            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+        },
+        features_data_c={ 
+            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
+        }
+    )
+    
     # Likes Configs
-    ranking_features = ['usuario_id', 'id', "like_dislike"]
-    likes_model_name = "Likes lite"
+    likes_config = ModelConfig(
+        model_name="Likes lite",
+        features=['usuario_id', 'id', "like_dislike"],
+        data_paths=["../../datasets/likes.csv"],
+        towers_layers_sizes=[],
+        deep_layers_sizes = [],
+        shuffle=10_000,
+        embedding_dimension=64,
+        learning_rate=0.0001,
+        num_epochs=1,
+        use_multiprocessing=True,
+        target_column={
+            "current": "valor",
+            "new": "like_dislike"
+        },
+        workers=4,
+        train_batch=8192,
+        val_batch=4096,
+        test_batch=4096,
+        vocabularies_batch=1000,
+        train_Length=60,
+        test_length=20,
+        val_length=20,
+        seed=42,
+        features_data_q={
+            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+        },
+        features_data_c={ 
+            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
+            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
+        }
+    )
 
     
     print(f"***** Proceso de Entrenamiendo del Systema {engine_name} Iniciado *****")
  
     pipe = DataPipeline()
-    pubs_df, views_df = pipe.read_csv_data(paths=[
-        "../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
-        "../../datasets/vistas_no_nulas.csv"
-    ])
-
+    pubs_df, views_df = pipe.read_csv_data(paths=retrieval_config.data_paths)
     pubs_df = pubs_df[: 5000]
 
-    views_df = views_df[: shuffle]
+    views_df = views_df[: retrieval_config.shuffle]
     views_df = views_df.drop(['id'], axis=1)
     pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
     pubs_df['nombre'] = pubs_df['nombre'].astype(str)
@@ -55,75 +124,69 @@ def train():
         right_data=pubs_df,
         left_on="publicacion_id",
         right_on="id",
-        output_features=retrieval_features
+        output_features=retrieval_config.features
     )
 
     pubs_ds = pipe.convert_to_tf_dataset(pubs_df)
     views_ds = pipe.convert_to_tf_dataset(views_df)
 
     vocabularies = pipe.build_vocabularies(
-        features=retrieval_features,
+        features=retrieval_config.features,
         ds=views_ds,
-        batch=1_000
+        batch=retrieval_config.vocabularies_batch
     )
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=views_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
+        train_length=retrieval_config.train_length,
+        test_length=retrieval_config.test_length,
+        val_length=retrieval_config.val_length
     )
 
     train, val, test = pipe.split_into_train_and_test(
         ds=views_ds,
-        shuffle=shuffle,
+        shuffle=retrieval_config.shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
-        seed=42
+        seed=retrieval_config.seed
     )
 
     cached_train, cached_val, cached_test = pipe.data_caching(
         train=train,
         val=val,
         test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
+        shuffle=retrieval_config.shuffle,
+        train_batch=retrieval_config.train_batch,
+        val_batch=retrieval_config.val_batch,
+        test_batch=retrieval_config.test_batch
     )
 
     pipe.close()
 
     retrieval_model = retrieval_stage.retrieval_model(
-        model_name=retrieval_model_name,
-        towers_layers_sizes=[],
+        # model_name=retrieval_model_name,
+        # towers_layers_sizes=towers_layers_sizes,
         vocabularies=vocabularies,
-        features_data_q={
-            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-        },
-        features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-        },
-        embedding_dimension=embedding_dimension, 
+        # features_data_q=features_data_q,
+        # features_data_c=features_data_c,
+        # embedding_dimension=embedding_dimension, 
         # test=test, 
         # shuffle=10_000, 
         # test_batch=512, 
         candidates=pubs_ds,
-        candidates_batch=candidates_batch, 
-        k_candidates=k_candidates
+        # candidates_batch=candidates_batch, 
+        # k_candidates=k_candidates
+        config=retrieval_config
     )
 
     retrieval_model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
-        learning_rate=learning_rate,
-        num_epochs=num_epochs,
-        use_multiprocessing=use_multiprocessing,
-        workers=workers   
+        # learning_rate=learning_rate,
+        # num_epochs=num_epochs,
+        # use_multiprocessing=use_multiprocessing,
+        # workers=workers   
     )
     retrieval_model.evaluate_model(
         cached_test=cached_test,
@@ -132,13 +195,14 @@ def train():
     retrieval_model.save_model(
         service_models_path, views_ds)
 
-
     pipe = DataPipeline()
     likes_df, = pipe.read_csv_data(paths=[
         "../../datasets/likes.csv"
     ])
+
+    likes_df = likes_df[: likes_config.shuffle]
     likes_df = likes_df.drop(['id'], axis=1)
-    likes_df['like_dislike'] = likes_df['valor']\
+    likes_df[likes_config.target_column['new']] = likes_df[likes_config.target_column['current']]\
         .map({True: 1, False: 0})
 
     likes_df = pipe.merge_data(
@@ -146,68 +210,62 @@ def train():
         right_data=pubs_df,
         left_on="publicacion_id",
         right_on="id",
-        output_features=ranking_features
+        output_features=likes_config.features
     )
 
     likes_ds = pipe.convert_to_tf_dataset(likes_df)
     
     vocabularies = pipe.build_vocabularies(
-        features=ranking_features,
+        features=likes_config.features,
         ds=likes_ds,
-        batch=1_000
+        batch=likes_config.vocabularies_batch
     )
 
     total, train_Length, val_length, test_length = pipe.get_lengths(
         ds=likes_ds,
-        train_length=60,
-        test_length=20,
-        val_length=20
+        train_length=likes_config.train_length,
+        test_length=likes_config.test_length,
+        val_length=likes_config.val_length
     )
 
     train, val, test = pipe.split_into_train_and_test(
         ds=likes_ds,
-        shuffle=shuffle,
+        shuffle=likes_config.shuffle,
         train_length=train_Length,
         val_length=val_length,
         test_length=test_length,
-        seed=42
+        seed=likes_config.seed
     )
 
     cached_train, cached_val, cached_test = pipe.data_caching(
         train=train,
         val=val,
         test=test,
-        shuffle=shuffle,
-        train_batch=train_batch,
-        val_batch=val_batch,
-        test_batch=test_batch
+        shuffle=likes_config.shuffle,
+        train_batch=likes_config.train_batch,
+        val_batch=likes_config.val_batch,
+        test_batch=likes_config.test_batch
     )
 
     likes_model = ranking_Stage.likes_model(
-        model_name=likes_model_name,
-        towers_layers_sizes=[],
-        deep_layers_sizes=[],
+        config=likes_config,
         vocabularies=vocabularies,
-        features_data_q={
-            'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
-        },
-        features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': StringText.StringText, 'w': 0.2 },
-            # 'descripcion': { 'dtype': StringText.StringText, 'w': 0.1 }
-        },
-        embedding_dimension=64, 
+        # model_name=likes_model_name,
+        # towers_layers_sizes=likes_towers_layers_sizes,
+        # deep_layers_sizes=likes_deep_layers_sizes,
+        # features_data_q=likes_features_data_q,
+        # features_data_c=likes_features_data_c,
+        # embedding_dimension=likes_embbedding_dimension, 
     )
 
 
     likes_model.fit_model(
         cached_train=cached_train,
         cached_val=cached_val,
-        learning_rate=learning_rate,
-        num_epochs=num_epochs,
-        use_multiprocessing=use_multiprocessing,
-        workers=workers   
+        # learning_rate=likes_learning_rate,
+        # num_epochs=likes_num_epochs,
+        # use_multiprocessing=likes_use_multiprocessing,
+        # workers=likes_workers   
     )
 
     likes_model.evaluate_model(
@@ -220,7 +278,6 @@ def train():
     engine_crud = EngineCRUD(engine=engine)
     engine_crud.turn_off_all()
     new_engine = engine_crud.create(name=engine_name)
-    engine_crud.close_session()
 
     model_crud = ModelCRUD(engine=engine)
     model_crud.turn_off_all()
@@ -229,7 +286,7 @@ def train():
         name=retrieval_model.model_name,
         stage="retrieval",
         model_path=retrieval_model.model_path,
-        data_train_path=retrieval_model.model_path,
+        data_train_path=retrieval_model.data_train_path,
         metadata_path=retrieval_model.model_metadata_path,
         engine_id=new_engine.id
     )
@@ -239,11 +296,12 @@ def train():
         name=likes_model.model_name,
         stage="ranking",
         model_path=likes_model.model_path,
-        data_train_path=likes_model.model_path,
+        data_train_path=likes_model.data_train_path,
         metadata_path=likes_model.model_metadata_path,
         engine_id=new_engine.id
     )
 
+    engine_crud.close_session()
     model_crud.close_session()
 
 

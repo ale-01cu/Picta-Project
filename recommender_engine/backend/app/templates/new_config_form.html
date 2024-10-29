@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Configuración</title>
+</head>
+<body>
+    <h1>Editar Configuración</h1>
+    <form id="configForm">
+      <label for="isTrain">Entrenar</label>
+      <input type="checkbox" id="isTrain" name="isTrain">
+
+      <label for="name">Nombre</label>
+      <input type="text" id="name" name="name" required>
+  
+      
+      <div id="features_container">
+        <label>Características</label>
+        <button type="button" onclick="addFeature()">
+          Agregar Campo
+        </button>
+      </div>
+    
+      <label for="candidate_data_path">Nombre de datos candidatos</label>
+      <input type="text" id="candidate_data_path" name="candidate_data_path" required>
+  
+      <label for="data_path">Nombre de datos del historial del usuario</label>
+      <input type="text" id="data_path" name="data_path" required>
+  
+      <label for="k_candidates">Número de candidatos</label>
+      <input type="number" id="k_candidates" name="k_candidates" required>
+  
+      <label for="candidate_feature_merge">Nombre de la característica del candidato a fustionar</label>
+      <input type="text" id="candidate_feature_merge" name="candidate_feature_merge" required>
+  
+      <label for="data_feature_merge">Nombre de la característica del historial del usuario a fusionar</label>
+      <input type="text" id="data_feature_merge" name="data_feature_merge" required>
+  
+        <div id="user_data_container">
+          <label>Datos del Usuario</label>
+          <button 
+            type="button" 
+            onclick="addFeatureDataQ(
+              'user_data_container', 
+              'user_feat', 
+              'feature_dtype', 
+              'weight')"
+          >
+            Agregar Campo
+          </button>
+        </div>
+    
+        <div id="features_data_q_container">
+          <label>Datos de características Q</label>
+          <button 
+            type="button" 
+            onclick="addFeatureDataQ(
+              'features_data_q_container', 
+              'feature_q', 
+              'feature_q_dtype', 
+              'feature_q_weight')"
+          >
+            Agregar Campo
+          </button>
+        </div>
+        <div id="features_data_c_container">
+          <label>Datos de características C</label>
+          <button 
+            type="button" 
+            onclick="addFeatureDataQ(
+              'features_data_c_container', 
+              'feature_c', 
+              'feature_c_dtype', 
+              'feature_c_weight')"
+          >
+            Agregar Campo
+          </button>
+        </div>
+
+        <div>
+          <label>Etapa</label>
+          <select name="stage" id="stage-select" required>
+            {% for stage in stages %}
+              <option value="{{ stage }}">{{ stage }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="target-column-div" style="display: none;">
+          <label>Columna Objetivo</label>
+          <label for="">
+            Actual
+            <input type="text" name="current" id="">
+          </label>
+          <label for="">
+            Nueva
+            <input type="text" name="new" id="">
+          </label>
+        </div>
+        
+        <div>
+          <label for="data_tunning_name">Nombre del fichero con los datos para tunnear</label>
+          <input type="text" id="data_tunning_name" name="data_tunning_name" required>
+        </div>
+  
+      <button type="button" onclick="submitForm()">
+        Enviar
+      </button>
+  </form>
+</body>
+</html>
+
+<script>
+  let counter = 1;
+
+  document.getElementById('stage-select').addEventListener('change', function() {
+    var targetDiv = document.getElementById('target-column-div');
+    if (this.value === 'ranking') {
+      targetDiv.style.display = 'block';
+    } else {
+      targetDiv.style.display = 'none';
+    }
+  });
+
+  function addFeature() {
+    const container = document.getElementById('features_container');
+    
+    // Crear un contenedor para el nuevo campo y el botón de eliminación
+    const fieldContainer = document.createElement('div');
+    
+    // Crear un nuevo campo de texto con etiqueta
+    const labelText = document.createElement('label');
+    labelText.textContent = 'Nombre';
+    fieldContainer.appendChild(labelText);
+    
+    const inputText = document.createElement('input');
+    inputText.type = 'text';
+    inputText.name = 'feature';
+    inputText.required = true;
+    fieldContainer.appendChild(inputText);
+    counter ++;
+    
+    // Crear un botón para eliminar el campo
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.textContent = 'Eliminar';
+    removeButton.onclick = function() {
+      container.removeChild(fieldContainer);
+    };
+    fieldContainer.appendChild(removeButton);
+    
+    container.appendChild(fieldContainer);
+  }
+
+async function addFeatureDataQ(field, textName, selectName, numberName) {
+  const container = document.getElementById(field);
+  
+  // Crear un contenedor para el nuevo campo y el botón de eliminación
+  const fieldContainer = document.createElement('div');
+  
+  // Crear un nuevo campo de texto con etiqueta
+  const labelText = document.createElement('label');
+  labelText.textContent = 'Característica';
+  fieldContainer.appendChild(labelText);
+  
+  const inputText = document.createElement('input');
+  inputText.type = 'text';
+  inputText.name = textName;
+  inputText.required = true;
+  fieldContainer.appendChild(inputText);
+
+  try {
+    const response = await fetch('/features-types');
+    if (!response.ok) {
+      throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+
+    // Crear un nuevo selector con etiqueta
+    const labelSelect = document.createElement('label');
+    labelSelect.textContent = 'Tipo de dato';
+    fieldContainer.appendChild(labelSelect);
+    
+    const select = document.createElement('select');
+    select.name = selectName;
+    select.required = true;
+
+    // Añadir opciones al selector basadas en los datos del servidor
+    data.forEach(item => {
+      const key = Object.keys(item)[0];
+      const value = item[key];
+      const option = document.createElement('option');
+      option.value = key;
+      option.text = value;
+      select.appendChild(option);
+    });
+
+    fieldContainer.appendChild(select);
+  } catch (error) {
+    console.error('Error al obtener los tipos de características:', error);
+  }
+  
+  // Crear un nuevo campo numérico con etiqueta
+  const labelNumber = document.createElement('label');
+  labelNumber.textContent = 'Peso';
+  fieldContainer.appendChild(labelNumber);
+  
+  const inputNumber = document.createElement('input');
+  inputNumber.type = 'number';
+  inputNumber.name = numberName;
+  inputNumber.required = true;
+  fieldContainer.appendChild(inputNumber);
+  
+  // Crear un botón para eliminar el campo
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.textContent = 'Eliminar';
+  removeButton.onclick = function() {
+    container.removeChild(fieldContainer);
+  };
+  fieldContainer.appendChild(removeButton);
+  
+  container.appendChild(fieldContainer);
+}
+
+  function submitForm() {
+    const form = document.getElementById('configForm');
+    const formData = new FormData(form);
+
+    const user_data = getFeatureData('user_data_container')
+    const features_data_q = getFeatureData('features_data_q_container');
+    const features_data_c = getFeatureData('features_data_c_container');
+
+    const data = {
+      isTrain: formData.get('isTrain') === 'on',
+      name: formData.get('name'),
+      features: Array.from(document.querySelectorAll('input[name="feature"]')).map(input => input.value),
+      candidate_data_path: formData.get('candidate_data_path'),
+      data_path: formData.get('data_path'),
+      k_candidates: parseInt(formData.get('k_candidates')),
+      candidate_feature_merge: formData.get('candidate_feature_merge'),
+      data_feature_merge: formData.get('data_feature_merge'),
+      user_id_data: user_data['user_feat'] ? {
+        [user_data['user_feat']]: {
+          dtype: user_data['feature_dtype'],
+          w: user_data['weight']
+        }
+      } : {}, // Si user_feat está vacío, asigna un objeto vacío
+      features_data_q: features_data_q['feature_q'] ? {
+        [features_data_q['feature_q']]: {
+          dtype: features_data_q['feature_q_dtype'],
+          w: features_data_q['feature_q_weight']
+        }
+      } : {}, // Si feature_q está vacío, asigna un objeto vacío
+      features_data_c: features_data_c['feature_c'] ? {
+        [features_data_c['feature_c']]: {
+          dtype: features_data_c['feature_c_dtype'],
+          w: features_data_c['feature_c_weight']
+        }
+      } : {}, // Si feature_c está vacío, asigna un objeto vacío
+      stage: formData.get('stage'),
+      target_column: {
+        "current": formData.get('current'),
+        "new": formData.get('new')
+      },
+      data_tunning_name: formData.get("data_tunning_name")
+    };
+
+    console.log(data);
+    
+
+    fetch('/add-config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    // .then(data => null)
+    .then(data => window.location.href = "/add-config")
+    .catch(error => console.error('Error:', error));
+  }
+  function getFeatureData(containerId) {
+    const container = document.getElementById(containerId);
+    const inputs = container.querySelectorAll('input[type="text"], input[type="number"]');
+    const selects = container.querySelectorAll('select');
+    const data = {};
+    
+    inputs.forEach(input => {
+      data[input.name] = input.value;
+    });
+
+    selects.forEach(select => {
+      data[select.name] = select.value;
+    });
+
+    return data;
+  }
+</script>

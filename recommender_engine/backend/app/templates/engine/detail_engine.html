@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<h1>Detalles del Motor: {{ engine.name }}</h1>
+<ul>
+    <li><strong>Nombre:</strong> {{ engine.name }}</li>
+    <li><strong>Activo:</strong> {{ "Sí" if engine.is_active else "No" }}</li>
+    <li><strong>En Entrenamiento:</strong> {{ "Sí" if engine.is_training_by else "No" }}</li>
+    <li><strong>Ruta de Modelos de Servicio:</strong> {{ engine.service_models_path }}</li>
+    <li><strong>Creado En:</strong> {{ engine.createAt.strftime('%Y-%m-%d %H:%M:%S') }}</li>
+    {% if engine.retrieval_model_id and engine.retrieval_model_id|length > 0 %}
+    <li><strong>Modelo de Recuperación:</strong> 
+        <ul>
+          <li><strong>Activo:</strong> {{ engine.retrieval_model_id.is_active }}</li>
+          <li><strong>Nombre:</strong> {{ engine.retrieval_model_id.name }}</li>
+          <li>
+              <strong>Características:</strong>
+              <ul>
+                  {% for feat in engine.retrieval_model_id.features %}
+                      <li>
+                          {{ feat }}
+                      </li>
+                  {% endfor %}
+              </ul>
+          </li>
+          <li><strong>Tamaños de capas de torres:</strong> {{ engine.retrieval_model_id.towers_layers_sizes }}</li>
+          <li><strong>Tamaños de capas profundas:</strong> {{ engine.retrieval_model_id.deep_layers_sizes }}</li>
+          <li><strong>Barajar:</strong> {{ engine.retrieval_model_id.shuffle }}</li>
+          <li><strong>Dimensión de incrustación:</strong> {{ engine.retrieval_model_id.embedding_dimension }}</li>
+          <li><strong>Lote de candidatos:</strong> {{ engine.retrieval_model_id.candidates_batch }}</li>
+          <li><strong>Tasa de aprendizaje:</strong> {{ engine.retrieval_model_id.learning_rate }}</li>
+          <li><strong>Número de épocas:</strong> {{ engine.retrieval_model_id.num_epochs }}</li>
+          <li><strong>Uso de multiprocesamiento:</strong> {{ engine.retrieval_model_id.use_multiprocessing }}</li>
+          <li><strong>Trabajadores:</strong> {{ engine.retrieval_model_id.workers }}</li>
+          <li><strong>Lote de entrenamiento:</strong> {{ engine.retrieval_model_id.train_batch }}</li>
+          <li><strong>Lote de validación:</strong> {{ engine.retrieval_model_id.val_batch }}</li>
+          <li><strong>Lote de prueba:</strong> {{ engine.retrieval_model_id.test_batch }}</li>
+          <li><strong>Lote de vocabularios:</strong> {{ engine.retrieval_model_id.vocabularies_batch }}</li>
+          <li><strong>Longitud de entrenamiento:</strong> {{ engine.retrieval_model_id.train_length }}</li>
+          <li><strong>Longitud de prueba:</strong> {{ engine.retrieval_model_id.test_length }}</li>
+          <li><strong>Longitud de validación:</strong> {{ engine.retrieval_model_id.val_length }}</li>
+          <li><strong>Semilla:</strong> {{ engine.retrieval_model_id.seed }}</li>
+          <li><strong>Columna objetivo:</strong> {{ engine.retrieval_model_id.target_column }}</li>
+          <li><strong>Mapear:</strong> {{ engine.retrieval_model_id.to_map }}</li>
+          <li><strong>Entrenar:</strong> {{ engine.retrieval_model_id.isTrain }}</li>
+          <li><strong>Ruta de datos de candidatos:</strong> {{ engine.retrieval_model_id.candidate_data_path }}</li>
+          <li><strong>Ruta de datos de historial de usuario:</strong> {{ engine.retrieval_model_id.user_history_data_path }}</li>
+          <li><strong>K candidatos:</strong> {{ engine.retrieval_model_id.k_candidates }}</li>
+          <li><strong>Fusión de características de candidatos:</strong> {{ engine.retrieval_model_id.candidate_feature_merge }}</li>
+          <li><strong>Fusión de características de historial de usuario:</strong> {{ engine.retrieval_model_id.user_history_feature_merge }}</li>
+          <li>
+              <strong>Caracteristicas de usuario:</strong> 
+              <ul>
+                {% for feat in engine.retrieval_model_id.user_id_data.keys() %}
+                  <li>
+                    {{ feat }}
+                  </li>
+                
+                {% endfor %}
+              </ul>
+            </li>
+          <li>
+              <strong>Caracteristicas de contexto:</strong> 
+              <ul>
+                {% for feat in engine.retrieval_model_id.features_data_q.keys() %}
+                  <li>
+                    {{ feat }}
+                  </li>
+                
+                {% endfor %}
+              </ul>
+          </li>
+          <li>
+              <strong>Caracteristicas de los candidatos:</strong>
+              <ul>
+                {% for feat in engine.retrieval_model_id.features_data_c.keys() %}
+                  <li>
+                    {{ feat }}
+                  </li>
+                
+                {% endfor %}
+              </ul>
+            </li>
+            <li>
+              <strong>Etapa</strong>
+              {{ engine.retrieval_model_id.stage }}
+            </li>
+            {% if engine.retrieval_model_id.stage == "ranking" %}
+            <li>
+              <strong>Columna Objetivo</strong>
+              <ul>
+                <li>
+                  Actual: {{ engine.retrieval_model_id.target_column.current }}
+                </li>
+                <li>
+                  Nueva: {{ engine.retrieval_model_id.target_column.new }}
+                </li>
+              </ul>
+            </li>
+            {% endif %}
+            <li>
+              <strong>Esta Entrenado</strong>
+              {{ engine.retrieval_model_id.is_trainned }}
+            </li>
+            <li>
+              <strong>Esta Tunneado</strong>
+              {{ engine.retrieval_model_id.is_tunned }}
+            </li>
+      </ul>
+    </li>
+    {% else %}
+    <li><strong>Modelo de Recuperación:</strong> No Seleccionado</li>
+    {% endif %}
+    {% if engine.ranking_model_id and engine.retrieval_model_id|length > 0 %}
+    <li><strong>Modelo de Ranking:</strong> 
+        <ul>
+          <li><strong>Activo:</strong> {{ engine.ranking_model_id.is_active }}</li>
+          <li><strong>Nombre:</strong> {{ engine.ranking_model_id.name }}</li>
+          <li>
+              <strong>Características:</strong>
+              <ul>
+                  {% for feat in engine.ranking_model_id.features %}
+                      <li>
+                          {{ feat }}
+                      </li>
+                  {% endfor %}
+              </ul>
+          </li>
+          <li><strong>Tamaños de capas de torres:</strong> {{ engine.ranking_model_id.towers_layers_sizes }}</li>
+          <li><strong>Tamaños de capas profundas:</strong> {{ engine.ranking_model_id.deep_layers_sizes }}</li>
+          <li><strong>Barajar:</strong> {{ engine.ranking_model_id.shuffle }}</li>
+          <li><strong>Dimensión de incrustación:</strong> {{ engine.ranking_model_id.embedding_dimension }}</li>
+          <li><strong>Lote de candidatos:</strong> {{ engine.ranking_model_id.candidates_batch }}</li>
+          <li><strong>Tasa de aprendizaje:</strong> {{ engine.ranking_model_id.learning_rate }}</li>
+          <li><strong>Número de épocas:</strong> {{ engine.ranking_model_id.num_epochs }}</li>
+          <li><strong>Uso de multiprocesamiento:</strong> {{ engine.ranking_model_id.use_multiprocessing }}</li>
+          <li><strong>Trabajadores:</strong> {{ engine.ranking_model_id.workers }}</li>
+          <li><strong>Lote de entrenamiento:</strong> {{ engine.ranking_model_id.train_batch }}</li>
+          <li><strong>Lote de validación:</strong> {{ engine.ranking_model_id.val_batch }}</li>
+          <li><strong>Lote de prueba:</strong> {{ engine.ranking_model_id.test_batch }}</li>
+          <li><strong>Lote de vocabularios:</strong> {{ engine.ranking_model_id.vocabularies_batch }}</li>
+          <li><strong>Longitud de entrenamiento:</strong> {{ engine.ranking_model_id.train_length }}</li>
+          <li><strong>Longitud de prueba:</strong> {{ engine.ranking_model_id.test_length }}</li>
+          <li><strong>Longitud de validación:</strong> {{ engine.ranking_model_id.val_length }}</li>
+          <li><strong>Semilla:</strong> {{ engine.ranking_model_id.seed }}</li>
+          <li><strong>Columna objetivo:</strong> {{ engine.ranking_model_id.target_column }}</li>
+          <li><strong>Mapear:</strong> {{ engine.ranking_model_id.to_map }}</li>
+          <li><strong>Entrenar:</strong> {{ engine.ranking_model_id.isTrain }}</li>
+          <li><strong>Ruta de datos de candidatos:</strong> {{ engine.ranking_model_id.candidate_data_path }}</li>
+          <li><strong>Ruta de datos de historial de usuario:</strong> {{ engine.ranking_model_id.user_history_data_path }}</li>
+          <li><strong>K candidatos:</strong> {{ engine.ranking_model_id.k_candidates }}</li>
+          <li><strong>Fusión de características de candidatos:</strong> {{ engine.ranking_model_id.candidate_feature_merge }}</li>
+          <li><strong>Fusión de características de historial de usuario:</strong> {{ engine.ranking_model_id.user_history_feature_merge }}</li>
+          <li>
+              <strong>Caracteristicas de usuario:</strong> 
+              <ul>
+                {% for feat in engine.ranking_model_id.user_id_data.keys() %}
+                  <li>
+                    {{ feat }}
+                  </li>
+                
+                {% endfor %}
+              </ul>
+            </li>
+          <li>
+              <strong>Caracteristicas de contexto:</strong> 
+              <ul>
+                {% for feat in engine.ranking_model_id.features_data_q.keys() %}
+                  <li>
+                    {{ feat }}
+                  </li>
+                
+                {% endfor %}
+              </ul>
+          </li>
+          <li>
+              <strong>Caracteristicas de los candidatos:</strong>
+              <ul>
+                {% for feat in engine.ranking_model_id.features_data_c.keys() %}
+                  <li>
+                    {{ feat }}
+                  </li>
+                
+                {% endfor %}
+              </ul>
+            </li>
+            <li>
+              <strong>Etapa</strong>
+              {{ engine.ranking_model_id.stage }}
+            </li>
+            {% if engine.ranking_model_id.stage == "ranking" %}
+            <li>
+              <strong>Columna Objetivo</strong>
+              <ul>
+                <li>
+                  Actual: {{ engine.ranking_model_id.target_column.current }}
+                </li>
+                <li>
+                  Nueva: {{ engine.ranking_model_id.target_column.new }}
+                </li>
+              </ul>
+            </li>
+            {% endif %}
+            <li>
+              <strong>Esta Entrenado</strong>
+              {{ engine.ranking_model_id.is_trainned }}
+            </li>
+            <li>
+              <strong>Esta Tunneado</strong>
+              {{ engine.ranking_model_id.is_tunned }}
+            </li>
+        </ul>
+    </li>
+    {% else %}
+    <li><strong>Modelo de Ranking:</strong> No Seleccionado</li>
+    {% endif %}
+</ul>
+
+<!-- Botón para actualizar la configuración -->
+<form action="/edit-engines/{{ engine._id }}" method="get" style="display:inline;">
+    <button type="submit">Actualizar</button>
+</form>
+<button id="trainButton">Entrenar</button>
+<span id="spinner" style="display:none;">Entrenando<span id="dots">...</span></span>
+
+<button id="tuneButton" {% if not (engine.retrieval_model_id.is_trainned or engine.ranking_model_id.is_trainned) %}disabled{% endif %}>
+  Tunear
+</button>
+<span id="tuneSpinner" style="display:none;">Tuneando<span id="tuneDots">...</span></span>
+
+<script>
+  document.getElementById('trainButton').addEventListener('click', function() {
+      document.getElementById('trainButton').style.display = 'none';
+      document.getElementById('spinner').style.display = 'inline';
+
+      let dots = document.getElementById('dots');
+      let dotCount = 0;
+      setInterval(function() {
+          dotCount = (dotCount + 1) % 4;
+          dots.textContent = '.'.repeat(dotCount);
+      }, 500);
+
+      fetch(`/train/{{ engine._id }}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error en el servidor');
+              }
+              window.location.reload()
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Ocurrió un error al entrenar el Modelo');
+          })
+          .finally(() => {
+            document.getElementById('trainButton').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+          })
+          
+  });
+
+  document.getElementById('tuneButton').addEventListener('click', function() {
+      document.getElementById('tuneButton').style.display = 'none';
+      document.getElementById('tuneSpinner').style.display = 'inline';
+
+      let tuneDots = document.getElementById('tuneDots');
+      let tuneDotCount = 0;
+      setInterval(function() {
+          tuneDotCount = (tuneDotCount + 1) % 4;
+          tuneDots.textContent = '.'.repeat(tuneDotCount);
+      }, 500);
+
+      fetch(`/tunning/{{ engine._id }}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error en el servidor');
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Ocurrió un error al tunear el Modelo');
+          })
+          .finally(() => {
+            document.getElementById('tuneButton').style.display = 'block';
+            document.getElementById('tuneSpinner').style.display = 'none';
+          })
+  });
+</script>
+</script>
+</body>
+</html>

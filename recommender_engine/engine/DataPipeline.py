@@ -17,6 +17,7 @@ class DataPipeline:
         # self.test_length = 0
         self.history = []
         self.dirname = os.path.dirname(__file__)
+        
 
 
     def __str__(self) -> Text:
@@ -163,6 +164,3 @@ class DataPipeline:
 
     def close(self):
         print("*** Tuberia de datos Cerrada ***")
-
-    # def data_pipeline_process(): 
-    #     pass
