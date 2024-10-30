@@ -1,47 +1,43 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página no encontrada</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            text-align: center;
-        }
-        h1 {
-            font-size: 3em;
-            margin-bottom: 0.5em;
-        }
-        p {
-            font-size: 1.2em;
-            margin-bottom: 1em;
-        }
-        a {
-            text-decoration: none;
-            color: #007BFF;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>404</h1>
-        <p>Lo sentimos, la página que buscas no se pudo encontrar.</p>
-        <p><a href="/">Volver al inicio</a></p>
-    </div>
-</body>
-</html>
+{% extends "Base.html" %}
+{% block title %}Página no encontrada{% endblock %}
+{% block content %}
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .container {
+        text-align: center;
+    }
+    h1 {
+        font-size: 3em;
+        margin-bottom: 0.5em;
+    }
+    p {
+        font-size: 1.2em;
+        margin-bottom: 1em;
+    }
+    a {
+        text-decoration: none;
+        color: #007BFF;
+        font-weight: bold;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+<div class="container">
+    <h1>404</h1>
+    <p>Lo sentimos, la página que buscas no se pudo encontrar.</p>
+    <p><a href="/">Volver al inicio</a></p>
+</div>
+
+{% endblock %}

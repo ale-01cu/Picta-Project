@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from datetime import datetime
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates/engine")
+templates = Jinja2Templates(directory="app/templates")
 
 
 # List all engines
@@ -19,7 +19,7 @@ async def list_engines(request: Request):
     try:
         engines = engine_collection.find().to_list(100)
         return templates.TemplateResponse(
-            "list_engines.html", 
+            "./engine/list_engines.html", 
             {"request": request, "engines": engines}
         )
     except Exception as e:
@@ -51,7 +51,7 @@ async def retrieve_engine(request: Request, engine_id: str):
                 })
         
         return templates.TemplateResponse(
-            "detail_engine.html",
+            "./engine/detail_engine.html",
             {"request": request, "engine": engine}
         )
     except Exception as e:
@@ -90,7 +90,7 @@ async def get_create_engine_template(request: Request):
             for documento in config_collection.find({"is_active": True})
         ]
         return templates.TemplateResponse(
-            "create_engine.html",
+            "./engine/create_engine.html",
             {"request": request, "configs": data},
         )
     except Exception as e:
@@ -130,7 +130,7 @@ async def get_update_engine_template(request: Request, engine_id: str):
         if engine is None:
             raise HTTPException(status_code=404, detail="Engine not found")
         return templates.TemplateResponse(
-            "update_engine.html", 
+            "./engine/update_engine.html", 
             {"request": request, "engine": engine, "configs": data}
         )
     except Exception as e:

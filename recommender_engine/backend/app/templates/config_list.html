@@ -1,68 +1,112 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Lista de Configuraciones</title>
-</head>
-<body>
-    <h1>Configuraciones</h1>
-    <ul>
+{% extends "Base.html" %}
+{% block title %}Lista de Configuraciones{% endblock %}
+{% block content %}
+
+<style>
+  #elementListContainer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 1em;
+  text-align: left;
+}
+
+#elementListContainer th, #elementListContainer td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+}
+
+#elementListContainer th {
+  background-color: #f4f4f4;
+}
+
+#elementListContainer tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+#elementListContainer tr:hover {
+  background-color: #f1f1f1;
+}
+button {
+  background-color: #4CAF50; /* Verde */
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049; /* Verde más oscuro */
+}
+</style>
+
+<div id="elementListContainer">
+  <h1>Configuraciones</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Entrenar</th>
+        <th>Nombre</th>
+        <th>Nombre de datos de candidatos</th>
+        <th>Nombre de datos de historial de usuario</th>
+        <th>K candidatos</th>
+        <th>Características</th>
+        <th>Características de contexto</th>
+        <th>Características de los candidatos</th>
+        <th>Acciones</th> <!-- Nueva columna para el botón -->
+      </tr>
+    </thead>
+    <tbody>
       {% for config in configs %}
-        <li>
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ config.isTrain }}</td>
+        <td>{{ config.name }}</td>
+        <td>{{ config.candidate_data_path }}</td>
+        <td>{{ config.data_path }}</td>
+        <td>{{ config.k_candidates }}</td>
+        <td>
+          <ul>
+            {% for feat in config.features %}
+            <li>{{ feat }}</li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td>
+          <ul>
+            {% for feat in config.features_data_q.keys() %}
+            <li>{{ feat }}</li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td>
+          <ul>
+            {% for feat in config.features_data_c.keys() %}
+            <li>{{ feat }}</li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td>
           <a href="/config/{{ config._id }}">
-            <h2>Configuración {{ loop.index }}</h2>
-            <ul>
-              <li><strong>Entrenar:</strong> {{ config.isTrain }}</li>
-              <li><strong>Nombre:</strong> {{ config.name }}</li>
-              <!-- <li><strong>Características:</strong>
-                <ul>
-                  {% for feature in config.features %}
-                  <li>{{ feature }}</li>
-                  {% endfor %}
-                </ul>
-              </li> -->
-              <li><strong>Nombre de datos de candidatos:</strong> {{ config.candidate_data_path }}</li>
-              <li><strong>Nombre de datos de historial de usuario:</strong> {{ config.data_path }}</li>
-              <li><strong>K candidatos:</strong> {{ config.k_candidates }}</li>
-              <li>
-                <strong>Características:</strong>
-                <ul>
-                    {% for feat in config.features %}
-                        <li>
-                            {{ feat }}
-                        </li>
-                    {% endfor %}
-                </ul>
-              </li>
-              <li>
-                <strong>Caracteristicas de contexto:</strong> 
-                <ul>
-                  {% for feat in config.features_data_q.keys() %}
-                    <li>
-                      {{ feat }}
-                    </li>
-                  
-                  {% endfor %}
-                </ul>
-              </li>
-              <li>
-                <strong>Caracteristicas de los candidatos:</strong>
-                <ul>
-                  {% for feat in config.features_data_c.keys() %}
-                    <li>
-                      {{ feat }}
-                    </li>
-                  
-                  {% endfor %}
-                </ul>
-              </li>
-            </ul>
+            <button>Ver Detalle</button>
           </a>
-        </li>
+        </td>
+      </tr>
       {% endfor %}
-    </ul>
-    <a href="/add-config">
-      <button>Nueva Configuración</button>
-    </a>  
-</body>
-</html>
+    </tbody>
+  </table>
+  <a href="/add-config">
+    <button>Nueva Configuración</button>
+  </a>
+</div>
+
+{% endblock %}
+  

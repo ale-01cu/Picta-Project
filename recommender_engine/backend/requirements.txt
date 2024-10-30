@@ -7,3 +7,6 @@ pandas==2.2.3
 matplotlib==3.9.2
 Jinja2==3.1.4
 pymongo==4.10.1
+passlib==1.7.4
+PyJWT==2.9.0
+bcrypt==4.2.0

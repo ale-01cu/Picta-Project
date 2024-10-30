@@ -1,19 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
+{% extends "Base.html" %}
+{% block title %}Detalle del Engine{% endblock %}
+{% block content %}
+<style>
+  /* Estilos para el contenedor principal */
+  .engine-details {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+  }
+
+  .engine-details h1 {
+      text-align: center;
+      color: #333;
+  }
+
+  .engine-details ul {
+      list-style-type: none;
+      padding: 0;
+  }
+
+  .engine-details li {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+  }
+
+  .engine-details li:last-child {
+      border-bottom: none;
+  }
+
+  .engine-details strong {
+      color: #555;
+  }
+
+  /* Estilos para la configuración general del engine */
+  .general-config {
+      background-color: #e7f3fe;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+  }
+
+  /* Estilos para la configuración del modelo de recuperación */
+  .retrieval-config {
+      background-color: #fef7e7;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+  }
+
+  /* Estilos para la configuración del modelo de ranking */
+  .ranking-config {
+      background-color: #f7e7fe;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+  }
+
+  /* Estilos para los botones */
+  .engine-details button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+  }
+
+  .engine-details button:hover {
+      background-color: #45a049;
+  }
+
+  .engine-details #spinner,
+  .engine-details #tuneSpinner {
+      font-style: italic;
+      color: #888;
+  }
+</style>
+<div class="engine-details">
+
 <h1>Detalles del Motor: {{ engine.name }}</h1>
 <ul>
+  <div class="general-config">
+
     <li><strong>Nombre:</strong> {{ engine.name }}</li>
     <li><strong>Activo:</strong> {{ "Sí" if engine.is_active else "No" }}</li>
     <li><strong>En Entrenamiento:</strong> {{ "Sí" if engine.is_training_by else "No" }}</li>
     <li><strong>Ruta de Modelos de Servicio:</strong> {{ engine.service_models_path }}</li>
     <li><strong>Creado En:</strong> {{ engine.createAt.strftime('%Y-%m-%d %H:%M:%S') }}</li>
+  </div>
+
     {% if engine.retrieval_model_id and engine.retrieval_model_id|length > 0 %}
+    <div class="retrieval-config">
     <li><strong>Modelo de Recuperación:</strong> 
         <ul>
           <li><strong>Activo:</strong> {{ engine.retrieval_model_id.is_active }}</li>
@@ -113,10 +195,14 @@
             </li>
       </ul>
     </li>
+  </div>
     {% else %}
+    
     <li><strong>Modelo de Recuperación:</strong> No Seleccionado</li>
     {% endif %}
-    {% if engine.ranking_model_id and engine.retrieval_model_id|length > 0 %}
+    {% if engine.ranking_model_id and engine.ranking_model_id|length > 0 %}
+    <div class="ranking-config">
+
     <li><strong>Modelo de Ranking:</strong> 
         <ul>
           <li><strong>Activo:</strong> {{ engine.ranking_model_id.is_active }}</li>
@@ -216,6 +302,8 @@
             </li>
         </ul>
     </li>
+  </div>
+
     {% else %}
     <li><strong>Modelo de Ranking:</strong> No Seleccionado</li>
     {% endif %}
@@ -232,6 +320,7 @@
   Tunear
 </button>
 <span id="tuneSpinner" style="display:none;">Tuneando<span id="tuneDots">...</span></span>
+</div>
 
 <script>
   document.getElementById('trainButton').addEventListener('click', function() {
@@ -291,5 +380,4 @@
   });
 </script>
 </script>
-</body>
-</html>
+{% endblock %}

@@ -1,5 +1,5 @@
 from app.schemas.ModelConfigSchema import ModelConfigUserInput, ModelConfig
-from fastapi import APIRouter, HTTPException, status, Body, Response
+from fastapi import APIRouter, HTTPException, status, Body, Response, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from settings.mongodb import db
@@ -10,7 +10,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/config")
-async def list_config():
+async def list_config(request: Request):
     collection = db['ModelConfigCollection']
     try:
         # Filtrar por configuraciones activas y convertir _id a string
@@ -20,7 +20,7 @@ async def list_config():
         ]
         return templates.TemplateResponse(
             "config_list.html", 
-            {"request": {}, "configs": data}
+            {"request": request, "configs": data}
         )
     except Exception as e:
         # Manejar errores de base de datos

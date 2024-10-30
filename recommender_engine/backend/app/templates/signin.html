@@ -4,15 +4,83 @@
 <head>
     <meta charset="UTF-8">
     <title>Formulario de Registro</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            gap: 4;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 400px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+
+        .signup-btn-container {
+            text-align: center;
+        }
+        .signup-btn-container a {
+            text-decoration: none;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
-    <form method="post" action="/signin">
-        {% for field in form_fields %}
-            <label for="{{ field }}">{{ field.capitalize() }}</label>
-            <input type="text" id="{{ field }}" name="{{ field }}" required>
+    <div class="container">
+        <h1>Acceder</h1>
+
+        <form method="post" action="/signin">
+            <label for="username">Nombre de usuario</label>
+            <input type="text" id="username" name="username" required>
             <br>
-        {% endfor %}
-        <button type="submit">Acceder</button>
-    </form>
+            <label for="password">Contraseña</label>
+            <input type="text" id="password" name="password" required>
+            <button type="submit">Acceder</button>
+        </form>
+
+        <div class="signup-btn-container">
+            <a href="/signup">Registrarme</a>
+        </div>
+    </div>
 </body>
 </html>

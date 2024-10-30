@@ -1,11 +1,47 @@
-<!-- app/templates/formulario.html -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Formulario de Registro</title>
-</head>
-<body>
-  home
-</body>
-</html>
+{% extends "Base.html" %}
+  <style>
+    .landing {
+        text-align: center;
+        padding: 50px;
+        background-color: #e0f7fa;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .landing h1 {
+        font-size: 2.5em;
+        color: #00796b;
+    }
+
+    .landing p {
+        font-size: 1.2em;
+        color: #004d40;
+        margin: 20px 0;
+    }
+
+    .cta-button {
+        background-color: #00796b;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1em;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .cta-button:hover {
+        background-color: #004d40;
+    }
+  </style>
+
+
+{% block title %}Landing Page{% endblock %}
+
+{% block content %}
+  <div class="landing">
+      <h1>Bienvenido a Nuestra Aplicación</h1>
+      <p>Explora nuestras funcionalidades y descubre cómo podemos ayudarte a mejorar tus procesos.</p>
+      <button class="cta-button">Comenzar Ahora</button>
+  </div>
+{% endblock %}

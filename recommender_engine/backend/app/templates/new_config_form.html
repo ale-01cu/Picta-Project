@@ -1,10 +1,75 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Editar Configuración</title>
-</head>
-<body>
+{% extends "Base.html" %}
+{% block title %}Editar Configuración{% endblock %}
+{% block content %}
+<style>
+  /* Estilos generales para el formulario */
+  #configForm {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+
+  /* Estilos para los elementos del formulario */
+  #configForm label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  #configForm input[type="text"],
+  #configForm input[type="number"],
+  #configForm select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+
+  #configForm input[type="checkbox"] {
+    margin-right: 10px;
+  }
+
+  /* Estilos para los botones */
+  #configForm button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #configForm button:hover {
+    background-color: #45a049;
+  }
+
+  /* Estilos para los contenedores de características */
+  #features_container div,
+  #user_data_container div,
+  #features_data_q_container div,
+  #features_data_c_container div {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+  }
+
+  /* Estilos para el contenedor de la columna objetivo */
+  #target-column-div {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+  }
+</style>
     <h1>Editar Configuración</h1>
     <form id="configForm">
       <label for="isTrain">Entrenar</label>
@@ -107,8 +172,6 @@
         Enviar
       </button>
   </form>
-</body>
-</html>
 
 <script>
   let counter = 1;
@@ -303,3 +366,5 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
     return data;
   }
 </script>
+
+{% endblock %}

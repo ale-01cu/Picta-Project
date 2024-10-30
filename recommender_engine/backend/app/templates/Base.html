@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi Aplicación{% endblock %}</title>
+</head>
+<body>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+          display: flex;
+          min-height: 100vh;
+          position: relative;
+      }
+
+      .sidebar-container{
+        width: 250px;
+        min-width: 250px;
+      }
+
+      .sidebar {
+          width: 200px;
+          height: 100vh;
+          position: fixed;
+          bottom: 0;
+          top: 0;
+          left: 0;
+          background-color: #f4f4f4;
+          padding: 15px;
+          box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      }
+
+      .sidebar ul {
+          list-style-type: none;
+          padding: 0;
+      }
+
+      .sidebar ul li {
+          margin: 10px 0;
+          display: flex;
+      }
+
+      .sidebar ul li a {
+          text-decoration: none;
+          color: #333;
+          font-weight: bold;
+          width: 100%;
+          padding: 6px;
+          border-radius: 8px;
+          transition: all 0.2s ease-in;
+      }
+
+      .content {
+          flex-grow: 1;
+          padding: 20px;
+      }
+
+      .active, .sidebar ul li a:hover {
+        background-color: #ddd;
+        color: #000;
+    }
+    </style>
+    <div class="container">
+        <div class="sidebar-container">
+          <nav class="sidebar">
+              <ul>
+                <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+                <li><a href="/engines" class="{% if request.path == '/engines' %}active{% endif %}">Engines</a></li>
+                <li><a href="/config" class="{% if request.path == '/config' %}active{% endif %}">Configuraciones</a></li>
+              </ul>
+          </nav>
+        </div>
+        <div class="content">
+            {% block content %}
+            <!-- Contenido específico de cada página -->
+            {% endblock %}
+        </div>
+    </div>
+</body>
+</html>

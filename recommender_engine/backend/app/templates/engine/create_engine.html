@@ -1,12 +1,53 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Nuevo Motor</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
+{% extends "Base.html" %}
+{% block title %}Crear Nuevo Engine{% endblock %}
+{% block content %}
+<style>
+    /* Estilos para el formulario */
+    #create-engine-form {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+
+    #create-engine-form div {
+        margin-bottom: 15px;
+    }
+
+    #create-engine-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    #create-engine-form input[type="text"],
+    #create-engine-form select {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    #create-engine-form input[type="checkbox"] {
+        margin-right: 10px;
+    }
+
+    #create-engine-form button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    #create-engine-form button:hover {
+        background-color: #45a049;
+    }
+</style>
     <h1>Crear Nuevo Motor</h1>
     <form id="create-engine-form">
         <div>
@@ -79,5 +120,4 @@
           });
       });
   </script>
-</body>
-</html>
+{% endblock %}
