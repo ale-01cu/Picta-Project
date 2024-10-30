@@ -1,0 +1,105 @@
+def __init__(self, collection_name):
+        """Inicializar el manejador de Chroma DB con el nombre de la colección."""
+        self.collection_name = collection_name
+        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name='bert-base-nli-mean-tokens'
+        )
+        self.model = SentenceTransformer('bert-base-nli-mean-tokens')  # Asegúrate de usar el mismo modelo
+        self.chroma_client = chromadb.Client()
+
+    def create_and_load_documents(self, documents):
+
+        """Crear y cargar documentos en Chroma DB."""
+        # Obtener o crear la colección
+        self.collection = self.chroma_client.get_or_create_collection(
+            name=self.collection_name,
+            embedding_function=self.embedding_function
+        )
+        print(f"Colección '{self.collection_name}' obtenida o creada.")
+
+        # Procesar documentos en lotes del tamaño especificado
+        batch_size = 5
+        for start in range(0, len(documents), batch_size):
+            batch = documents[start:start + batch_size]
+            ids = []
+            vectors = []
+
+            for doc in batch:
+                id = str(doc['id'])
+                document = str(doc.get('nombre', ''))  # Solo incluir el nombre
+                ids.append(id)
+                # Generar el vector de embedding para el documento
+                vector = self.model.encode(document).tolist()
+                vectors.append(vector)
+
+            # Imprimir la estructura del lote actual
+            print("\nEstructura del lote de documentos:")
+            print(f"IDs: {ids}")
+
+            # Añadir el lote de vectores a la colección de Chroma DB
+            try:
+                self.collection.add(
+                    ids=ids,
+                    embeddings=vectors
+                )
+                print("Lote añadido exitosamente.")
+            except Exception as e:
+                print(f"Error al añadir documentos: {str(e)}")
+
+    def load_documents(self, documents, collection_name="publicaciones"):
+        """Cargar documentos en Chroma DB."""
+        # Obtener o crear la colección
+        self.collection = self.chroma_client.get_or_create_collection(
+            name=collection_name,
+            embedding_function=self.embedding_function
+        )
+        print(f"Colección '{collection_name}' obtenida o creada.")
+
+        ids = []
+        docs = []
+
+        for doc in documents:
+            id = str(doc['id'])
+            document = f"{str(doc.get('nombre', ''))}, {str(doc.get('descripcion', ''))}"
+
+            ids.append(id)
+            docs.append(document)
+
+        # Imprimir la información de IDs y documentos
+        print("\nAñadiendo documentos:")
+        for id, doc in zip(ids, docs):
+            print(f"ID: {id}, Documento: {doc.split(',')[0]}")  # Mostrar solo el nombre
+
+        # Añadir los documentos a la colección de Chroma DB
+        try:
+            self.collection.add(
+                ids=ids,
+                documents=docs
+            )
+            print("Documentos añadidos exitosamente.")
+        except Exception as e:
+            print(f"Error al añadir documentos: {str(e)}")
+
+    def search_by_text(self, query_text, n_results=5):
+        """Buscar documentos en Chroma DB por texto."""
+        # Generar el embedding para la consulta
+        query_embedding = self.model.encode(query_text)
+    
+        # Convertir el embedding a una lista de Python
+        query_embedding_list = query_embedding.tolist()
+    
+        # Realizar la búsqueda usando el embedding
+        results = self.collection.query(
+            query_embeddings=[query_embedding_list],
+            n_results=n_results
+        )
+        return results
+
+    def search_by_metadata(self, metadata_filter, n_results=5):
+        """Buscar documentos en Chroma DB por metadatos."""
+        results = self.collection.query(
+            query_texts=[""],
+            where=metadata_filter,
+            n_results=n_results
+        )
+        return results
