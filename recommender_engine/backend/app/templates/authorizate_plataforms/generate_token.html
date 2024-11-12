@@ -1,0 +1,23 @@
+!{% extends "Base.html" %}
+{% block title %}Página no encontrada{% endblock %}
+{% block content %}
+
+<style>
+
+</style>
+
+
+<div class="container">
+    <h1>Generar API_KEY Publica</h1>
+
+    <form method="post" action="/generate_token">
+      <input type="text" name="name" id="name">
+      <input type="text" name="secret_key" id="secret_key">
+  
+      <button type="submit">
+        Generar token
+      </button>
+    </form>
+</div>
+
+{% endblock %}

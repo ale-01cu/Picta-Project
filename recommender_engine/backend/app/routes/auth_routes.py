@@ -47,7 +47,7 @@ async def signin(
         
         token_data = {
             "sub": username,
-            "exp": datetime.utcnow() + timedelta(days=30)  # El token expira en 1 hora
+            "exp": datetime.utcnow() + timedelta(days=30)  # El token expira en 30 dias
         }
         token = jwt.encode(token_data, SECRET_KEY, algorithm="HS256")
         

@@ -51,7 +51,6 @@ class ModelConfig(BaseModel):
     deep_layers_sizes: list
     target_column: Optional[dict] = None
     to_map: bool
-    stage: str
     modelPath: str
     data_train_path: str
     metadata_path: str

@@ -256,25 +256,46 @@ def use_models(user_id, k, params):
     # return response[: k]
 
 
+# data_test = [
+#     {
+#         "usuario_id": np.array([320]),
+#         "edad": np.array([32])
+#     },
+#     {
+#         "usuario_id": np.array([161]),
+#         "edad": np.array([37])
+#     },
+#     {
+#         "usuario_id": np.array([3040]),
+#         "edad": np.array([51])
+#     },
+#     {
+#         "usuario_id": np.array([8097]),
+#         "edad": np.array([45])
+#     },
+#     {
+#         "usuario_id": np.array([9364]),
+#         "edad": np.array([22])
+#     },
 data_test = [
     {
-        "usuario_id": np.array([320]),
+        "username": np.array([b'Rainer']),
         "edad": np.array([32])
     },
     {
-        "usuario_id": np.array([161]),
+        "username": np.array([b'david']),
         "edad": np.array([37])
     },
     {
-        "usuario_id": np.array([3040]),
+        "username": np.array([b'Taylor']),
         "edad": np.array([51])
     },
     {
-        "usuario_id": np.array([8097]),
+        "username": np.array([b'rene89']),
         "edad": np.array([45])
     },
     {
-        "usuario_id": np.array([9364]),
+        "username": np.array([b'yanaisis']),
         "edad": np.array([22])
     },
 ]
@@ -305,7 +326,7 @@ data_test = [
 if __name__ == "__main__":
     build_db()
     data = data_test[0]
-    USER_ID = data['usuario_id'].item()
+    # USER_ID = data['usuario_id'].item()
     #USER_ID = data['user_id'].item()
     K = 10
     # params = {
@@ -320,20 +341,19 @@ if __name__ == "__main__":
     }
 
     print(params)
-    res = use_models(user_id=USER_ID, k=K, params=params)
+    res = use_models(user_id=data['username'], k=K, params=params)
     print(res)
 
-# id  b'323'
-# id  b'117'
-# id  b'332'
-# id  b'301'
-# id  b'245'
-# id  b'682'
-# id  b'313'
-# id  b'293'
-# id  b'751'
-# id  b'547'
-
+# id  368
+# id  3819
+# id  1892
+# id  1690
+# id  1787
+# id  2109
+# id  427
+# id  3948
+# id  4366
+# id  286
 
 # import tensorflow as tf
 

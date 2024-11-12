@@ -2,9 +2,9 @@ import tensorflow as tf
 from tensorflow.python.types.core import Tensor
 from typing import Dict, Text, Optional
 from engine.data.FeaturesTypes import (
-    StringText, 
-    CategoricalContinuous, 
-    CategoricalString, 
+    StringText,
+    CategoricalContinuous,
+    CategoricalString,
     CategoricalInteger
 )
 import numpy as np
@@ -17,7 +17,7 @@ class FeaturesLayers(tf.keras.Model):
     max_tokens: int
     extra_layers: Dict[Text, tf.keras.layers.Layer]
 
-    def __init__(self, 
+    def __init__(self,
         vocabularies: Dict[Text, Dict[Text, tf.Tensor]],
         features_data: Dict[Text, Dict[Text, object]],
         embedding_dimension: int = 32,
@@ -49,8 +49,8 @@ class FeaturesLayers(tf.keras.Model):
             print(f'Building {feature_name} feature...')
 
             if feature_type == CategoricalInteger:
-                #normalization_layer = tf.keras.layers.Normalization(axis=None)
-                #normalization_layer.adapt(vocabulary)
+                # normalization_layer = tf.keras.layers.Normalization(axis=None)
+                # normalization_layer.adapt(vocabulary)
 
                 self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + 'input', dtype = tf.int32),
@@ -60,9 +60,9 @@ class FeaturesLayers(tf.keras.Model):
                     tf.keras.layers.Embedding(len(
                         vocabulary) + 1, self.embedding_dimension),
                     tf.keras.layers.Flatten(name='Flatten_' + feature_name)
-                    
+
                 ])
-            
+
             elif feature_type == CategoricalString:
                 self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + '_input', dtype = tf.string),
@@ -109,12 +109,12 @@ class FeaturesLayers(tf.keras.Model):
 
                 self.model = tf.keras.Sequential([
                     tf.keras.layers.InputLayer(
-                        input_shape=(1,), 
-                        name = feature_name + '_input', 
+                        input_shape=(1,),
+                        name = feature_name + '_input',
                         dtype = tf.string
                     ),
                     vectorization_layer,
-                    tf.keras.layers.Embedding(self.max_tokens, 
+                    tf.keras.layers.Embedding(self.max_tokens,
                         self.embedding_dimension, mask_zero=True),
                     tf.keras.layers.GlobalAveragePooling1D(),
                     tf.keras.layers.Flatten(name='Flatten_' + feature_name)
@@ -144,10 +144,10 @@ class FeaturesLayers(tf.keras.Model):
                 if feature in self.extra_layers.keys()
             ], axis=1)
 
-            features_embeddings.append(extra_layers) 
-        
+            features_embeddings.append(extra_layers)
+
         return tf.concat(features_embeddings, axis=1)
-    
+
     # def get_config(self):
     #     config = super().get_config()
     #     config.update({
@@ -160,16 +160,16 @@ class FeaturesLayers(tf.keras.Model):
     #         'aditional_layers': [layer.get_config() for layer in self.aditional_layers ]
     #     })
     #     return config
-    
+
     # @classmethod
     # def from_config(cls, config):
     #     # Deserializar las configuraciones de los modelos
-    #     config["models"] = {name: tf.keras.models.model_from_config(model_config) 
+    #     config["models"] = {name: tf.keras.models.model_from_config(model_config)
     #                         for name, model_config in config["models"].items()}
-        
+
     #     # Deserializar las capas adicionales si existen
     #     if "aditional_layers" in config:
-    #         config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config) 
+    #         config["aditional_layers"] = [tf.keras.layers.deserialize(layer_config)
     #                                       for layer_config in config["aditional_layers"]]
-        
+
     #     return cls(**config)

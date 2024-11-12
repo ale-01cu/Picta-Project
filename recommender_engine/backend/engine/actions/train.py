@@ -31,7 +31,7 @@ def train():
 
     # General Configs
     engine_name = "Engine Local v0.1"
-    is_training_by = False
+    is_training_by = True
     service_models_path = f"service_models/{engine_name}"
 
     engine_crud = EngineCRUD(engine=engine)
@@ -49,36 +49,36 @@ def train():
     retrieval_config = ModelConfig(
         isTrain=True,
         model_name="Retrieval lite",
-        features=['usuario_id', 'id'],
+        features=['username', "nombre", "id"],
         # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
         candidate_data_path="../../../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
-        data_path="../../datasets/vistas.csv",
+        data_path="../../datasets/vistas_full.csv",
         towers_layers_sizes=[],
-        shuffle=100_000,
-        embedding_dimension=64,
+        shuffle=102_417,
+        embedding_dimension=128,
         candidates_batch=128,
         k_candidates=100,
-        learning_rate=0.12,
+        learning_rate=0.1,
         num_epochs=1,
         use_multiprocessing=True,
         workers=4,
-        train_batch=16_384,
-        val_batch=4096,
-        test_batch=4096,
+        train_batch=4096,
+        val_batch=1024,
+        test_batch=1024,
         vocabularies_batch=1000,
-        train_Length=60,
-        test_length=20,
-        val_length=20,
+        train_Length=70,
+        test_length=15,
+        val_length=15,
         seed=8,
         candidate_feature_merge="id",
         data_feature_merge="publicacion_id",
-        user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
+        user_id_data={ 'username': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         # user_id_data={ 'user_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         features_data_q={
             # 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             #'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
+            # 'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             # 'timestamp': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 0.1 }    
             #'bucketized_user_age': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 0.5 }    
         },
@@ -86,8 +86,8 @@ def train():
             # 'movie_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
             # 'movie_title': { 'dtype': FeaturesTypes.CategoricalString, 'w': 0.5 },
             'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 0.5 },
-            #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
+            # 'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            # 'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
         }
     )
     
@@ -101,7 +101,7 @@ def train():
         data_path="../../datasets/likes.csv",
         towers_layers_sizes=[],
         deep_layers_sizes = [],
-        shuffle=100_000,
+        shuffle=150_000,
         embedding_dimension=64,
         learning_rate=0.0001,
         num_epochs=10,
@@ -123,14 +123,14 @@ def train():
         data_feature_merge="publicacion_id",
         user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
         features_data_q={
-            #'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
         },
         features_data_c={ 
             'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
+            # 'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
             #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
         }
     )
@@ -142,14 +142,14 @@ def train():
         pipe = DataPipeline()
         pubs_df, views_df = pipe.read_csv_data(paths=[
             retrieval_config.candidate_data_path, 
-            retrieval_config.data_path
+            retrieval_config.data_path,
         ])    
 
         # pubs_df = pubs_df[: 5000]
 
         views_df = views_df[: retrieval_config.shuffle]
-        views_df = views_df.drop(['id'], axis=1)
-        views_df['fecha'] = views_df['fecha'].astype("int32")
+        # views_df = views_df.drop(['id'], axis=1)
+        # views_df['fecha'] = views_df['fecha'].astype("int32")
 
         pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
@@ -171,6 +171,18 @@ def train():
 
         pubs_ds = pipe.convert_to_tf_dataset(pubs_df)
         views_ds = pipe.convert_to_tf_dataset(views_df)
+
+        # import tensorflow as tf
+        # pubs_ds = pubs_ds.map(lambda x: {**x, "id": tf.strings.as_string(x['id'])})
+        # views_ds = views_ds.map(lambda x: {
+        #     "id": tf.strings.as_string(int(x['id'])), 
+        #     "usuario_id": tf.strings.as_string(int(x['usuario_id']))
+        # })
+
+        # for i in pubs_ds.take(1).as_numpy_iterator():
+        #     print(i)
+        for i in views_ds.take(1).as_numpy_iterator():
+            print(i)
 
         # views_ds, pubs_ds = get_datasets()
 
@@ -286,6 +298,12 @@ def train():
         #likes_df['id'] = likes_df['id'].astype(str)
         #likes_df['usuario_id'] = likes_df['usuario_id'].astype(str)
         likes_ds = pipe.convert_to_tf_dataset(likes_df)
+
+        # likes_ds = likes_ds.map(lambda x: {
+        #     **x,
+        #     "id": tf.strings.as_string(int(x['id'])), 
+        #     "usuario_id": tf.strings.as_string(int(x['usuario_id']))
+        # })
         
         vocabularies = pipe.build_vocabularies(
             features=all_features,

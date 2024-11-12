@@ -12,3 +12,6 @@ tengo un problema muy serio, estoy creando un sistema de recomendaciones utiliza
 - The Average Coverage of Long Tail items (ACLT) metric 
 - Position Aware Learning (PAL)
 - xQUAD Framework
+
+## Problema Revuelto
+Se debe a que los datos que le estaba pasando de prueba no estaban dentro de los datos con los que se entreno el modelo por tanto el mismo recomendaba los candidatos mas convenientes para todo el mundo. Esto es una tecnica de arranque en frio.

@@ -1,0 +1,27 @@
+!{% extends "Base.html" %}
+{% block title %}Página no encontrada{% endblock %}
+{% block content %}
+
+<style>
+
+</style>
+
+
+<div class="container">
+    <h1>API_KEYS Publicas</h1>
+
+    <ul>
+      {% for token in tokens %}
+        <li>
+          <div>{{ token.name }}</div>
+          <div>{{ token.token }}</div>
+        </li>  
+      {% endfor %}
+    </ul>
+
+    <a href="/generate_token">
+      Generar Nuevo TOken
+    </a>
+</div>
+
+{% endblock %}
