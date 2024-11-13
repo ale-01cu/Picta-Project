@@ -54,6 +54,7 @@ class RetrievalModel(tfrs.models.Model):
         self.k_candidates = config.k_candidates
         self.candidates = candidates
         self.vocabularies = vocabularies
+        self.data_test = None
 
         # self.cached_train = train.shuffle(self.shuffle)\
         #     .batch(self.train_batch).cache()
@@ -191,34 +192,11 @@ class RetrievalModel(tfrs.models.Model):
     def index_model(self) -> tfrs.layers.factorized_top_k.BruteForce:
         print("Indexando...")
 
-        # data_test = {}
-
-        # for key, value in self.config.features_data_q.items():
-        #     new_value = None
-        #     feature_type = value['dtype']
-
-        #     if(feature_type == FeaturesTypes.CategoricalString):
-        #         new_value = np.array(["test"])
-        #     elif(feature_type == FeaturesTypes.CategoricalInteger):
-        #         new_value = np.array([0])
-        #     elif(feature_type == FeaturesTypes.CategoricalContinuous):
-        #         new_value = np.array([0])
-        #     elif(feature_type == FeaturesTypes.StringText):
-        #         new_value = np.array(["test"])
-
-        #     data_test[key] = new_value
-
-        # self.query_model(data_test)
-
         index = tfrs.layers.factorized_top_k.BruteForce(
             self.query_model, 
             k=self.k_candidates
         )
 
-        # index.index_from_dataset(
-        #     self.candidates.batch(self.candidates_batch).map(
-        #         lambda x: (x['movie_id'], self.candidate_model(x)))
-        # )
         index.index_from_dataset(
             self.candidates.batch(self.candidates_batch).map(
                 lambda x: (
@@ -227,92 +205,23 @@ class RetrievalModel(tfrs.models.Model):
                 ))
         )
 
-        # data_test = [
-        #     {
-        #         "usuario_id": np.array([9364]),
-        #         "edad": np.array([22]),
-        #         "fecha": np.array([int(time.time() * 1000)])
-        #     },
-        #     {
-        #         "usuario_id": np.array([8097]),
-        #         "edad": np.array([45]),
-        #         "fecha": np.array([int(time.time() * 1000) + (60 * 1000)])
-        #     },
-        #     {
-        #         "usuario_id": np.array([3040]),
-        #         "edad": np.array([51]),
-        #         "fecha": np.array([int(time.time() * 1000)  + (2 * 60 * 1000)])
-        #     },
-        #     {
-        #         "usuario_id": np.array([161]),
-        #         "edad": np.array([37]),
-        #         "fecha": np.array([int(time.time() * 1000) + (3 * 60 * 1000)])
-        #     },
-        #     {
-        #         "usuario_id": np.array([320]),
-        #         "edad": np.array([32]),
-        #         "fecha": np.array([int(time.time() * 1000) + (4 * 60 * 1000)])
-        #     },
-        # ]
+        pipe = DataPipeline()
+        df, = pipe.read_csv_data(paths=[self.config.data_path])
 
-        data_test = [
-            {
-                "username": np.array([b'Jpena']),
-                # "fecha_nacimiento": np.array([2085978496]),
-                # "edad": np.array([32])
-            },
-            {
-                "username": np.array([b'Hume']),
-                # "fecha_nacimiento": np.array([2085978496]),
-                # "edad": np.array([37])
-            },
-            {
-                "username": np.array([b'Lazarojromero']),
-                # "fecha_nacimiento": np.array([2085978496]),
-                # "edad": np.array([51])
-            },
-            {
-                "username": np.array([b'juanmpo']),
-                # "fecha_nacimiento": np.array([2085978496]),
-                # "edad": np.array([45])
-            },
-            {
-                "username": np.array([b'Hellsing']),
-                # "fecha_nacimiento": np.array([652147200]),
-                # "edad": np.array([22])
-            },
-        ]
+        data_test = [{
+            key: np.array([df[key].sample(n=1).iloc[0]])
+            for key in self.config.features_data_q.keys() 
+        } for _ in range(5)]
 
-        # index.build(input_shape=(None, self.config.embedding_dimension))
-
-        # data_test = {}
-
-        # for key, value in self.config.features_data_q.items():
-        #    new_value = None
-        #    feature_type = value['dtype']
-
-        #    if(feature_type == FeaturesTypes.CategoricalString):
-        #        new_value = np.array([""])
-        #    elif(feature_type == FeaturesTypes.CategoricalInteger):
-        #        new_value = np.array([0])
-        #    elif(feature_type == FeaturesTypes.CategoricalContinuous):
-        #        new_value = np.array([int(time.time() * 1000)])
-        #     #    new_value = np.array(int(time.time() * 1000))
-        #    elif(feature_type == FeaturesTypes.StringText):
-        #        new_value = np.array([""])
-
-        #    data_test[key] = new_value
-
-        # score, titles = index(data_test)
-        # ids = [id for id, score in zip(titles.numpy()[0], score.numpy()[0])]
-        # print(ids[: 10])
 
         for data in data_test:
            print(data)
-           score, titles = index(data)
-           ids = [id for id, score in zip(titles.numpy()[0], score.numpy()[0])]
+           _, titles = index(data)
+           ids = [id for id in titles.numpy()[0]]
            print(ids[: 10])
            print("")
+
+        self.data_test = data_test
 
         return index
 
@@ -398,6 +307,9 @@ class RetrievalModel(tfrs.models.Model):
         dataset.save(data_path)
         with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
             pickle.dump(self.vocabularies, f)
+
+        with open(f'{data_path}/data_test.pkl', 'wb') as f:
+            pickle.dump(self.data_test, f)
 
         self.model_metadata_path = f"{self.model_path}/hiperparams.json"
         self.config.save_as_json(self.model_metadata_path)

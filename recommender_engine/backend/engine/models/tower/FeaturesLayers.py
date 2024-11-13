@@ -53,7 +53,7 @@ class FeaturesLayers(tf.keras.Model):
                 # normalization_layer.adapt(vocabulary)
 
                 self.model = tf.keras.Sequential([
-                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + 'input', dtype = tf.int32),
+                    tf.keras.layers.InputLayer(input_shape=(1,), name = feature_name + 'input', dtype = tf.int64),
                     #normalization_layer,
                     tf.keras.layers.IntegerLookup(
                         vocabulary=vocabulary, mask_token=None),

@@ -1,5 +1,4 @@
-from fastapi import Request, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi import Request, status
 from fastapi.templating import Jinja2Templates
 import jwt
 
@@ -19,25 +18,26 @@ class AuthMiddleware:
         if request.url.path not in allowed_paths:
             auth_token = request.cookies.get("auth_token")
             if not auth_token:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Token de autenticación no encontrado"
-                )
+                response = templates.TemplateResponse("403.html", {"request": request})
+                await response(scope, receive, send)
+                return
             
             try:
                 # Decodificar el token JWT
-                payload = jwt.decode(auth_token, SECRET_KEY, algorithms=["HS256"])
+                jwt.decode(
+                    auth_token, 
+                    SECRET_KEY, 
+                    algorithms=["HS256"]
+                )
                 # Puedes acceder a los datos del token si es necesario, por ejemplo:
                 # username = payload.get("sub")
             except jwt.ExpiredSignatureError:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="El token ha expirado"
-                )
+                response = templates.TemplateResponse("403.html", {"request": request})
+                await response(scope, receive, send)
+                return
             except jwt.InvalidTokenError:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token inválido"
-                )
+                response = templates.TemplateResponse("403.html", {"request": request})
+                await response(scope, receive, send)
+                return
 
         await self.app(scope, receive, send)

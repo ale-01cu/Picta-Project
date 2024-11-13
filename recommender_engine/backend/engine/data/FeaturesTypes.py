@@ -18,14 +18,14 @@ class Categorical():
 class CategoricalContinuous(Categorical):
     def __init__(self) -> None:
         super().__init__()
-        self.datatype = tf.int32
+        self.datatype = tf.int64
         self.label = "Continuo Categorico"
 
 
 class CategoricalInteger(Categorical):
     def __init__(self) -> None:
         super().__init__()
-        self.datatype = tf.int32
+        self.datatype = tf.int64
         self.label = "Entero Categorico"
 
 

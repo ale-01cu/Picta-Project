@@ -30,8 +30,8 @@ def train():
     global engine
 
     # General Configs
-    engine_name = "Engine Local v0.1"
-    is_training_by = True
+    engine_name = "Engine Test #1"
+    is_training_by = False
     service_models_path = f"service_models/{engine_name}"
 
     engine_crud = EngineCRUD(engine=engine)
@@ -48,13 +48,15 @@ def train():
     # Retrieval Configs
     retrieval_config = ModelConfig(
         isTrain=True,
-        model_name="Retrieval lite",
-        features=['username', "nombre", "id"],
+        model_name="Retrieval Model 1M 4F",
+        # features=['username', 'fecha', "nombre", 'categoria'],
+        features=['username', 'fecha_nacimiento', 'fecha', "nombre", "descripcion", 'categoria'],
         # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
-        candidate_data_path="../../../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
-        data_path="../../datasets/vistas_full.csv",
+        candidate_data_path="../../datasets/pubs.csv",
+        data_path="../../datasets/vistas.csv",
         towers_layers_sizes=[],
-        shuffle=102_417,
+        # shuffle=1_000_531,
+        shuffle=1000,
         embedding_dimension=128,
         candidates_batch=128,
         k_candidates=100,
@@ -62,9 +64,9 @@ def train():
         num_epochs=1,
         use_multiprocessing=True,
         workers=4,
-        train_batch=4096,
-        val_batch=1024,
-        test_batch=1024,
+        train_batch=64,
+        val_batch=32,
+        test_batch=32,
         vocabularies_batch=1000,
         train_Length=70,
         test_length=15,
@@ -75,19 +77,19 @@ def train():
         user_id_data={ 'username': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         # user_id_data={ 'user_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         features_data_q={
-            # 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
-            # 'timestamp': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 0.1 }    
-            #'bucketized_user_age': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 0.5 }    
+            #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
+            #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 } 
+            'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 },    
+            'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }       
         },
         features_data_c={ 
-            # 'movie_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
-            # 'movie_title': { 'dtype': FeaturesTypes.CategoricalString, 'w': 0.5 },
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
-            # 'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
+            # 'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
+            #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
+            'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            'categoria': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
         }
     )
     
@@ -96,15 +98,15 @@ def train():
         isTrain=False,
         model_name="Likes lite",
         # features=['usuario_id', 'id', 'fecha', 'nombre', 'edad', 'descripcion'],
-        features=['usuario_id', 'id'],
-        candidate_data_path="../../../../datasets/picta_publicaciones_procesadas_sin_nulas_v2.csv",
+        features=['username', 'fecha_nacimiento', 'fecha', "nombre", "descripcion", 'categoria'],
+        candidate_data_path="../../datasets/pubs.csv",
         data_path="../../datasets/likes.csv",
         towers_layers_sizes=[],
         deep_layers_sizes = [],
-        shuffle=150_000,
+        shuffle=1000,
         embedding_dimension=64,
         learning_rate=0.0001,
-        num_epochs=10,
+        num_epochs=1,
         use_multiprocessing=True,
         target_column={
             "current": "valor",
@@ -121,17 +123,21 @@ def train():
         seed=8,
         candidate_feature_merge="id",
         data_feature_merge="publicacion_id",
-        user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
+        user_id_data={ 'username': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         features_data_q={
             # 'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 }    
+            # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 } 
+            'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 },    
+            'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }       
         },
         features_data_c={ 
-            'id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
             #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
+            'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            'categoria': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
         }
     )
 
@@ -278,10 +284,10 @@ def train():
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
         likes_df = likes_df[: likes_config.shuffle]
-        likes_df = likes_df.drop(['id'], axis=1)
+        # likes_df = likes_df.drop(['id'], axis=1)
         likes_df[likes_config.target_column['new']] = likes_df[likes_config.target_column['current']]\
             .map({True: 1, False: 0})
-        likes_df['fecha'] = likes_df['fecha'].astype("int32")
+        # likes_df['fecha'] = likes_df['fecha'].astype("int32")
         
 
         all_features = likes_config.features + [likes_config.target_column['new']]

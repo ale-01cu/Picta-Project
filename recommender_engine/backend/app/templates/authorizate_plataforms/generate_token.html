@@ -3,21 +3,61 @@
 {% block content %}
 
 <style>
+  .form-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 30px;
+    background-color: #f0f4c3;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
 
+  .form-title {
+    text-align: center;
+    color: #006064;
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #c5e1a5;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+
+  .submit-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #004d40;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .submit-button:hover {
+    background-color: #33691e;
+  }
 </style>
 
 
-<div class="container">
-    <h1>Generar API_KEY Publica</h1>
+<div class="form-container">
+  <h1 class="form-title">Generar API_KEY Publica</h1>
 
-    <form method="post" action="/generate_token">
-      <input type="text" name="name" id="name">
-      <input type="text" name="secret_key" id="secret_key">
-  
-      <button type="submit">
-        Generar token
-      </button>
-    </form>
+  <form method="post" action="/generate_token">
+    <input type="text" name="name" id="name" class="form-input" placeholder="Nombre">
+    <input type="text" name="secret_key" id="secret_key" class="form-input" placeholder="Clave Secreta">
+
+    <button type="submit" class="submit-button">
+      Generar token
+    </button>
+  </form>
 </div>
 
 {% endblock %}

@@ -13,7 +13,7 @@ def user_frecuency():
     movielens_ratings = pd.read_csv(os.path.join(dirname, "../datasets/movielens_ratings.csv"))
     picta_likes = pd.read_csv(os.path.join(dirname, "../datasets/likes.csv"))
     picta_views = pd.read_csv(os.path.join(dirname, "../datasets/vistas_no_nulas.csv"))
-    picta_views = picta_views.sample(n=360_000, random_state=42)
+    picta_views = picta_views.sample(n=1_460_000, random_state=42)
 
     logging.info("Convirtiendo IDs de usuario a tipo string")
     movielens_ratings['user_id'] = movielens_ratings['user_id'].astype(str)

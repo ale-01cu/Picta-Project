@@ -1,27 +1,71 @@
-!{% extends "Base.html" %}
+{% extends "Base.html" %}
 {% block title %}Página no encontrada{% endblock %}
 {% block content %}
 
 <style>
+  .title {
+    text-align: center;
+    color: #006064;
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
 
+  .token-list {
+    list-style-type: none;
+    padding: 0;
+    margin-bottom: 50px;
+  }
+
+  .token-item {
+    background-color: #ffffff;
+    margin: 15px 0;
+    padding: 15px;
+    border-left: 5px solid #00796b;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .token-name {
+    font-weight: bold;
+    color: #004d40;
+  }
+
+  .token-value {
+    font-family: 'Courier New', monospace;
+    color: #00796b;
+  }
+
+  .generate-link {
+    padding: 12px 20px;
+    background-color: #004d40;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+  }
+
+  .generate-link:hover {
+    background-color: #00251a;
+  }
 </style>
 
+    <h1 class="title">API_KEYS Publicas</h1>
 
-<div class="container">
-    <h1>API_KEYS Publicas</h1>
-
-    <ul>
+    <ul class="token-list">
       {% for token in tokens %}
-        <li>
-          <div>{{ token.name }}</div>
-          <div>{{ token.token }}</div>
+        <li class="token-item">
+          <div class="token-name">{{ token.name }}</div>
+          <div class="token-value">{{ token.token }}</div>
         </li>  
       {% endfor %}
     </ul>
 
-    <a href="/generate_token">
-      Generar Nuevo TOken
+    <a href="/generate_token" class="generate-link">
+      Generar Nuevo Token
     </a>
-</div>
 
 {% endblock %}
