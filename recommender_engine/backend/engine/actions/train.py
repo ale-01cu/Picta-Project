@@ -50,7 +50,7 @@ def train():
         isTrain=True,
         model_name="Retrieval Model 1M 4F",
         # features=['username', 'fecha', "nombre", 'categoria'],
-        features=['username', 'fecha_nacimiento', 'fecha', "nombre", "descripcion", 'categoria'],
+        features=['username', 'fecha', "nombre", 'categoria'],
         # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
         candidate_data_path="../../datasets/pubs.csv",
         data_path="../../datasets/vistas.csv",
@@ -81,7 +81,7 @@ def train():
             #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 } 
-            'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 },    
+            # 'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 },    
             'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }       
         },
         features_data_c={ 
@@ -89,7 +89,7 @@ def train():
             #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
             'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
             'categoria': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
-            'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
+            # 'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
         }
     )
     
