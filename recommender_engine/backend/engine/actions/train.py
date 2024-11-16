@@ -30,8 +30,8 @@ def train():
     global engine
 
     # General Configs
-    engine_name = "Engine Test #1"
-    is_training_by = False
+    engine_name = "Engine Test #2"
+    is_training_by = True
     service_models_path = f"service_models/{engine_name}"
 
     engine_crud = EngineCRUD(engine=engine)
@@ -55,16 +55,16 @@ def train():
         candidate_data_path="../../datasets/pubs.csv",
         data_path="../../datasets/vistas.csv",
         towers_layers_sizes=[],
-        # shuffle=1_000_531,
-        shuffle=1000,
-        embedding_dimension=128,
+        shuffle=1_000_531,
+        # shuffle=1000,
+        embedding_dimension=64,
         candidates_batch=128,
         k_candidates=100,
         learning_rate=0.1,
-        num_epochs=1,
+        num_epochs=12,
         use_multiprocessing=True,
         workers=4,
-        train_batch=64,
+        train_batch=32,
         val_batch=32,
         test_batch=32,
         vocabularies_batch=1000,
@@ -103,7 +103,7 @@ def train():
         data_path="../../datasets/likes.csv",
         towers_layers_sizes=[],
         deep_layers_sizes = [],
-        shuffle=1000,
+        shuffle=154_396,
         embedding_dimension=64,
         learning_rate=0.0001,
         num_epochs=1,
