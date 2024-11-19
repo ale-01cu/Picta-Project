@@ -118,7 +118,10 @@ def ranking_recommendations(user_id, pubs_ids: list, params: dict):
     test_ratings = {}
 
     full_data_trained = get_full_data(metadata)
+    # count = 1
     for id in pubs_ids:
+        # print("Number: ", count)
+        # count += 1
         row_data = get_row_as_dict(id, full_data_trained)
         if not row_data: continue
         # model_input['usuario_id'] = np.array([user_id])
@@ -230,20 +233,20 @@ def get_row_as_dict(id: str, data: dict):
 
 
 def use_models(user_id, k, params):
-    print(params)
+    # print(params)
     recommendations = get_recommendations(
         user_id=user_id, k=k, params=params)
     
 
     ids = [id for id, _ in recommendations]
-    print("Recomendados por recuperacion...............")
-    for id in ids[: 10]:
-        print("id ", id)
+    # print("Recomendados por recuperacion...............")
+    # for id in ids[: 10]:
+    #     print("id ", id)
     results = ranking_recommendations(user_id, ids, params)
 
     print("Recomendaciones por clasificacion............")
-    for id, score in results:
-        print("id ", id, "Score ", score)
+    # for id, score in results:
+    #     print("id ", id, "Score ", score)
 
     # response = []
 

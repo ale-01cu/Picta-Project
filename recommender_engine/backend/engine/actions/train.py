@@ -30,7 +30,7 @@ def train():
     global engine
 
     # General Configs
-    engine_name = "Engine Test #2"
+    engine_name = "Engine Test #5"
     is_training_by = True
     service_models_path = f"service_models/{engine_name}"
 
@@ -50,45 +50,47 @@ def train():
         isTrain=True,
         model_name="Retrieval Model 1M 4F",
         # features=['username', 'fecha', "nombre", 'categoria'],
-        features=['username', 'fecha', "nombre", 'categoria'],
+        # features=['username', 'fecha', "nombre", 'categoria', "id"],
+        features=["usuario_id", "id", "fecha", "nombre"],
         # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
         candidate_data_path="../../datasets/pubs.csv",
         data_path="../../datasets/vistas.csv",
-        towers_layers_sizes=[],
-        shuffle=1_000_531,
+        towers_layers_sizes=[64],
+        shuffle=1_000_000,
         # shuffle=1000,
         embedding_dimension=64,
         candidates_batch=128,
         k_candidates=100,
         learning_rate=0.1,
-        num_epochs=12,
+        num_epochs=8,
         use_multiprocessing=True,
         workers=4,
         train_batch=32,
-        val_batch=32,
-        test_batch=32,
+        val_batch=16,
+        test_batch=16,
         vocabularies_batch=1000,
-        train_Length=70,
-        test_length=15,
-        val_length=15,
-        seed=8,
+        train_Length=60,
+        test_length=20,
+        val_length=20,
+        seed=12,
         candidate_feature_merge="id",
         data_feature_merge="publicacion_id",
-        user_id_data={ 'username': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
+        user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
         # user_id_data={ 'user_id': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
         features_data_q={
             # 'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
-            #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
+            'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
             #'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             # 'timestamp': { 'dtype': CategoricalContinuous.CategoricalContinuous, 'w': 0.3 } 
             # 'fecha_nacimiento': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 },    
-            'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }       
+            # 'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }       
         },
         features_data_c={ 
             # 'nombre': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 },
             #'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.1 }
+            "id": {"dtype": FeaturesTypes.CategoricalInteger, 'w': 1},
             'nombre': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
-            'categoria': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
+            # 'categoria': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 },
             # 'descripcion': { 'dtype': FeaturesTypes.StringText, 'w': 0.5 }
         }
     )
@@ -386,6 +388,18 @@ def train():
     model_crud.close_session()
 
 
+import time
+
+def format_time(seconds):
+    horas = int(seconds // 3600)
+    minutos = int((seconds % 3600) // 60)
+    segundos = seconds % 60
+    return f"{horas} horas, {minutos} minutos, {segundos:.2f} segundos"
+
 if __name__ == "__main__":
+    start_time = time.time()
     build_db()
     train()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Tiempo de ejecución: {format_time(execution_time)}")

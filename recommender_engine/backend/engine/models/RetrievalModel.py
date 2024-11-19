@@ -213,6 +213,7 @@ class RetrievalModel(tfrs.models.Model):
             for key in self.config.features_data_q.keys() 
         } for _ in range(5)]
 
+        print(data_test)
 
         for data in data_test:
            print(data)

@@ -127,8 +127,8 @@ def train(engine_id):
         # pubs_df = pubs_df[: 5000]
 
         views_df = views_df[: retrieval_config.shuffle]
-        views_df = views_df.drop(['id'], axis=1)
-        views_df['fecha'] = views_df['fecha'].astype("int32")
+        # views_df = views_df.drop(['id'], axis=1)
+        # views_df['fecha'] = views_df['fecha'].astype("int32")
 
         pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
@@ -273,10 +273,10 @@ def train(engine_id):
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
 
         likes_df = likes_df[: ranking_config.shuffle]
-        likes_df = likes_df.drop(['id'], axis=1)
+        # likes_df = likes_df.drop(['id'], axis=1)
         likes_df[ranking_config.target_column['new']] = likes_df[ranking_config.target_column['current']]\
             .map({True: 1, False: 0})
-        likes_df['fecha'] = likes_df['fecha'].astype("int32")
+        # likes_df['fecha'] = likes_df['fecha'].astype("int32")
         
 
         all_features = ranking_config.features + [ranking_config.target_column['new']]

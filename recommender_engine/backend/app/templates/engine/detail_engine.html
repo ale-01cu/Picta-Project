@@ -97,6 +97,7 @@
     {% if engine.retrieval_model_id and engine.retrieval_model_id|length > 0 %}
     <div class="retrieval-config">
     <li><strong>Modelo de Recuperación:</strong> 
+      <a href="/config/{{ engine.retrieval_model_id._id }}">
         <ul>
           <li><strong>Activo:</strong> {{ engine.retrieval_model_id.is_active }}</li>
           <li><strong>Nombre:</strong> {{ engine.retrieval_model_id.name }}</li>
@@ -194,6 +195,7 @@
               {{ engine.retrieval_model_id.is_tunned }}
             </li>
       </ul>
+    </a>
     </li>
   </div>
     {% else %}
@@ -204,6 +206,7 @@
     <div class="ranking-config">
 
     <li><strong>Modelo de Ranking:</strong> 
+      <a href="/config/{{ engine.ranking_model_id._id }}">
         <ul>
           <li><strong>Activo:</strong> {{ engine.ranking_model_id.is_active }}</li>
           <li><strong>Nombre:</strong> {{ engine.ranking_model_id.name }}</li>
@@ -301,6 +304,7 @@
               {{ engine.ranking_model_id.is_tunned }}
             </li>
         </ul>
+      </a>
     </li>
   </div>
 

@@ -97,6 +97,7 @@ async def add_config(config: ModelConfigUserInput):
         }
         config = config.model_dump()
         config = {**full_config, **config}
+        config['is_active'] = True
         # Inserta el documento y devuelve el ID insertado
         result = collection.insert_one(config)
         return { "id": str(result.inserted_id) }  # Asegúrate de convertir el ObjectId a string
@@ -167,7 +168,7 @@ async def update_config(config_id: str, config: ModelConfigUserInput):
 
 
 @router.get("/delete-config/{config_id}")
-async def deactivate_config(config_id: str):
+async def deactivate_config(config_id: str, request: Request):
     collection = db['ModelConfigCollection']
     try:
         result = collection.update_one(
@@ -180,7 +181,7 @@ async def deactivate_config(config_id: str):
                 detail="Configuración no encontrada"
             )
         # Cambiar el redireccionamiento para que sea una respuesta HTML
-        return await list_config()
+        return await list_config(request)
     except Exception as e:
         # Manejar el caso en que el config_id no sea un ObjectId válido
         raise HTTPException(
