@@ -4,7 +4,7 @@ from engine.actions.ui_actions import (
     fine_tunning,
     use_engine
 )
-from typing import List
+from typing import List, Dict
 import time
 
 router = APIRouter()
@@ -40,7 +40,7 @@ async def fine_tunning_api(engine_id: str):
         )
 
 @router.get("/recommend/{user_id}")
-async def recommend_api(user_id, request: Request, k: int = Query(10)) -> List[int]:
+async def recommend_api(user_id, request: Request, k: int = Query(10)) -> Dict[int, Dict]:
     params = request.query_params._dict
     start_time = time.time()
     try:
