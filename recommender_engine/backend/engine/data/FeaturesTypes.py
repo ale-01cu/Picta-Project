@@ -14,6 +14,20 @@ class Categorical():
             return self.datatype == value.datatype
         return False
     
+    def cast(self, value):
+        try:
+            if self.datatype == tf.int64:
+                # return tf.cast(value, tf.int64)
+                return int(value)
+            elif self.datatype == tf.string:
+                return str(value)
+                # return tf.convert_to_tensor(value, dtype=tf.string)
+            else:
+                raise ValueError("Tipo de dato no soportado para casteo")
+        except (ValueError, TypeError) as e:
+            print(f"Error al castear {value} a {self.datatype}: {e}")
+            return None
+    
 
 class CategoricalContinuous(Categorical):
     def __init__(self) -> None:
@@ -48,6 +62,14 @@ class StringText():
         if isinstance(value, Text):
             return self.datatype == value.datatype
         return False
+    
+    def cast(self, value):
+        try:
+            # return tf.convert_to_tensor(value, dtype=tf.string)
+            return str(value)
+        except (ValueError, TypeError) as e:
+            print(f"Error al castear {value} a {self.datatype}: {e}")
+            return None
     
 
 features_types_map = {

@@ -3,7 +3,15 @@ import copy
 from engine.data.FeaturesTypes import features_types_map
 
 class ModelConfig:
-    def __init__(self, model_name, features, candidate_data_path, data_path, user_id_data, isTrain=False, **kwargs):
+    def __init__(self, 
+        model_name, 
+        features, 
+        candidate_data_path, 
+        data_path, 
+        user_id_data, 
+        isTrain=False, 
+        **kwargs
+    ):
         self.model_name = model_name
         self.features = features
         self.candidate_data_path = candidate_data_path

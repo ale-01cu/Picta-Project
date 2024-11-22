@@ -8,6 +8,14 @@ import re
 import os
 import pickle
 from engine.models.ModelConfig import ModelConfig
+from engine.exceptions.Models.ModelInitializing import ModelInitializingException
+from engine.exceptions.Models import (
+    Evaluate,
+    Fit,
+    Indexing,
+    Load,
+    Save
+)
 dirname = os.path.dirname(__file__)
 
 class LikesModel(tfrs.models.Model):
@@ -30,81 +38,84 @@ class LikesModel(tfrs.models.Model):
         # test_batch: int = 1024,
         # val_batch: int = 1024,
     ) -> None:
-        print("Inicializando Modelo de Clasificacion de likes...")
-        
-        super().__init__()
-        self.config = config
-        self.model_name = config.model_name
-        self.model_filename = None
-        self.model_path = None
-        self.data_train_path = None
-        self.model_metadata_path = None
-        self.epochs = None
-        self.learning_rate = None
-        self.vocabularies = vocabularies
+        try:
+            print("Inicializando Modelo de Clasificacion de likes...")
+            
+            super().__init__()
+            self.config = config
+            self.model_name = config.model_name
+            self.model_filename = None
+            self.model_path = None
+            self.data_train_path = None
+            self.model_metadata_path = None
+            self.epochs = None
+            self.learning_rate = None
+            self.vocabularies = vocabularies
 
-        self.metric_labels = (
-            "binary_accuracy",
-            "loss"
-        )
+            self.metric_labels = (
+                "binary_accuracy",
+                "loss"
+            )
 
-        self.evaluation_result = {
-            "train": [],
-            "test": []
-        }
+            self.evaluation_result = {
+                "train": [],
+                "test": []
+            }
 
-        self.hiperparams = (
-            f"Towers Layers Sizes: {config.towers_layers_sizes}",
-            f"Deep Layers Sizes: {config.deep_layers_sizes}",
-            f"Features Query: {[f for f in config.features_data_q.keys()]}",
-            f"Features Candidate: {[f for f in config.features_data_c.keys()]}",
-            f"Embedding Dimension: {config.embedding_dimension}",
-            # f"Shuffle: {shuffle}",
-            # f"Train Batch: {train_batch}",
-            # f"Test Batch: {test_batch}", 
-        )
-
-
-        self.query_model = TowerModel(
-            layer_sizes=config.towers_layers_sizes,
-            vocabularies=vocabularies,
-            features_data=config.features_data_q,
-            embedding_dimension=config.embedding_dimension,
-            regularization_l2=regularization_l2
-        )
-
-        self.candidate_model = TowerModel(
-            layer_sizes=config.towers_layers_sizes,
-            vocabularies=vocabularies,
-            features_data=config.features_data_c,
-            embedding_dimension=config.embedding_dimension,
-            regularization_l2=regularization_l2
-        )
-
-        # ********* Red De Clasificacion Binaria **********
-        self.likes_model = tf.keras.Sequential()
-
-        # self.likes_model.add(tf.keras.layers.Dense(64, 
-        #     kernel_initializer=tf.keras.initializers.RandomNormal(
-        #         mean=0.0, stddev=0.05), input_shape=(None, 128)))
-        
-        for size in config.deep_layers_sizes:
-            self.likes_model.add(tf.keras.layers.Dense(
-                size, activation='relu'))
-
-        self.likes_model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-        # ********* Red De Clasificacion Binaria **********
+            self.hiperparams = (
+                f"Towers Layers Sizes: {config.towers_layers_sizes}",
+                f"Deep Layers Sizes: {config.deep_layers_sizes}",
+                f"Features Query: {[f for f in config.features_data_q.keys()]}",
+                f"Features Candidate: {[f for f in config.features_data_c.keys()]}",
+                f"Embedding Dimension: {config.embedding_dimension}",
+                # f"Shuffle: {shuffle}",
+                # f"Train Batch: {train_batch}",
+                # f"Test Batch: {test_batch}", 
+            )
 
 
-        self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
-            loss=tf.keras.losses.BinaryCrossentropy(),
-            metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
-        )
+            self.query_model = TowerModel(
+                layer_sizes=config.towers_layers_sizes,
+                vocabularies=vocabularies,
+                features_data=config.features_data_q,
+                embedding_dimension=config.embedding_dimension,
+                regularization_l2=regularization_l2
+            )
 
-        # self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
-        #     loss=tf.keras.losses.MeanSquaredError(),
-        #     metrics=[tf.keras.metrics.RootMeanSquaredError()],
-        # )
+            self.candidate_model = TowerModel(
+                layer_sizes=config.towers_layers_sizes,
+                vocabularies=vocabularies,
+                features_data=config.features_data_c,
+                embedding_dimension=config.embedding_dimension,
+                regularization_l2=regularization_l2
+            )
+
+            # ********* Red De Clasificacion Binaria **********
+            self.likes_model = tf.keras.Sequential()
+
+            # self.likes_model.add(tf.keras.layers.Dense(64, 
+            #     kernel_initializer=tf.keras.initializers.RandomNormal(
+            #         mean=0.0, stddev=0.05), input_shape=(None, 128)))
+            
+            for size in config.deep_layers_sizes:
+                self.likes_model.add(tf.keras.layers.Dense(
+                    size, activation='relu'))
+
+            self.likes_model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+            # ********* Red De Clasificacion Binaria **********
+
+
+            self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
+                loss=tf.keras.losses.BinaryCrossentropy(),
+                metrics=[tf.keras.metrics.BinaryAccuracy(threshold=0.5)],
+            )
+
+            # self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
+            #     loss=tf.keras.losses.MeanSquaredError(),
+            #     metrics=[tf.keras.metrics.RootMeanSquaredError()],
+            # )
+        except:
+            raise ModelInitializingException("Ranking")
 
 
     def call(self, inputs: typ.Dict[typ.Text, tf.Tensor]) -> tf.Tensor:
@@ -140,50 +151,54 @@ class LikesModel(tfrs.models.Model):
         # use_multiprocessing: bool = False, 
         # workers: int = 1
     ) -> None:
-        
-        print(f'---------- Entrenando el modelo {self.model_name} ----------')
-        self.epochs = self.config.num_epochs
-        self.learning_rate = self.config.learning_rate
-        model = self
-        model.compile(optimizer=tf.keras.optimizers.Adam(
-            learning_rate=self.config.learning_rate))
-        model.fit(
-            cached_train, 
-            epochs=self.config.num_epochs,
-            validation_data=cached_val,
-            callbacks=callbacks,
-            use_multiprocessing=self.config.use_multiprocessing,
-            workers=self.config.workers
-        )
+        try:
+            print(f'---------- Entrenando el modelo {self.model_name} ----------')
+            self.epochs = self.config.num_epochs
+            self.learning_rate = self.config.learning_rate
+            model = self
+            model.compile(optimizer=tf.keras.optimizers.Adam(
+                learning_rate=self.config.learning_rate))
+            model.fit(
+                cached_train, 
+                epochs=self.config.num_epochs,
+                validation_data=cached_val,
+                callbacks=callbacks,
+                use_multiprocessing=self.config.use_multiprocessing,
+                workers=self.config.workers
+            )
+        except:
+            raise Fit.FitException("Ranking")
 
 
     def evaluate_model(self, cached_test, cached_train) -> None:
-        model = self
-        model.evaluate(cached_test, return_dict=True)
-        
-        train_accuracy = model.evaluate(
-            cached_train, 
-            return_dict=True,
-            verbose=0
-        )
+        try:
+            model = self
+            model.evaluate(cached_test, return_dict=True)
+            
+            train_accuracy = model.evaluate(
+                cached_train, 
+                return_dict=True,
+                verbose=0
+            )
+            print("********** Train **********")
+            for metric in self.metric_labels:
+                output = f"{metric} (train): {train_accuracy[metric]:.2f}."
+                print(output)
+                self.evaluation_result["train"].append(output)
 
-        print("********** Train **********")
-        for metric in self.metric_labels:
-            output = f"{metric} (train): {train_accuracy[metric]:.2f}."
-            print(output)
-            self.evaluation_result["train"].append(output)
+            test_accuracy = model.evaluate(
+                cached_test, 
+                return_dict=True,
+                verbose=0
+            )
 
-        test_accuracy = model.evaluate(
-            cached_test, 
-            return_dict=True,
-            verbose=0
-        )
-
-        print("********** Test **********")
-        for metric in self.metric_labels:
-            output = f"{metric} (test): {test_accuracy[metric]:.2f}."
-            print(output)
-            self.evaluation_result["test"].append(output)
+            print("********** Test **********")
+            for metric in self.metric_labels:
+                output = f"{metric} (test): {test_accuracy[metric]:.2f}."
+                print(output)
+                self.evaluation_result["test"].append(output)
+        except:
+            raise Evaluate.EvaluateException("Ranking")
 
 
     def predict_model(self, user_id: int, pubs_ids: list[str], candidates) -> None:
@@ -232,85 +247,89 @@ class LikesModel(tfrs.models.Model):
     #     return config
     
     def save_model(self, path: str, dataset: tf.data.Dataset) -> None:
-        path = os.path.join(dirname, f"../{path}")
+        try:
+            path = os.path.join(dirname, f"../{path}")
 
 
-        def format_size(x):
-            if x < 1000:
-                return str(x)
-            elif x < 1000000:
-                return f"{x / 1000:.0f}K"
-            elif x < 1000000000:
-                return f"{x / 1000000:.0f}M"
-            elif x < 1000000000000:
-                return f"{x / 1000000000:.0f}B"
-            else:
-                return f"{x / 1000000000000:.0f}T"
+            def format_size(x):
+                if x < 1000:
+                    return str(x)
+                elif x < 1000000:
+                    return f"{x / 1000:.0f}K"
+                elif x < 1000000000:
+                    return f"{x / 1000000:.0f}M"
+                elif x < 1000000000000:
+                    return f"{x / 1000000000:.0f}B"
+                else:
+                    return f"{x / 1000000000000:.0f}T"
 
-        current_time = datetime.now()
+            current_time = datetime.now()
 
-        content = [
-            f"Nombre: {self.model_name}",
-            "\n ********** Hiperparametros **********",
-            '\n'.join(self.hiperparams),
-            f"Epochs: {self.epochs}",
-            f"Learning Rate: {self.learning_rate}"
-        ]
+            content = [
+                f"Nombre: {self.model_name}",
+                "\n ********** Hiperparametros **********",
+                '\n'.join(self.hiperparams),
+                f"Epochs: {self.epochs}",
+                f"Learning Rate: {self.learning_rate}"
+            ]
 
-        for k, v in self.evaluation_result.items():
-          content.append(f"\n ********** {k} **********")
-          content.append("\n".join(metric for metric in v))
+            for k, v in self.evaluation_result.items():
+                content.append(f"\n ********** {k} **********")
+                content.append("\n".join(metric for metric in v))
 
-        content.append("\n ********** Parametros **********")
-        total_params = 0
-        for param in self.variables[:-1]:
-            if hasattr(param, 'shape'):
-                params = 1
-                for p in param.shape: params *= p 
-                total_params += params
-                content.append(f"{param.name}: {params}")
-        content.append(f"Total params: {total_params}")
+            content.append("\n ********** Parametros **********")
+            total_params = 0
+            for param in self.variables[:-1]:
+                if hasattr(param, 'shape'):
+                    params = 1
+                    for p in param.shape: params *= p 
+                    total_params += params
+                    content.append(f"{param.name}: {params}")
+            content.append(f"Total params: {total_params}")
 
-        content = "\n".join(content)
+            content = "\n".join(content)
 
-        name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
-        name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
-        name = name.replace(' ', '_')  # replace spaces with underscores
+            name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
+            name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
+            name = name.replace(' ', '_')  # replace spaces with underscores
 
-        self.model_path = f"{path}/{name}"
-        self.model_filename = name
+            self.model_path = f"{path}/{name}"
+            self.model_filename = name
 
-        # tf.saved_model.save(self, f"{path}/{name}")
+            # tf.saved_model.save(self, f"{path}/{name}")
 
-        # print("Salvando el modelo...")
-        # self.save(f"{path}/{name}")
+            # print("Salvando el modelo...")
+            # self.save(f"{path}/{name}")
 
-        print("Salvando los pesos...")
-        self.save_weights(
-            f"{self.model_path}/model/pesos.tf", 
-            save_format='tf'
-        )
+            print("Salvando los pesos...")
+            self.save_weights(
+                f"{self.model_path}/model/pesos.tf", 
+                save_format='tf'
+            )
 
-        print("Salvando el Modelo")
-        tf.saved_model.save(self, f"{self.model_path}/service")
+            print("Salvando el Modelo")
+            tf.saved_model.save(self, f"{self.model_path}/service")
 
-        print("Salvando los datos de entrenamiento...")
-        data_path = f"{path}/{name}/data"
-        self.data_train_path = data_path
-        dataset.save(data_path)
-        with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
-            pickle.dump(self.vocabularies, f)
-        
-        self.model_metadata_path = f"{self.model_path}/hiperparams.json"
-        self.config.save_as_json(self.model_metadata_path)
-        with open(f"{path}/{name}/Info.txt", "w") as f:
-            f.write(f"{content}")
-        
+            print("Salvando los datos de entrenamiento...")
+            data_path = f"{path}/{name}/data"
+            self.data_train_path = data_path
+            dataset.save(data_path)
+            with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
+                pickle.dump(self.vocabularies, f)
+            
+            self.model_metadata_path = f"{self.model_path}/hiperparams.json"
+            self.config.save_as_json(self.model_metadata_path)
+            with open(f"{path}/{name}/Info.txt", "w") as f:
+                f.write(f"{content}")
+        except:
+            raise Save.SaveException("Ranking")
 
     def load_model(self, path: str, cached_train, cached_test) -> None:
-        
-        print("Cargando los pesos...")
-        status = self.load_weights(os.path.join(path, "model/pesos.tf"))
+        try:
+            print("Cargando los pesos...")
+            status = self.load_weights(os.path.join(path, "model/pesos.tf"))
+        except:
+            raise Load.LoadException("Ranking")
         # status.expect_partial()
 
         # print("Compilando...")

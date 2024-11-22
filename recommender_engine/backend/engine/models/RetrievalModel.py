@@ -10,6 +10,14 @@ import pickle
 from engine.models.ModelConfig import ModelConfig
 from engine.data import FeaturesTypes
 from engine.data.DataPipeline import DataPipeline
+from engine.exceptions.Models.ModelInitializing import ModelInitializingException 
+from engine.exceptions.Models import (
+    Evaluate,
+    Fit,
+    Indexing,
+    Load,
+    Save
+)
 import time
 
 dirname = os.path.dirname(__file__)
@@ -46,75 +54,78 @@ class RetrievalModel(tfrs.models.Model):
         # k_candidates: int = 10,
         config: ModelConfig
     ) -> None:
-        print("Inicializando Modelo de Recuperacion...")
-        super().__init__()
-        # self.shuffle = shuffle
-        self.config = config
-        self.candidates_batch = config.candidates_batch
-        self.k_candidates = config.k_candidates
-        self.candidates = candidates
-        self.vocabularies = vocabularies
-        self.data_test = None
+        try:
+            print("Inicializando Modelo de Recuperacion...")
+            super().__init__()
+            # self.shuffle = shuffle
+            self.config = config
+            self.candidates_batch = config.candidates_batch
+            self.k_candidates = config.k_candidates
+            self.candidates = candidates
+            self.vocabularies = vocabularies
+            self.data_test = None
 
-        # self.cached_train = train.shuffle(self.shuffle)\
-        #     .batch(self.train_batch).cache()
-        # self.cached_test = test.batch(self.test_batch).cache()
-        # self.cached_val = val.batch(self.test_batch).cache()
+            # self.cached_train = train.shuffle(self.shuffle)\
+            #     .batch(self.train_batch).cache()
+            # self.cached_test = test.batch(self.test_batch).cache()
+            # self.cached_val = val.batch(self.test_batch).cache()
 
-        self.model_name = config.model_name
-        self.model_filename = None
-        self.model_path = None
-        self.data_train_path = None
-        self.model_metadata_path = None
-        self.epochs = None
-        self.learning_rate = None
+            self.model_name = config.model_name
+            self.model_filename = None
+            self.model_path = None
+            self.data_train_path = None
+            self.model_metadata_path = None
+            self.epochs = None
+            self.learning_rate = None
 
-        self.metric_labels = (
-            "factorized_top_k/top_1_categorical_accuracy",
-            "factorized_top_k/top_5_categorical_accuracy",
-            "factorized_top_k/top_10_categorical_accuracy",
-            "factorized_top_k/top_50_categorical_accuracy",
-            "factorized_top_k/top_100_categorical_accuracy"
-        )
-
-        self.evaluation_result = {
-            "train": [],
-            "test": []
-        }
-
-        self.hiperparams = (
-            f"Towers Layers Sizes: {config.towers_layers_sizes}",
-            f"Features Query: {[f for f in config.features_data_q.keys()]}",
-            f"Features Candidate: {[f for f in config.features_data_c.keys()]}",
-            f"Embedding Dimension: {config.embedding_dimension}",
-            # f"Shuffle: {shuffle}",
-            # f"Train Batch: {train_batch}",
-            # f"Test Batch: {test_batch}", 
-            f"Candidate Batch: {config.candidates_batch}", 
-            f"K Candidates: {config.k_candidates}" 
-        )
-
-        self.query_model = TowerModel(
-            layer_sizes=config.towers_layers_sizes,
-            vocabularies=vocabularies,
-            features_data=config.features_data_q,
-            embedding_dimension=config.embedding_dimension,
-            regularization_l2=regularization_l2
-        )
-        self.candidate_model = TowerModel(
-            layer_sizes=config.towers_layers_sizes,
-            vocabularies=vocabularies,
-            features_data=config.features_data_c,
-            embedding_dimension=config.embedding_dimension,
-            regularization_l2=regularization_l2
-        )
-
-        self.task = tfrs.tasks.Retrieval(
-            metrics= tfrs.metrics.FactorizedTopK(
-                candidates=self.candidates.batch(
-                    self.candidates_batch).map(self.candidate_model)
+            self.metric_labels = (
+                "factorized_top_k/top_1_categorical_accuracy",
+                "factorized_top_k/top_5_categorical_accuracy",
+                "factorized_top_k/top_10_categorical_accuracy",
+                "factorized_top_k/top_50_categorical_accuracy",
+                "factorized_top_k/top_100_categorical_accuracy"
             )
-        )
+
+            self.evaluation_result = {
+                "train": [],
+                "test": []
+            }
+
+            self.hiperparams = (
+                f"Towers Layers Sizes: {config.towers_layers_sizes}",
+                f"Features Query: {[f for f in config.features_data_q.keys()]}",
+                f"Features Candidate: {[f for f in config.features_data_c.keys()]}",
+                f"Embedding Dimension: {config.embedding_dimension}",
+                # f"Shuffle: {shuffle}",
+                # f"Train Batch: {train_batch}",
+                # f"Test Batch: {test_batch}", 
+                f"Candidate Batch: {config.candidates_batch}", 
+                f"K Candidates: {config.k_candidates}" 
+            )
+
+            self.query_model = TowerModel(
+                layer_sizes=config.towers_layers_sizes,
+                vocabularies=vocabularies,
+                features_data=config.features_data_q,
+                embedding_dimension=config.embedding_dimension,
+                regularization_l2=regularization_l2
+            )
+            self.candidate_model = TowerModel(
+                layer_sizes=config.towers_layers_sizes,
+                vocabularies=vocabularies,
+                features_data=config.features_data_c,
+                embedding_dimension=config.embedding_dimension,
+                regularization_l2=regularization_l2
+            )
+
+            self.task = tfrs.tasks.Retrieval(
+                metrics= tfrs.metrics.FactorizedTopK(
+                    candidates=self.candidates.batch(
+                        self.candidates_batch).map(self.candidate_model)
+                )
+            )
+        except:
+            raise ModelInitializingException("Retrieval")
 
     def call(self, inputs):
         user_embedding = self.query_model(inputs)
@@ -145,86 +156,95 @@ class RetrievalModel(tfrs.models.Model):
         # use_multiprocessing: bool = False, 
         # workers: int = 1,
     ) -> None:
-        print(f'---------- Entrenando el modelo {self.model_name} ----------')
-        model = self
-        self.epochs = self.config.num_epochs
-        self.learning_rate = self.config.learning_rate
+        try:
+            print(f'---------- Entrenando el modelo {self.model_name} ----------')
+            model = self
+            self.epochs = self.config.num_epochs
+            self.learning_rate = self.config.learning_rate
 
-        model.compile(optimizer=tf.keras.optimizers.Adagrad(
-            learning_rate=self.config.learning_rate))
-        model.fit(
-            cached_train, 
-            validation_data=cached_val,
-            epochs=self.config.num_epochs,
-            use_multiprocessing=self.config.use_multiprocessing,
-            workers=self.config.workers
-        )
+            model.compile(optimizer=tf.keras.optimizers.Adagrad(
+                learning_rate=self.config.learning_rate))
+            model.fit(
+                cached_train, 
+                validation_data=cached_val,
+                epochs=self.config.num_epochs,
+                use_multiprocessing=self.config.use_multiprocessing,
+                workers=self.config.workers
+            )
+        except:
+            raise Fit.FitException("Retrieval")
     
 
     def evaluate_model(self, cached_test, cached_train) -> None:
-        model = self
-        model.evaluate(cached_test, return_dict=True)
+        try:
+            model = self
+            model.evaluate(cached_test, return_dict=True)
 
-        train_accuracy = model.evaluate(
-            cached_train, 
-            return_dict=True,
-            verbose=0
-        )
+            train_accuracy = model.evaluate(
+                cached_train, 
+                return_dict=True,
+                verbose=0
+            )
 
-        print("********** Train **********")
-        for metric in self.metric_labels:
-            output = f"{metric} (train): {train_accuracy[metric]:.2f}."
-            print(output)
-            self.evaluation_result["train"].append(output)
+            print("********** Train **********")
+            for metric in self.metric_labels:
+                output = f"{metric} (train): {train_accuracy[metric]:.2f}."
+                print(output)
+                self.evaluation_result["train"].append(output)
 
-        test_accuracy = model.evaluate(
-            cached_test, 
-            return_dict=True,
-            verbose=0
-        )
+            test_accuracy = model.evaluate(
+                cached_test, 
+                return_dict=True,
+                verbose=0
+            )
 
-        print("********** Test **********")
-        for metric in self.metric_labels:
-            output = f"{metric} (test): {test_accuracy[metric]:.2f}."
-            print(output)
-            self.evaluation_result["test"].append(output)
+            print("********** Test **********")
+            for metric in self.metric_labels:
+                output = f"{metric} (test): {test_accuracy[metric]:.2f}."
+                print(output)
+                self.evaluation_result["test"].append(output)
+        except:
+            raise Evaluate.EvaluateException("Retrieval")
 
     def index_model(self) -> tfrs.layers.factorized_top_k.BruteForce:
-        print("Indexando...")
+        try:
+            print("Indexando...")
 
-        index = tfrs.layers.factorized_top_k.BruteForce(
-            self.query_model, 
-            k=self.k_candidates
-        )
+            index = tfrs.layers.factorized_top_k.BruteForce(
+                self.query_model, 
+                k=self.k_candidates
+            )
 
-        index.index_from_dataset(
-            self.candidates.batch(self.candidates_batch).map(
-                lambda x: (
-                    x[self.config.candidate_feature_merge], 
-                    self.candidate_model(x)
-                ))
-        )
+            index.index_from_dataset(
+                self.candidates.batch(self.candidates_batch).map(
+                    lambda x: (
+                        x[self.config.candidate_feature_merge], 
+                        self.candidate_model(x)
+                    ))
+            )
 
-        pipe = DataPipeline()
-        df, = pipe.read_csv_data(paths=[self.config.data_path])
+            pipe = DataPipeline()
+            df, = pipe.read_csv_data(paths=[self.config.data_path])
 
-        data_test = [{
-            key: np.array([df[key].sample(n=1).iloc[0]])
-            for key in self.config.features_data_q.keys() 
-        } for _ in range(5)]
+            data_test = [{
+                key: np.array([df[key].sample(n=1).iloc[0]])
+                for key in self.config.features_data_q.keys() 
+            } for _ in range(5)]
 
-        print(data_test)
+            print(data_test)
 
-        for data in data_test:
-           print(data)
-           _, titles = index(data)
-           ids = [id for id in titles.numpy()[0]]
-           print(ids[: 10])
-           print("")
+            for data in data_test:
+                print(data)
+                _, titles = index(data)
+                ids = [id for id in titles.numpy()[0]]
+                print(ids[: 10])
+                print("")
 
-        self.data_test = data_test
+            self.data_test = data_test
 
-        return index
+            return index
+        except:
+            raise Indexing.IndexingException("Retrieval")
 
 
     def predict_model(self, 
@@ -241,97 +261,103 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def save_model(self, path: str, dataset: tf.data.Dataset) -> None:
-        path = os.path.join(dirname, f"../{path}")
+        try:
+            path = os.path.join(dirname, f"../{path}")
 
-        def format_size(x):
-            if x < 1000:
-                return str(x)
-            elif x < 1000000:
-                return f"{x / 1000:.0f}K"
-            elif x < 1000000000:
-                return f"{x / 1000000:.0f}M"
-            elif x < 1000000000000:
-                return f"{x / 1000000000:.0f}B"
-            else:
-                return f"{x / 1000000000000:.0f}T"
+            def format_size(x):
+                if x < 1000:
+                    return str(x)
+                elif x < 1000000:
+                    return f"{x / 1000:.0f}K"
+                elif x < 1000000000:
+                    return f"{x / 1000000:.0f}M"
+                elif x < 1000000000000:
+                    return f"{x / 1000000000:.0f}B"
+                else:
+                    return f"{x / 1000000000000:.0f}T"
 
-        current_time = datetime.now()
+            current_time = datetime.now()
 
-        content = [
-            f"Nombre: {self.model_name}",
-            "\n ********** Hiperparametros **********",
-            '\n'.join(self.hiperparams),
-            f"Epochs: {self.epochs}",
-            f"Learning Rate: {self.learning_rate}"
-        ]
+            content = [
+                f"Nombre: {self.model_name}",
+                "\n ********** Hiperparametros **********",
+                '\n'.join(self.hiperparams),
+                f"Epochs: {self.epochs}",
+                f"Learning Rate: {self.learning_rate}"
+            ]
 
-        for k, v in self.evaluation_result.items():
-          content.append(f"\n ********** {k} **********")
-          content.append("\n".join(metric for metric in v))
+            for k, v in self.evaluation_result.items():
+                content.append(f"\n ********** {k} **********")
+                content.append("\n".join(metric for metric in v))
 
-        content.append("\n ********** Parametros **********")
-        total_params = 0
-        for param in self.variables[:-1]:
-            if hasattr(param, 'shape'):
-                params = 1
-                for p in param.shape: params *= p 
-                total_params += params
-                content.append(f"{param.name}: {params}")
-        content.append(f"Total params: {total_params}")
+            content.append("\n ********** Parametros **********")
+            total_params = 0
+            for param in self.variables[:-1]:
+                if hasattr(param, 'shape'):
+                    params = 1
+                    for p in param.shape: params *= p 
+                    total_params += params
+                    content.append(f"{param.name}: {params}")
+            content.append(f"Total params: {total_params}")
 
-        content = "\n".join(content)
+            content = "\n".join(content)
 
-        name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
-        name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
-        name = name.replace(' ', '_')  # replace spaces with underscores
+            name = f"{self.model_name} ({format_size(total_params)}) {current_time}"
+            name = re.sub(r'[^\w\s-]', '', name)  # remove invalid characters
+            name = name.replace(' ', '_')  # replace spaces with underscores
 
-        model = self
-        index = self.index_model()
+            model = self
+            index = self.index_model()
 
-        os.makedirs(f"{path}/{name}", exist_ok=True)
-        #Problemas aqui para cargarlo 
+            os.makedirs(f"{path}/{name}", exist_ok=True)
+            #Problemas aqui para cargarlo 
 
-        print(content)
-        self.model_path = f"{path}/{name}"
-        self.model_filename = name
-        
-        print("Salvando los pesos...")
-        model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
-        # Problemas aqui para guardarlo 
-        # tf.saved_model.save(model, f"{path}/{name}/model")
-        print("Salvando los indices...")
-        tf.saved_model.save(index, f"{path}/{name}/index")
+            print(content)
+            self.model_path = f"{path}/{name}"
+            self.model_filename = name
+            
+            print("Salvando los pesos...")
+            model.save_weights(f"{path}/{name}/model/pesos.tf", save_format='tf')
+            # Problemas aqui para guardarlo 
+            # tf.saved_model.save(model, f"{path}/{name}/model")
+            print("Salvando los indices...")
+            tf.saved_model.save(index, f"{path}/{name}/index")
 
-        print("Salvando los datos de entrenamiento...")
-        data_path = f"{path}/{name}/data"
-        self.data_train_path = data_path
-        dataset.save(data_path)
-        with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
-            pickle.dump(self.vocabularies, f)
+            print("Salvando los datos de entrenamiento...")
+            data_path = f"{path}/{name}/data"
+            self.data_train_path = data_path
+            dataset.save(data_path)
+            with open(f"{data_path}/vocabularies.pkl", 'wb') as f:
+                pickle.dump(self.vocabularies, f)
 
-        with open(f'{data_path}/data_test.pkl', 'wb') as f:
-            pickle.dump(self.data_test, f)
+            with open(f'{data_path}/data_test.pkl', 'wb') as f:
+                pickle.dump(self.data_test, f)
 
-        self.model_metadata_path = f"{self.model_path}/hiperparams.json"
-        self.config.save_as_json(self.model_metadata_path)
-        with open(f"{path}/{name}/Info.txt", "w") as f:
-            f.write(f"{content}")
+            self.model_metadata_path = f"{self.model_path}/hiperparams.json"
+            self.config.save_as_json(self.model_metadata_path)
+            with open(f"{path}/{name}/Info.txt", "w") as f:
+                f.write(f"{content}")
+        except:
+            raise Save.SaveException('Retrieval')
 
 
     def load_model(self, path: str, cached_train, cached_test) -> None:
-        print("Cargando los pesos...")
-        self.load_weights(os.path.join(path, "model/pesos.tf"))
-        print("Compilando...")
-        self.compile(optimizer=tf.keras.optimizers.Adagrad(
-            learning_rate=self.config.learning_rate)
-        )
-        print("Inicializando...")
-        cached_train.map(lambda x: self(x))
-        print("Evaluando...")
-        self.evaluate_model(
-            cached_test=cached_test,
-            cached_train=cached_train
-        )
+        try:
+            print("Cargando los pesos...")
+            self.load_weights(os.path.join(path, "model/pesos.tf"))
+            print("Compilando...")
+            self.compile(optimizer=tf.keras.optimizers.Adagrad(
+                learning_rate=self.config.learning_rate)
+            )
+            print("Inicializando...")
+            cached_train.map(lambda x: self(x))
+            print("Evaluando...")
+            self.evaluate_model(
+                cached_test=cached_test,
+                cached_train=cached_train
+            )
+        except:
+            raise Load.LoadException("Retrieval")
 
     # def get_config(self):
     #     config = super().get_config()

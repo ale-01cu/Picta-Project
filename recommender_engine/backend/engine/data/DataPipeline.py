@@ -5,6 +5,17 @@ from typing import Dict, Text, Tuple, List
 import math
 import os
 import pickle
+from engine.exceptions.DataPipeline import (
+    CSVDatasetNotFound,
+    CSVMergeError,
+    ConvertToTfDataset,
+    BuildVocabularies,
+    GetLengths,
+    LoadVocabularies,
+    SplitIntoTrainAndTest,
+    DataCaching,
+    LoadDataset
+)
 
 class DataPipeline:
     # El dataframe con el que se va a entrenar el modelo
@@ -34,14 +45,22 @@ class DataPipeline:
             print("Leyendo datos...")
         dataframes = []
         for path in paths:
-            df = pd.read_csv(self.get_path(path))
-            dataframes.append(df)
+            try:
+                df = pd.read_csv(self.get_path(path))
+                dataframes.append(df)
+            except FileNotFoundError:
+                raise CSVDatasetNotFound.CSVDatasetNotFoundException(path)
 
         return tuple(dataframes)
     
     
     def load_dataset(self, path: str):
-        return tf.data.Dataset.load(path)
+        try:
+            return tf.data.Dataset.load(path)
+        except Exception as e:
+            raise LoadDataset.LoadDatasetException(
+                f"Error al cargar el dataset desde {path}: {str(e)}"
+            )
 
 
     def merge_data(self, 
@@ -51,57 +70,70 @@ class DataPipeline:
         right_on: str, 
         output_features: list[str] = []
     ) -> pd.DataFrame:
-        if self.logging:
-            print("Megeando data...")
-        
-        new_df = left_data.merge(
-            right_data, 
-            how='inner', 
-            left_on=left_on, 
-            right_on=right_on
-        )[output_features]
+        try:
+            if self.logging:
+                print("Megeando data...")
+            
+            new_df = left_data.merge(
+                right_data, 
+                how='inner', 
+                left_on=left_on, 
+                right_on=right_on
+            )[output_features]
 
-        self.history.append("***** Merge *****")
-        self.history.append(f"Merge de {left_data.columns} con {right_data.columns}")
-        self.history.append(f"Entre {left_on} y {right_on}")
-        self.history.append(f"Se obtuvo como salida: {output_features}")
-        self.history.append("\n")
+            self.history.append("***** Merge *****")
+            self.history.append(f"Merge de {left_data.columns} con {right_data.columns}")
+            self.history.append(f"Entre {left_on} y {right_on}")
+            self.history.append(f"Se obtuvo como salida: {output_features}")
+            self.history.append("\n")
 
-        return new_df
+            return new_df
+        except:
+            raise CSVMergeError.CSVMergeErrorException()
 
     
     def convert_to_tf_dataset(self, data: pd.DataFrame) -> tf.data.Dataset:
+        # try:
         if self.logging: 
             print("Convirtiendo data...")
         return tf.data.Dataset.from_tensor_slices(dict(data))
     
+        # except: 
+        #     raise ConvertToTfDataset.ConvertToTfDatasetException()
 
     def load_vocabularies(self, path: str):
-        with open(os.path.join(path, "vocabularies.pkl"), 'rb') as f:
-            vocabularies = pickle.load(f)
-            return vocabularies
-        
+        try:
+            with open(os.path.join(path, "vocabularies.pkl"), 'rb') as f:
+                vocabularies = pickle.load(f)
+                return vocabularies
+        except Exception as e:
+            raise LoadVocabularies.LoadVocabulariesException(
+                f"Error al cargar los vocabularios desde {path}: {str(e)}")   
+
 
     def build_vocabularies(self, 
         features: list[str], 
         ds: tf.data.Dataset,
         batch: int
     ) -> Dict[Text, tf.Tensor]:
-        
-        if self.logging: 
-            print("Construyendo Vocabulario...")
-        vocaburaries = {}
-        for feature_name in features:
-            vocab = ds.map(lambda x: x[feature_name], 
-                num_parallel_calls=tf.data.AUTOTUNE).batch(batch)
-            dtype = ds.element_spec[feature_name].dtype
+        try:
+            if self.logging: 
+                print("Construyendo Vocabulario...")
+            vocaburaries = {}
+            for feature_name in features:
+                vocab = ds.map(lambda x: x[feature_name], 
+                    num_parallel_calls=tf.data.AUTOTUNE).batch(batch)
+                dtype = ds.element_spec[feature_name].dtype
 
-            vocaburaries[feature_name] = {}
-            vocaburaries[feature_name]['dtype'] = dtype
-            vocaburaries[feature_name]['vocabulary'] = np.unique(
-                np.concatenate(list(vocab)))
+                vocaburaries[feature_name] = {}
+                vocaburaries[feature_name]['dtype'] = dtype
+                vocaburaries[feature_name]['vocabulary'] = np.unique(
+                    np.concatenate(list(vocab)))
 
-        return vocaburaries
+            return vocaburaries
+        except Exception as e:
+            raise BuildVocabularies.BuildVocabulariesException(
+                f"Error al construir vocabularios: {str(e)}")
 
 
     def get_lengths(self, 
@@ -110,13 +142,17 @@ class DataPipeline:
         test_length: int,
         val_length: int    
     ) -> Tuple[int]:
-        total = len(ds)
-        train_length = math.ceil(total * (train_length / 100))
-        val_test_length = total - train_length
-        val_length = math.ceil(val_test_length * (val_length / (test_length + val_length)))
-        test_length = val_test_length - val_length
+        try:
+            total = len(ds)
+            train_length = math.ceil(total * (train_length / 100))
+            val_test_length = total - train_length
+            val_length = math.ceil(val_test_length * (val_length / (test_length + val_length)))
+            test_length = val_test_length - val_length
 
-        return total, train_length, val_length, test_length
+            return total, train_length, val_length, test_length
+        except Exception as e:
+            raise GetLengths.GetLengthsException(
+                f"Error al obtener las longitudes del dataset: {str(e)}")
 
 
     def split_into_train_and_test(
@@ -128,14 +164,17 @@ class DataPipeline:
             val_length: int,
             seed: int
     ) -> Tuple[tf.data.Dataset]:
+        try:
+            tf.random.set_seed(seed)
+            shuffled = ds.shuffle(shuffle, seed=seed, reshuffle_each_iteration=False)
+            train = shuffled.take(train_length)
+            val = shuffled.skip(train_length).take(val_length)
+            test = shuffled.skip(train_length).skip(val_length).take(test_length)
 
-        tf.random.set_seed(seed)
-        shuffled = ds.shuffle(shuffle, seed=seed, reshuffle_each_iteration=False)
-        train = shuffled.take(train_length)
-        val = shuffled.skip(train_length).take(val_length)
-        test = shuffled.skip(train_length).skip(val_length).take(test_length)
-
-        return train, val, test
+            return train, val, test
+        except Exception as e:
+            raise SplitIntoTrainAndTest.SplitIntoTrainAndTestException(
+                f"Error al dividir el dataset: {str(e)}")
 
 
     def save(self, dataset: tf.data.Dataset, path:str) -> None:
@@ -160,12 +199,16 @@ class DataPipeline:
         val_batch: int,
         test_batch: int
     ) -> Tuple[tf.data.Dataset]: 
-        cached_train = train.shuffle(shuffle)\
-            .batch(train_batch).cache()
-        cached_val = val.batch(val_batch).cache()
-        cached_test = test.batch(test_batch).cache()
+        try:
+            cached_train = train.shuffle(shuffle)\
+                .batch(train_batch).cache()
+            cached_val = val.batch(val_batch).cache()
+            cached_test = test.batch(test_batch).cache()
 
-        return cached_train, cached_val, cached_test
+            return cached_train, cached_val, cached_test
+        except Exception as e:
+            raise DataCaching.DataCachingException(
+                f"Error al cachear los datos: {str(e)}")
 
 
     def close(self):

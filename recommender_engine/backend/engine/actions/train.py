@@ -6,7 +6,6 @@ from engine.db.cruds.ModelCRUD import ModelCRUD
 from engine.db.config import engine
 from engine.models.ModelConfig import ModelConfig
 import os
-import pandas as pd
 import shutil
 from engine.db.main import build_db
 
@@ -47,7 +46,7 @@ def train():
 
     # Retrieval Configs
     retrieval_config = ModelConfig(
-        isTrain=True,
+        isTrain=False,
         model_name="Retrieval Model 1M 4F",
         # features=['username', 'fecha', "nombre", 'categoria'],
         # features=['username', 'fecha', "nombre", 'categoria', "id"],
@@ -55,19 +54,19 @@ def train():
         # features=['user_id', 'movie_id', 'bucketized_user_age', 'movie_title', 'timestamp'],
         candidate_data_path="../../datasets/pubs.csv",
         data_path="../../datasets/vistas.csv",
-        towers_layers_sizes=[64],
+        towers_layers_sizes=[],
         shuffle=1_000_000,
         # shuffle=1000,
         embedding_dimension=64,
         candidates_batch=128,
         k_candidates=100,
         learning_rate=0.1,
-        num_epochs=8,
+        num_epochs=12,
         use_multiprocessing=True,
         workers=4,
-        train_batch=32,
-        val_batch=16,
-        test_batch=16,
+        train_batch=64,
+        val_batch=32,
+        test_batch=32,
         vocabularies_batch=1000,
         train_Length=60,
         test_length=20,
@@ -97,10 +96,10 @@ def train():
     
     # Likes Configs
     likes_config = ModelConfig(
-        isTrain=False,
+        isTrain=True,
         model_name="Likes lite",
         # features=['usuario_id', 'id', 'fecha', 'nombre', 'edad', 'descripcion'],
-        features=['username', 'fecha_nacimiento', 'fecha', "nombre", "descripcion", 'categoria'],
+        features=['usuario_id', 'fecha_nacimiento', 'fecha', "nombre", "descripcion", 'categoria'],
         candidate_data_path="../../datasets/pubs.csv",
         data_path="../../datasets/likes.csv",
         towers_layers_sizes=[],
@@ -108,7 +107,7 @@ def train():
         shuffle=154_396,
         embedding_dimension=64,
         learning_rate=0.0001,
-        num_epochs=1,
+        num_epochs=20,
         use_multiprocessing=True,
         target_column={
             "current": "valor",
@@ -125,7 +124,7 @@ def train():
         seed=8,
         candidate_feature_merge="id",
         data_feature_merge="publicacion_id",
-        user_id_data={ 'username': { 'dtype': FeaturesTypes.CategoricalString, 'w': 1 } },
+        user_id_data={ 'usuario_id': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 } },
         features_data_q={
             # 'edad': { 'dtype': FeaturesTypes.CategoricalInteger, 'w': 1 },
             #'fecha': { 'dtype': FeaturesTypes.CategoricalContinuous, 'w': 1 }    
@@ -284,6 +283,7 @@ def train():
 
         pubs_df['descripcion'] = pubs_df['descripcion'].astype(str)
         pubs_df['nombre'] = pubs_df['nombre'].astype(str)
+        pubs_df['categoria'] = pubs_df['categoria'].astype(str)
 
         likes_df = likes_df[: likes_config.shuffle]
         # likes_df = likes_df.drop(['id'], axis=1)
@@ -302,9 +302,16 @@ def train():
         )
 
 
-        #pubs_df['id'] = pubs_df['id'].astype(str)
-        #likes_df['id'] = likes_df['id'].astype(str)
-        #likes_df['usuario_id'] = likes_df['usuario_id'].astype(str)
+        # pubs_df['id'] = pubs_df['id'].astype(str)
+        # likes_df['id'] = likes_df['id'].astype(str)
+        # likes_df['usuario_id'] = likes_df['usuario_id'].astype(str)
+        # likes_df = likes_df.drop('nombre', axis=1)
+        # likes_df = likes_df.drop('descripcion', axis=1)
+        # likes_df = likes_df.drop('categoria', axis=1)
+        # likes_df['username'] = likes_df['username'].astype(str)
+
+        # likes_df = likes_df.drop('username', axis=1)
+        # print(likes_df.columns)
         likes_ds = pipe.convert_to_tf_dataset(likes_df)
 
         # likes_ds = likes_ds.map(lambda x: {

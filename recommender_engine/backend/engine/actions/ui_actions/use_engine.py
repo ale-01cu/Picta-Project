@@ -1,20 +1,29 @@
 import tensorflow as tf
 import numpy as np
 import os
-from engine.db.cruds.ModelCRUD import ModelCRUD
-from engine.stages.stages import retrieval_stage, ranking_Stage
 from settings.db import engine
 from engine.utils import read_json
 from engine.data.FeaturesTypes import map_feature
 from engine.data.DataPipeline import DataPipeline
 from settings.mongodb import engine_collection, config_collection
 from bson import ObjectId
-import time
+from engine.exceptions.use_engine import (
+    DataInvalid,
+    FeatureNotFound,
+    MetadataNotFound,
+    ContextDataToTensor,
+    ModelInference,
+    UserIdToTensor
+)
+from engine.exceptions.train import (
+    ModelIdNotProvide,
+    ModelNotFound
+)
 dirname = os.path.dirname(__file__)
-
 engine = engine_collection.find_one({ "is_active": True })
 
-def get_recommendations(user_id, k, params):
+
+def get_recommendations(user_id, params):
     retrieval_config_db = config_collection.find_one(
         { "_id": ObjectId(engine['retrieval_model_id']) })
 
@@ -26,47 +35,60 @@ def get_recommendations(user_id, k, params):
     user_identier_name = next(iter(metadata['user_id_data']))
     
 
-    user_id_data = {
-        key: tf.constant(
-            [user_id], 
-            dtype=map_feature(to_class=True, feature_type=value['dtype'])().datatype,
-            name=key
-        ) 
-        for key, value in metadata['user_id_data'].items() 
-    }
+    try:
+        user_id_data = {
+            key: tf.constant(
+                [user_id], 
+                dtype=map_feature(to_class=True, feature_type=value['dtype'])().datatype,
+                name=key
+            ) 
+            for key, value in metadata['user_id_data'].items() 
+        }
+    except:
+        raise UserIdToTensor.UserIdToTensorException()
+
+    try:
+        model_input = {
+            key: tf.constant(
+                [params[key]], 
+                dtype=map_feature(
+                    to_class=True, 
+                    feature_type=metadata['features_data_q'][key]['dtype']
+                )().datatype,
+                name=key
+            )
+            for key in metadata['features_data_q'].keys() if key != user_identier_name
+        }
+    except:
+        raise ContextDataToTensor.ContextDataToTensorException()
+
+    # if 'fecha' in model_input:
+    #     model_input['fecha'] = tf.constant([params['fecha']], dtype=tf.int64)
+    # if 'timestamp' in model_input:
+    #     model_input['timestamp'] = tf.constant([params['timestamp']], dtype=tf.int64)
+
+    # for key, value in user_id_data.items():
+    #     model_input[key] = value
 
     model_input = {
-        key: tf.constant(
-            [params[key]], 
-            dtype=map_feature(
-                to_class=True, 
-                feature_type=metadata['features_data_q'][key]['dtype']
-            )().datatype,
-            name=key
-        )
-        for key in metadata['features_data_q'].keys() if key != user_identier_name
+        **user_id_data,
+        **model_input
     }
 
-    if 'fecha' in model_input:
-        model_input['fecha'] = tf.constant([params['fecha']], dtype=tf.int64)
-    if 'timestamp' in model_input:
-        model_input['timestamp'] = tf.constant([params['timestamp']], dtype=tf.int64)
-
-    for key, value in user_id_data.items():
-        model_input[key] = value
-
     #input_tensor = tf.constant([user_id], dtype=tf.int32)
-    scores, ids = retieval_model(
-        model_input, 
-        training=False
-    )
+    try:
+        _, ids = retieval_model(
+            model_input, 
+            training=False
+        )
+    except:
+        raise ModelInference.ModelInferenceException("Retrieval")
+
+    for id in ids.numpy()[0]:
+        yield id
 
 
-    for id, score in zip(ids.numpy()[0], scores.numpy()[0]):
-        yield id, score
-
-
-def ranking_recommendations(user_id, pubs_ids: list, params: dict): 
+def ranking_recommendations(user_id, pubs_ids: GeneratorExit, params: dict): 
     ranking_config_db = config_collection.find_one(
             { "_id": ObjectId(engine['ranking_model_id']) })
 
@@ -78,18 +100,21 @@ def ranking_recommendations(user_id, pubs_ids: list, params: dict):
         **metadata['features_data_c']
     }
 
-    user_id_data = {}
-    for key, value in metadata['user_id_data'].items():
-        datatype = None 
-        if map_feature(to_class=True, feature_type=value['dtype'])().datatype == tf.int32:
-            datatype = tf.int64
-        else:
-            datatype = map_feature(to_class=True, feature_type=value['dtype'])().datatype
-        user_id_data[key] = tf.constant(
+    user_id_data = {
+        key: tf.constant(
             [user_id], 
-            dtype=datatype,
+            dtype=(tf.int64 if map_feature(
+                to_class=True, 
+                feature_type=value['dtype']
+            )().datatype == tf.int32 
+                   else map_feature(
+                       to_class=True, 
+                       feature_type=value['dtype']
+                    )().datatype),
             name=key
         )
+        for key, value in metadata['user_id_data'].items()
+    }
     
     context_input = {
         key: tf.constant(
@@ -106,11 +131,14 @@ def ranking_recommendations(user_id, pubs_ids: list, params: dict):
         for key in metadata['features_data_q'].keys() if key != user_identier_name
     }
 
-    if 'fecha' in context_input:
-        context_input['fecha'] = tf.constant([params['fecha']], dtype=tf.int32)
+    # if 'fecha' in context_input:
+    #     context_input['fecha'] = tf.constant([params['fecha']], dtype=tf.int32)
 
-    for key, value in user_id_data.items():
-        context_input[key] = value
+    context_input = {
+        **user_id_data,
+        **context_input
+    }
+
     
     model = tf.saved_model.load(
         os.path.join(dirname, f"{ranking_config_db['modelPath']}/service"))
@@ -172,7 +200,6 @@ def ranking_recommendations(user_id, pubs_ids: list, params: dict):
     return result
 
 
-from engine.data.data_preprocessing.transform_date_to_timestamp import transform_date_to_timestamp
 def get_full_data(hiperparams):
     candidate_path, data_path = (
         "../../../../datasets/picta_publicaciones_crudas.csv", 
@@ -199,7 +226,7 @@ def get_full_data(hiperparams):
         right_data=data_df,
         left_on=hiperparams['candidate_feature_merge'],
         right_on=hiperparams['data_feature_merge'],
-        output_features=hiperparams['features']
+        output_features=hiperparams['features'] + [hiperparams['candidate_feature_merge']] + [hiperparams['data_feature_merge']]
     )
 
     pipe.close()
@@ -214,7 +241,7 @@ def get_row_as_dict(id: str, data: dict):
     metadata = read_json(retrieval_config_db["metadata_path"])
 
     try:
-    # Filtrar el DataFrame para solo la fila donde el id coincide con el proporcionado
+        # Filtrar el DataFrame para solo la fila donde el id coincide con el proporcionado
         df_filtered = data[data[metadata['candidate_feature_merge']] == id]
         
         # Convertir la primera (y única) fila del DataFrame filtrado a un diccionario
@@ -232,144 +259,89 @@ def get_row_as_dict(id: str, data: dict):
     return None
 
 
-def use_models(user_id, k, params):
-    # print(params)
-    recommendations = get_recommendations(
-        user_id=user_id, k=k, params=params)
+def validate_inputs(user_id, params):
+# Recuperando datos
+    if engine['retrieval_model_id']:
+        retrieval_config_db = config_collection.find_one(
+            { "_id": ObjectId(engine['retrieval_model_id']) })
+        if not retrieval_config_db:
+            raise ModelNotFound.ModelNotFoundException("Retrieval")
+    else: raise ModelIdNotProvide.ModelIdNotProvideException("Retrieval")
+    if engine['ranking_model_id']:
+        ranking_config_db = config_collection.find_one(
+            { "_id": ObjectId(engine['ranking_model_id']) })
+        if not ranking_config_db:
+            raise ModelNotFound.ModelNotFoundException(engine['ranking_model_id'])
+    else:
+        raise ModelIdNotProvide.ModelIdNotProvideException("Ranking")
     
 
-    ids = [id for id, _ in recommendations]
-    # print("Recomendados por recuperacion...............")
-    # for id in ids[: 10]:
-    #     print("id ", id)
-    results = ranking_recommendations(user_id, ids, params)
+    try: retrieval_hyperparams = read_json(retrieval_config_db['metadata_path'])
+    except: raise MetadataNotFound.MetadataNotFoundException("Retrieval")
+    try: ranking_hyperparams = read_json(ranking_config_db['metadata_path'])
+    except: raise MetadataNotFound.MetadataNotFoundException("Ranking")
 
-    print("Recomendaciones por clasificacion............")
-    # for id, score in results:
-    #     print("id ", id, "Score ", score)
+    user_key = retrieval_hyperparams['user_id_data']
+    retrieval_features_data_q = retrieval_hyperparams['features_data_q']
+    ranking_feature_data_q = ranking_hyperparams['features_data_q']
 
-    # response = []
+    if not user_id:
+        raise FeatureNotFound(user_key.keys()[0])
 
-    # for i in results:
-    #     response.append({ "id": i[0].item() })
-    # # print("Top ", k, " recomendaciones para el usuario ", user_id)
-    # # for id, score in recommendations:
-    # #     response.append({ "id": id.item() })
-    #     # print(id)
-    #     # print(get_row_as_dict(id), "Score: ", score)
-
-    # return response[: k]
-
-
-data_test = [
-    {
-        "usuario_id": np.array([320]),
-        "edad": np.array([32])
-    },
-    {
-        "usuario_id": np.array([161]),
-        "edad": np.array([37])
-    },
-    {
-        "usuario_id": np.array([3040]),
-        "edad": np.array([51])
-    },
-    {
-        "usuario_id": np.array([8097]),
-        "edad": np.array([45])
-    },
-    {
-        "usuario_id": np.array([9364]),
-        "edad": np.array([22])
-    },
-]
-data_test = [
-    {
-        "user_id": np.array([b'138']),
-        "bucketized_user_age": np.array([45])
-    },
-    {
-        "user_id": np.array([b'92']),
-        "bucketized_user_age": np.array([25])
-    },
-    {
-        "user_id": np.array([b'301']),
-        "bucketized_user_age": np.array([18])
-    },
-    {
-        "user_id": np.array([b'60']),
-        "bucketized_user_age": np.array([50])
-    },
-    {
-        "user_id": np.array([b'197']),
-        "bucketized_user_age": np.array([50])
-    },
-]
-
-
-if __name__ == "__main__":
-    data = data_test[0]
-    #USER_ID = data['usuario_id'].item()
-    USER_ID = data['user_id'].item()
-    K = 10
-    params = {
-        "bucketized_user_age": data['bucketized_user_age'].item(),
-        'timestamp': int(time.time() * 1000)#+ (7 * 24 * 60 * 60 * 1000)
-
+    features_data = {
+        **retrieval_features_data_q, 
+        **ranking_feature_data_q
     }
 
     print(params)
-    res = use_models(user_id=USER_ID, k=K, params=params)
-    print(res)
+    # Actualizar los tipos de datos en user_key y features_data
+    for k, v in user_key.items():
+        v['dtype'] = map_feature(
+            to_class=True, 
+            feature_type=v['dtype']
+        )
+    for key, value in features_data.items():
+        if key not in params.keys() and key not in user_key.keys():
+            raise FeatureNotFound.FeatureNotFoundException(key)
+        value['dtype'] = map_feature(
+            to_class=True, 
+            feature_type=value['dtype']
+        )
 
-# id  b'323'
-# id  b'117'
-# id  b'332'
-# id  b'301'
-# id  b'245'
-# id  b'682'
-# id  b'313'
-# id  b'293'
-# id  b'751'
-# id  b'547'
+
+    # Validacion
+    if len(features_data) > 1:
+        # validacion de los parametros
+        for key, value in params.items():
+            if key not in features_data.keys() and key not in user_key.keys():
+                raise FeatureNotFound.FeatureNotFoundException(key)
+
+            dtype = features_data[key]['dtype']()
+            try:
+                params[key] = dtype.cast(value)
+            except:
+                raise DataInvalid.DataInvalidException()
 
 
-# import tensorflow as tf
+    # Validacion de la clave del usuario
+    for key, value in user_key.items():
+        dtype = value['dtype']()
+        user_id = dtype.cast(user_id)
 
-# features_data_q = {
-#     'usuario_id': {'dtype': 'CategoricalInteger', 'w': 1},
-#     'timestamp': {'dtype': 'CategoricalContinuous', 'w': 0.3}
-# }
+    return user_id, params
 
-# features_data_c = {
-#     'id': {'dtype': 'CategoricalInteger', 'w': 1},
-#     'nombre': {'dtype': 'StringText', 'w': 0.2},
-#     'descripcion': {'dtype': 'StringText', 'w': 0.1}
-# }
 
-# data = {
-#     'id': 1,
-#     'usuario_id': 2,
-#     'timestamp': 3,
-#     'nombre': 'Juan',
-#     'descripcion': 'Este es un ejemplo'
-# }
+def use_models(user_id, k, params):
+    # print(params)
+    user_id, params = validate_inputs(user_id, params)
 
-# # Extraer los datos relevantes de features_data_q
-# features_data_q_keys = [key for key in features_data_q if key != 'usuario_id']
-# features_data_q_data = {key: data[key] for key in features_data_q_keys if key in data}
+    recommendations = get_recommendations(
+        user_id=user_id, params=params)
 
-# # Extraer los datos relevantes de features_data_c
-# features_data_c_keys = [key for key in features_data_c]
-# features_data_c_data = {key: data[key] for key in features_data_c_keys if key in data}
-
-# # Construir el objeto model_input
-# model_input = {
-#     **features_data_q_data,
-#     **features_data_c_data
-# }
-
-# # Convertir los valores a tf.constant
-# model_input = {key: tf.constant([value], dtype=tf.int64) for key, value in model_input.items()}
-
-# print(model_input)
+    # print("Recomendados por recuperacion...............")
+    # for id in ids[: 10]:
+    #     print("id ", id)
+    results = ranking_recommendations(user_id, recommendations, params)
+    return [id for id, _  in results]
+    # for id, score in results:
+    #     print("id ", id, "Score ", score)
