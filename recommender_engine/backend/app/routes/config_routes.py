@@ -147,6 +147,7 @@ async def update_config_form(config_id: str):
 @router.put("/update-config/{config_id}")
 async def update_config(config_id: str, config: ModelConfigUserInput):
     collection = db['ModelConfigCollection']
+    []
     try:
         # Actualizar el documento con los nuevos datos
         result = collection.update_one(

@@ -342,22 +342,22 @@ class RetrievalModel(tfrs.models.Model):
 
 
     def load_model(self, path: str, cached_train, cached_test) -> None:
-        try:
-            print("Cargando los pesos...")
-            self.load_weights(os.path.join(path, "model/pesos.tf"))
-            print("Compilando...")
-            self.compile(optimizer=tf.keras.optimizers.Adagrad(
-                learning_rate=self.config.learning_rate)
-            )
-            print("Inicializando...")
-            cached_train.map(lambda x: self(x))
-            print("Evaluando...")
-            self.evaluate_model(
-                cached_test=cached_test,
-                cached_train=cached_train
-            )
-        except:
-            raise Load.LoadException("Retrieval")
+        # try:
+        print("Cargando los pesos...")
+        self.load_weights(os.path.join(path, "model/pesos.tf"))
+        print("Compilando...")
+        self.compile(optimizer=tf.keras.optimizers.Adagrad(
+            learning_rate=self.config.learning_rate)
+        )
+        print("Inicializando...")
+        cached_train.map(lambda x: self(x))
+        print("Evaluando...")
+        self.evaluate_model(
+            cached_test=cached_test,
+            cached_train=cached_train
+        )
+        # except:
+        #     raise Load.LoadException("Retrieval")
 
     # def get_config(self):
     #     config = super().get_config()

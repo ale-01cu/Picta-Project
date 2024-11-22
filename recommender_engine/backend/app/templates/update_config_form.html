@@ -247,7 +247,6 @@
     inputText.name = 'feature';
     inputText.required = true;
     fieldContainer.appendChild(inputText);
-    counter ++;
     
     // Crear un botón para eliminar el campo
     const removeButton = document.createElement('button');
@@ -274,9 +273,10 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
   
   const inputText = document.createElement('input');
   inputText.type = 'text';
-  inputText.name = textName;
+  inputText.name = textName + counter;
   inputText.required = true;
   fieldContainer.appendChild(inputText);
+
   
   try {
     const response = await fetch('/features-types');
@@ -291,7 +291,7 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
     fieldContainer.appendChild(labelSelect);
     
     const select = document.createElement('select');
-    select.name = selectName;
+    select.name = selectName + counter;
     select.required = true;
 
     // Añadir opciones al selector basadas en los datos del servidor
@@ -316,7 +316,7 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
   
   const inputNumber = document.createElement('input');
   inputNumber.type = 'number';
-  inputNumber.name = numberName;
+  inputNumber.name = numberName + counter;
   inputNumber.required = true;
   fieldContainer.appendChild(inputNumber);
   
@@ -350,24 +350,9 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
       k_candidates: parseInt(formData.get('k_candidates')),
       candidate_feature_merge: formData.get('candidate_feature_merge'),
       data_feature_merge: formData.get('data_feature_merge'),
-      user_id_data: user_data['user_feat'] ? {
-        [user_data['user_feat']]: {
-          dtype: user_data['feature_dtype'],
-          w: user_data['weight']
-        }
-      } : {}, // Si user_feat está vacío, asigna un objeto vacío
-      features_data_q: features_data_q['feature_q'] ? {
-        [features_data_q['feature_q']]: {
-          dtype: features_data_q['feature_q_dtype'],
-          w: features_data_q['feature_q_weight']
-        }
-      } : {}, // Si feature_q está vacío, asigna un objeto vacío
-      features_data_c: features_data_c['feature_c'] ? {
-        [features_data_c['feature_c']]: {
-          dtype: features_data_c['feature_c_dtype'],
-          w: features_data_c['feature_c_weight']
-        }
-      } : {}, // Si feature_c está vacío, asigna un objeto vacío
+      user_id_data: user_data, // Si user_feat está vacío, asigna un objeto vacío
+      features_data_q: features_data_q, // Si feature_q está vacío, asigna un objeto vacío
+      features_data_c: features_data_c, // Si feature_c está vacío, asigna un objeto vacío
       stage: formData.get('stage'),
       target_column: {
         "current": formData.get('current'),
@@ -378,11 +363,10 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
     };
 
     console.log(data);
-
+    
     const pathSegments = window.location.pathname.split('/');
     const configId = pathSegments[pathSegments.length - 1];
     
-
     fetch('/update-config/' + configId, {
       method: 'PUT',
       headers: {
@@ -402,18 +386,17 @@ async function addFeatureDataQ(field, textName, selectName, numberName) {
 
   function getFeatureData(containerId) {
     const container = document.getElementById(containerId);
-    const inputs = container.querySelectorAll('input[type="text"], input[type="number"]');
+    const inputsText = container.querySelectorAll('input[type="text"]');
+    const inputsNumber = container.querySelectorAll('input[type="number"]');
     const selects = container.querySelectorAll('select');
     const data = {};
-    
-    inputs.forEach(input => {
-      data[input.name] = input.value;
-    });
 
-    selects.forEach(select => {
-      data[select.name] = select.value;
-    });
-
+    for (let i = 0; i < inputsText.length; i++) {
+      data[inputsText[i].value] = {
+        "dtype": selects[i].value, 
+        "w": inputsNumber[i].value
+      }
+    }
     return data;
   }
 </script>

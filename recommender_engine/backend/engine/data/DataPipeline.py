@@ -93,13 +93,13 @@ class DataPipeline:
 
     
     def convert_to_tf_dataset(self, data: pd.DataFrame) -> tf.data.Dataset:
-        # try:
-        if self.logging: 
-            print("Convirtiendo data...")
-        return tf.data.Dataset.from_tensor_slices(dict(data))
+        try:
+            if self.logging: 
+                print("Convirtiendo data...")
+            return tf.data.Dataset.from_tensor_slices(dict(data))
     
-        # except: 
-        #     raise ConvertToTfDataset.ConvertToTfDatasetException()
+        except: 
+            raise ConvertToTfDataset.ConvertToTfDatasetException()
 
     def load_vocabularies(self, path: str):
         try:
