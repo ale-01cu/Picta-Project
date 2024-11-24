@@ -197,7 +197,23 @@ def ranking_recommendations(user_id, pubs_ids: GeneratorExit, params: dict):
         key=lambda x: x[1], 
         reverse=True
     )
-    return result
+
+    keys_to_extract = ['usuario_id', 'nombre', 'descripcion']
+    full_result = {}
+
+    for id, _ in result:
+        row_data = get_row_as_dict(id, full_data_trained)
+        row_data = {key: value.item() if value.size == 1 else value.tolist() 
+               for key, value in row_data.items() 
+               if key in keys_to_extract}
+        
+        print(row_data)
+        print("************")
+        full_result[id] = row_data
+
+
+    return full_result
+    # return result
 
 
 def get_full_data(hiperparams):
@@ -342,6 +358,8 @@ def use_models(user_id, k, params):
     # for id in ids[: 10]:
     #     print("id ", id)
     results = ranking_recommendations(user_id, recommendations, params)
-    return [id for id, _  in results]
+    # results = [id for id, _ in results]
+    print(results)
+    return results    
     # for id, score in results:
     #     print("id ", id, "Score ", score)

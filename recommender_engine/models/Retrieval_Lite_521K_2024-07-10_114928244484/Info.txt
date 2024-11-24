@@ -1,0 +1,25 @@
+Nombre: Retrieval Lite
+
+ ********** Hiperparametros **********
+Towers Layers Sizes: []
+Features Query: ['usuario_id']
+Features Candidate: ['id']
+Embedding Dimension: 64
+Shuffle: 100000
+Train Batch: 8192
+Test Batch: 4096
+Candidate Batch: 128
+K Candidates: 100
+Epochs: 3
+Learning Rate: 0.1
+
+ ********** train **********
+
+
+ ********** test **********
+
+
+ ********** Parametros **********
+embedding/embeddings:0: 354048
+embedding_1/embeddings:0: 166976
+Total params: 521024
