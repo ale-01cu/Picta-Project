@@ -23,18 +23,6 @@ import time
 dirname = os.path.dirname(__file__)
 
 class RetrievalModel(tfrs.models.Model):
-    """
-    
-    Los datos para entrenar este modelo son son pares 
-    de tipo usuario - item osea en el caso de las publicaciones
-    tengo que pasarle un historial de clicks que ha dado cada usuario 
-    a cada publicacion
-    
-    ejemplo:
-
-    En cualquier pagina de la aplicacion el usuario x dio click en la pelicula z
-    
-    """
     def __init__(self, 
         # model_name: str,
         # towers_layers_sizes: typ.List[int],
@@ -136,12 +124,10 @@ class RetrievalModel(tfrs.models.Model):
             axis=1
         )
 
-
     def compute_loss(self, features, training=False):
         query_embeddings = self.query_model(features)
         pubs_embeddings = self.candidate_model(features)
         return self.task(query_embeddings, pubs_embeddings)
-        
 
     def fit_model(self, 
         # train: tf.data.Dataset, 
@@ -174,7 +160,6 @@ class RetrievalModel(tfrs.models.Model):
         except:
             raise Fit.FitException("Retrieval")
     
-
     def evaluate_model(self, cached_test, cached_train) -> None:
         try:
             model = self
@@ -246,7 +231,6 @@ class RetrievalModel(tfrs.models.Model):
         except:
             raise Indexing.IndexingException("Retrieval")
 
-
     def predict_model(self, 
         index: tfrs.layers.factorized_top_k.BruteForce, 
         user_id: int
@@ -258,7 +242,6 @@ class RetrievalModel(tfrs.models.Model):
         )
         
         return score, titles[0]
-
 
     def save_model(self, path: str, dataset: tf.data.Dataset) -> None:
         try:
@@ -339,7 +322,6 @@ class RetrievalModel(tfrs.models.Model):
                 f.write(f"{content}")
         except:
             raise Save.SaveException('Retrieval')
-
 
     def load_model(self, path: str, cached_train, cached_test) -> None:
         # try:

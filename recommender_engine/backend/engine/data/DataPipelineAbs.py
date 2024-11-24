@@ -94,3 +94,5 @@ class AbstractDataPipeline(ABC):
     @abstractmethod
     def close(self):
         pass
+
+    
