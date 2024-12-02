@@ -30,8 +30,6 @@ class DataPipeline:
         self.history = []
         self.dirname = os.path.dirname(__file__)
         self.logging = logging
-        
-
 
     def __str__(self) -> Text:
         return self.history
@@ -39,7 +37,6 @@ class DataPipeline:
     def get_path(self, path: str) -> str:
         return os.path.join(self.dirname, path)
     
-
     def read_csv_data(self, paths: List[str]) -> Tuple[pd.DataFrame]:
         if self.logging:
             print("Leyendo datos...")
@@ -53,7 +50,6 @@ class DataPipeline:
 
         return tuple(dataframes)
     
-    
     def load_dataset(self, path: str):
         try:
             return tf.data.Dataset.load(path)
@@ -61,7 +57,6 @@ class DataPipeline:
             raise LoadDataset.LoadDatasetException(
                 f"Error al cargar el dataset desde {path}: {str(e)}"
             )
-
 
     def merge_data(self, 
         left_data: pd.DataFrame,
@@ -90,7 +85,6 @@ class DataPipeline:
             return new_df
         except:
             raise CSVMergeError.CSVMergeErrorException()
-
     
     def convert_to_tf_dataset(self, data: pd.DataFrame) -> tf.data.Dataset:
         try:
@@ -109,7 +103,6 @@ class DataPipeline:
         except Exception as e:
             raise LoadVocabularies.LoadVocabulariesException(
                 f"Error al cargar los vocabularios desde {path}: {str(e)}")   
-
 
     def build_vocabularies(self, 
         features: list[str], 
@@ -135,7 +128,6 @@ class DataPipeline:
             raise BuildVocabularies.BuildVocabulariesException(
                 f"Error al construir vocabularios: {str(e)}")
 
-
     def get_lengths(self, 
         ds: tf.data.Dataset,
         train_length: int,
@@ -153,7 +145,6 @@ class DataPipeline:
         except Exception as e:
             raise GetLengths.GetLengthsException(
                 f"Error al obtener las longitudes del dataset: {str(e)}")
-
 
     def split_into_train_and_test(
             self,
@@ -176,19 +167,16 @@ class DataPipeline:
             raise SplitIntoTrainAndTest.SplitIntoTrainAndTestException(
                 f"Error al dividir el dataset: {str(e)}")
 
-
     def save(self, dataset: tf.data.Dataset, path:str) -> None:
         dataset.save(
             os.path.join(self.dirname, path)
         ), 
-
 
     def load(self, path:str) -> tf.data.Dataset:
         return tf.data.Dataset.load(
             path
             # tf.TensorSpec(shape=(), dtype=tf.int64)
         )
-
 
     def data_caching(self, 
         train: tf.data.Dataset, 
@@ -209,7 +197,6 @@ class DataPipeline:
         except Exception as e:
             raise DataCaching.DataCachingException(
                 f"Error al cachear los datos: {str(e)}")
-
 
     def close(self):
         if self.logging:

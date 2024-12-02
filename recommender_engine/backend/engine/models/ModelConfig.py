@@ -57,7 +57,6 @@ class ModelConfig:
             self.features_data_c = new_dict['features_data_c']
             # self.user_id_data = new_dict['user_id_data']
 
-
     def __str__(self):
         attributes = vars(self)
         # Calcular el ancho máximo para las columnas
@@ -95,7 +94,6 @@ class ModelConfig:
                 data[feature][key]['dtype'] = value['dtype'].__name__
 
         return data
-                
     
     def save_as_json(self, path):
         config: dict = self.replace_class_with_name(self.__dict__)

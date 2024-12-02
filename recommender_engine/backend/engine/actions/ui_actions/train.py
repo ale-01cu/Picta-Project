@@ -56,7 +56,6 @@ def train(engine_id):
                 raise ModelNotFound.ModelNotFoundException(engine['ranking_model_id'])
         else:
             raise ModelIdNotProvide.ModelIdNotProvideException("Ranking")
-
     except ModelNotFound.ModelNotFoundException as e:
         print(f"Modelo no encontrado: {e}")
         return
