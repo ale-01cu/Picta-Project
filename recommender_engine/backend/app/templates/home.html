@@ -1,47 +1,80 @@
 {% extends "Base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
   <style>
-    .landing {
-        text-align: center;
-        padding: 50px;
-        background-color: #e0f7fa;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    .home {
+
     }
 
-    .landing h1 {
-        font-size: 2.5em;
-        color: #00796b;
+    ul {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 4px;
+      list-style: none;
+      padding-left: 0;
     }
 
-    .landing p {
-        font-size: 1.2em;
-        color: #004d40;
-        margin: 20px 0;
+    ul li a {
+      display: block;
+      background-color: #eeeeee;
+      padding: 8px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: inherit;
     }
 
-    .cta-button {
-        background-color: #00796b;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 1em;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
+    .historial-container {
+      display: flex;
+      gap: 4px;
+    } 
 
-    .cta-button:hover {
-        background-color: #004d40;
+    .user-selected {
+      width: 100%;
+      background-color: #eeeeee;
+      padding: 8px;
+      border-radius: 10px;
     }
   </style>
 
 
-{% block title %}Landing Page{% endblock %}
+  <div class="home">
+    <h1>Bienvenido</h1>
 
-{% block content %}
-  <div class="landing">
-      <h1>Bienvenido a Nuestra Aplicación</h1>
-      <p>Explora nuestras funcionalidades y descubre cómo podemos ayudarte a mejorar tus procesos.</p>
-      <button class="cta-button">Comenzar Ahora</button>
+    <div>
+      <h3>Seleccione un usuario para generarle recomendaciones.</h3>
+      <ul class="user-list">
+        {% for user in users %}
+          <li>
+            <a href="/{{user.id}}">
+              {{ user.username }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if user %}
+      <h3>Usuario Seleccionado</h3>
+      <div class="user-selected">
+        {{ user.username.0 }}
+      </div>
+    {% endif %}
+
+    <div class="historial-container">
+      <ul>
+        {% for view in views %}
+          <li>
+            {{ view.username }}
+          </li>
+        {% endfor %}
+      </ul>
+      <ul>
+        {% for like in likes %}
+          <li>
+            {{ like.username }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
 {% endblock %}

@@ -1,0 +1,47 @@
+{% extends "Base.html" %}
+{% block title %}Error 500{% endblock %}
+{% block content %}
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .container {
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column-reverse;
+    }
+    h1 {
+        font-size: 3em;
+        margin-bottom: 0.5em;
+    }
+    p {
+        font-size: 1.2em;
+        margin-bottom: 0.2em;
+    }
+    a {
+        text-decoration: none;
+        color: #007BFF;
+        font-weight: bold;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+<div class="container">
+    <h1>500</h1>
+    <p>Lo sentimos, algo salio mal.</p>
+    <p><a href="/">Volver a inicio</a></p>
+</div>
+
+{% endblock %}
