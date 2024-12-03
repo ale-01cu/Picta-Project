@@ -15,13 +15,12 @@ def data_preprocessing():
     # likes_df = dislikes_undersampling(likes_df)
     # likes_df = transform_date_to_timestamp(likes_df, "fecha")
 
-
-    views_df = transform_date_to_timestamp(views_df, 'fecha')
-    completar_likes_con_usuarios(
-        views_df, 
-        users_df, 
-        './datasets/vistas.csv'
-    )
+    # views_df = transform_date_to_timestamp(views_df, 'fecha')
+    # completar_likes_con_usuarios(
+    #     views_df, 
+    #     users_df, 
+    #     './datasets/vistas.csv'
+    # )
     # user_df = pd.DataFrame()
     # user_df['usuario_id'] = pd.concat([likes_df['usuario_id'], views_df['usuario_id']]).reset_index(drop=True)
     # user_df['usuario_id'] = user_df['usuario_id'].drop_duplicates().reset_index(drop=True)
