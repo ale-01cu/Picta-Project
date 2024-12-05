@@ -39,19 +39,21 @@ async def home_user_selected(user_id: int, request: Request):
             '../../datasets/likes.csv',
         ])
 
+        print(views_df)
+
         views_result = views_df.loc[views_df['usuario_id'] == user_id]
         likes_result = likes_df.loc[likes_df['usuario_id'] == user_id]
         user = users_df.drop_duplicates(subset='id').loc[users_df['id'] == user_id]
 
-        print(views_result.head(10).to_dict(orient='records'))
-        print(user)
+        print(views_result)
+
         # Filtrar por configuraciones activas y convertir _id a string
         return templates.TemplateResponse(
             "home.html", 
             {
                 "request": request, 
-                "users": users_df.head(10).to_dict(orient='records'), 
-                "user": user.to_dict(),
+                "users": users_df.tail(10).to_dict(orient='records'), 
+                "user": list(user.to_dict()['username'].values())[0],
                 "views": views_result.head(10).to_dict(orient='records'), 
                 "likes": likes_result.head(10).to_dict(orient='records')
             }

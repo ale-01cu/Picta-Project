@@ -14,7 +14,7 @@ from app.middlewares.auth import AuthMiddleware
 # build_db()
 app = FastAPI()
 
-app.add_middleware(AuthMiddleware)
+# app.add_middleware(AuthMiddleware)
 
 app.include_router(config_routes.router)
 app.include_router(features_routes.router)
