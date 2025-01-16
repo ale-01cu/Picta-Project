@@ -33,6 +33,26 @@
       background-color: #eeeeee;
       padding: 8px;
       border-radius: 10px;
+      text-align: center;
+    }
+
+    .btn-container {
+      display: flex;
+      width: 100%;
+      padding: 24px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-container button{
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-container button:hover {
+      background-color: #aaa;
     }
   </style>
 
@@ -56,25 +76,38 @@
     {% if user %}
       <h3>Usuario Seleccionado</h3>
       <div class="user-selected">
-        {{ user.username.0 }}
+        {{ user }}
       </div>
     {% endif %}
 
-    <div class="historial-container">
-      <ul>
-        {% for view in views %}
-          <li>
-            {{ view.username }}
-          </li>
-        {% endfor %}
-      </ul>
-      <ul>
-        {% for like in likes %}
-          <li>
-            {{ like.username }}
-          </li>
-        {% endfor %}
-      </ul>
+    <div>
+      <h3>Preferencias</h3>
+      <div class="historial-container">
+        <ul>
+          {% for view in views %}
+            <li>
+              {{ view.username }}
+              {{ view.publicacion_id }}
+            </li>
+          {% endfor %}
+        </ul>
+        <ul>
+          {% for like in likes %}
+            <li>
+              {{ like.username }}
+              {{ like.publicacion_id }}
+
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
-  </div>
+
+
+    <div class="btn-container">
+      <button class="btn-rec">
+        Generar Recomendaciones
+      </button>
+    </div>
+
 {% endblock %}
